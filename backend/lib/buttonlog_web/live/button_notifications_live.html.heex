@@ -1,0 +1,213 @@
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="py-8">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Notification Settings</h1>
+          <p class="text-gray-600">Configure which friends get notified when you click "<%= @button.name %>"</p>
+        </div>
+        <div class="flex space-x-4">
+          <a href={~p"/buttons/#{@button.id}"} class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+            Back to Button
+          </a>
+          <button phx-click="save_all_settings" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Save Settings
+          </button>
+        </div>
+      </div>
+
+      <!-- Flash Messages -->
+      <%= if @flash[:info] do %>
+        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+          <%= @flash[:info] %>
+        </div>
+      <% end %>
+      
+      <%= if @flash[:error] do %>
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <%= @flash[:error] %>
+        </div>
+      <% end %>
+
+      <!-- Notification Summary -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M15 17h5l-5 5v-5z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-medium text-blue-900">Notification Summary</h3>
+            <p class="text-blue-700">
+              <%= 
+                enabled_count = Enum.count(@friends, fn friend -> 
+                  Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled 
+                end)
+              %>
+              <span class="font-semibold"><%= enabled_count %></span> of your <span class="font-semibold"><%= length(@friends) %></span> friends 
+              will receive notifications when you click "<%= @button.name %>"
+            </p>
+            <%= if enabled_count > 0 do %>
+              <p class="text-sm text-blue-600 mt-1">
+                Selected friends: 
+                <%= @friends 
+                  |> Enum.filter(fn friend -> 
+                    Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled 
+                  end)
+                  |> Enum.map(fn friend -> friend.display_name end)
+                  |> Enum.join(", ") %>
+              </p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Button Information -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Button Details</h2>
+        <div class="flex items-center space-x-4">
+          <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold flex-shrink-0" 
+               style={"background-color: #{@button.color}"}>
+            <%= @button.icon %>
+          </div>
+          <div>
+            <h3 class="text-lg font-medium text-gray-900"><%= @button.name %></h3>
+            <p class="text-sm text-gray-500">
+              <%= if @button.description do %>
+                <%= @button.description %>
+              <% else %>
+                No description
+              <% end %>
+            </p>
+            <p class="text-xs text-gray-400">
+              Type: <%= String.capitalize(@button.type) %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification Settings -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-900">Friend Notifications</h2>
+          <div class="text-sm text-gray-500">
+            <%= 
+              enabled_count = Enum.count(@friends, fn friend -> 
+                Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled 
+              end)
+            %>
+            <span class="font-medium text-blue-600"><%= enabled_count %></span> of <%= length(@friends) %> friends selected
+          </div>
+        </div>
+        <p class="text-gray-600 mb-6">Select which friends should receive notifications when you click "<%= @button.name %>":</p>
+        
+        <!-- Quick Actions -->
+        <div class="flex space-x-3 mb-4">
+          <button phx-click="select_all_friends" class="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
+            Select All Friends
+          </button>
+          <button phx-click="deselect_all_friends" class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+            Deselect All
+          </button>
+        </div>
+        
+        <%= if length(@friends) > 0 do %>
+          <div class="space-y-4">
+            <%= for friend <- @friends do %>
+              <div class={[
+                "flex items-center justify-between p-4 border rounded-lg transition-colors",
+                if(Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled, 
+                   do: "border-green-300 bg-green-50 hover:bg-green-100", 
+                   else: "border-gray-200 hover:bg-gray-50")
+              ]}>
+                <div class="flex items-center space-x-3">
+                  <%= if friend.avatar do %>
+                    <img src={friend.avatar} alt="Avatar" class="w-10 h-10 rounded-full">
+                  <% else %>
+                    <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                      <span class="text-gray-600 font-medium"><%= String.first(friend.username) %></span>
+                    </div>
+                  <% end %>
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <p class="font-medium text-gray-900"><%= friend.display_name %></p>
+                      <%= if Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled do %>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                          </svg>
+                          Selected
+                        </span>
+                      <% end %>
+                    </div>
+                    <p class="text-sm text-gray-500">@<%= friend.username %></p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                  <button phx-click="toggle_friend_notification" 
+                          phx-value-friend_id={friend.id}
+                          title={if Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled, 
+                                  do: "Click to disable notifications", 
+                                  else: "Click to enable notifications"}
+                          class={[
+                            "w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-colors cursor-pointer hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                            if(Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled, 
+                               do: "bg-blue-600 border-blue-600 shadow-sm", 
+                               else: "border-gray-300 bg-white hover:border-blue-400")
+                          ]}>
+                    <svg class={[
+                      "w-4 h-4 transition-opacity",
+                      if(Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled, 
+                         do: "text-white opacity-100", 
+                         else: "text-gray-400 opacity-0")
+                    ]} fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          
+          <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-start space-x-3">
+              <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-medium text-blue-900">How it works</h3>
+                <p class="text-sm text-blue-700 mt-1">
+                  When you click "<%= @button.name %>", selected friends will receive a notification. 
+                  You can change these settings at any time.
+                </p>
+              </div>
+            </div>
+          </div>
+        <% else %>
+          <div class="text-center py-8">
+            <div class="text-gray-400 mb-4">
+              <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No friends yet</h3>
+            <p class="text-gray-500 mb-4">You need to add friends before you can configure notifications</p>
+            <a href={~p"/friends"} class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              Add Friends
+            </a>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+

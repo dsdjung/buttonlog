@@ -1,0 +1,37 @@
+defmodule ButtonLog.Social.FriendPermission do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "friend_permissions" do
+    field :can_view_history, :boolean
+    field :can_receive_notifications, :boolean
+    field :can_view_buttons, :boolean
+
+    # Relationships
+    belongs_to :user, ButtonLog.Accounts.User
+    belongs_to :friend, ButtonLog.Accounts.User
+
+    timestamps()
+  end
+
+  def changeset(permission, attrs) do
+    permission
+    |> cast(attrs, [:user_id, :friend_id, :can_view_history, :can_receive_notifications, :can_view_buttons])
+    |> validate_required([:user_id, :friend_id])
+    |> unique_constraint([:user_id, :friend_id], name: :friend_permissions_user_friend_index)
+  end
+
+  def create_changeset(permission, attrs, user_id, friend_id) do
+    permission
+    |> changeset(attrs)
+    |> put_change(:user_id, user_id)
+    |> put_change(:friend_id, friend_id)
+    |> put_change(:can_view_history, false)
+    |> put_change(:can_receive_notifications, true)
+    |> put_change(:can_view_buttons, true)
+  end
+end
+

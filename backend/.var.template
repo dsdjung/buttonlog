@@ -1,0 +1,8 @@
+# Copy this file to .var and fill in your actual values
+# DO NOT commit the .var file to git as it contains sensitive information
+
+export GOOGLE_CLIENT_ID="your_google_client_id_here"
+export GOOGLE_CLIENT_SECRET="your_google_client_secret_here"
+export ELEVENLABS_API_KEY="your_elevenlabs_api_key_here"
+export OPENAI_API_KEY="your_openai_api_key_here"
+export PEXELS_API_KEY="your_pexels_api_key_here"

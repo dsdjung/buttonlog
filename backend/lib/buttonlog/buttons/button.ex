@@ -1,0 +1,53 @@
+defmodule ButtonLog.Buttons.Button do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "buttons" do
+    field :name, :string
+    field :description, :string
+    field :type, :string
+    field :icon, :string
+    field :color, :string
+    field :is_active, :boolean
+    field :current_state, :string
+    field :state_changed_at, :utc_datetime
+
+    # Settings
+    field :notifications_enabled, :boolean
+    field :auto_stop_enabled, :boolean
+    field :calendar_sync_enabled, :boolean
+
+    # Relationships
+    belongs_to :user, ButtonLog.Accounts.User
+    has_many :button_clicks, ButtonLog.Buttons.ButtonClick
+
+    timestamps()
+  end
+
+  def changeset(button, attrs) do
+    button
+    |> cast(attrs, [:name, :description, :type, :icon, :color, :is_active,
+                    :notifications_enabled, :auto_stop_enabled, :calendar_sync_enabled, 
+                    :current_state, :state_changed_at, :user_id])
+    |> validate_required([:name, :type])
+    |> validate_length(:name, min: 1, max: 100)
+    |> validate_length(:description, max: 500)
+    |> validate_inclusion(:type, ["instant", "timed", "state"])
+    |> validate_inclusion(:current_state, ["idle", "active"], allow_blank: true)
+    |> validate_format(:color, ~r/^#[0-9A-Fa-f]{6}$/, message: "must be a valid hex color")
+  end
+
+  def create_changeset(button, attrs, user_id) do
+    button
+    |> changeset(attrs)
+    |> put_change(:user_id, user_id)
+    |> put_change(:is_active, true)
+    |> put_change(:current_state, "idle")
+    |> put_change(:notifications_enabled, true)
+    |> put_change(:auto_stop_enabled, false)
+    |> put_change(:calendar_sync_enabled, false)
+  end
+end

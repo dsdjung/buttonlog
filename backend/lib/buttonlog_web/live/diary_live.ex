@@ -1,0 +1,652 @@
+defmodule ButtonLogWeb.DiaryLive do
+  use ButtonLogWeb, :live_view
+  alias ButtonLog.Accounts
+  alias ButtonLog.Repo
+  import Ecto.Query
+
+  @impl true
+  def mount(_params, session, socket) do
+    user_id = session["user_id"]
+
+    if user_id do
+      current_user = Accounts.get_user!(user_id)
+      today = get_local_today()
+
+      # Get today's activities by default
+      activities = get_daily_activities(user_id, today)
+      summary = generate_daily_summary(activities, today)
+
+      {:ok,
+       socket
+       |> assign(:current_user, current_user)
+       |> assign(:selected_date, today)
+       |> assign(:activities, activities)
+       |> assign(:summary, summary)
+       |> assign(:page_title, "Diary")}
+    else
+      {:ok,
+       socket
+       |> put_flash(:error, "Please log in to view your diary")
+       |> redirect(to: ~p"/auth/login")}
+    end
+  end
+
+
+
+      @impl true
+  def handle_event("select_date", params, socket) do
+    IO.inspect(params, label: "select_date params received")
+    IO.inspect(socket.assigns.selected_date, label: "current selected_date")
+
+    case params do
+      %{"date" => date_string} when is_binary(date_string) and date_string != "" ->
+        IO.inspect(date_string, label: "date_string received from date key")
+        process_date_selection(date_string, socket)
+
+      %{"value" => date_string} when is_binary(date_string) and date_string != "" ->
+        IO.inspect(date_string, label: "date_string received from value key")
+        process_date_selection(date_string, socket)
+
+      _ ->
+        IO.inspect(params, label: "unexpected params format")
+        {:noreply, socket |> put_flash(:error, "Invalid date selection")}
+    end
+  end
+
+
+
+  # Helper function to process date selection
+  defp process_date_selection(date_string, socket) do
+    case Date.from_iso8601(date_string) do
+      {:ok, selected_date} ->
+        IO.inspect(selected_date, label: "parsed selected_date")
+
+        user_id = socket.assigns.current_user.id
+        activities = get_daily_activities(user_id, selected_date)
+        summary = generate_daily_summary(activities, selected_date)
+
+        IO.inspect(activities, label: "new activities")
+        IO.inspect(summary, label: "new summary")
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Date changed to #{Calendar.strftime(selected_date, "%B %d, %Y")}")
+         |> assign(:selected_date, selected_date)
+         |> assign(:activities, activities)
+         |> assign(:summary, summary)}
+
+      {:error, reason} ->
+        IO.inspect(reason, label: "date parsing error")
+        {:noreply, socket |> put_flash(:error, "Invalid date format: #{inspect(reason)}")}
+    end
+  end
+
+  @impl true
+  def handle_event("previous_day", _params, socket) do
+    current_date = socket.assigns.selected_date
+    previous_date = Date.add(current_date, -1)
+
+    user_id = socket.assigns.current_user.id
+    activities = get_daily_activities(user_id, previous_date)
+    summary = generate_daily_summary(activities, previous_date)
+
+    {:noreply,
+     socket
+     |> assign(:selected_date, previous_date)
+     |> assign(:activities, activities)
+     |> assign(:summary, summary)}
+  end
+
+  @impl true
+  def handle_event("next_day", _params, socket) do
+    current_date = socket.assigns.selected_date
+    next_date = Date.add(current_date, 1)
+
+    # Don't allow future dates
+    today = get_local_today()
+    if Date.compare(next_date, today) == :gt do
+      {:noreply, socket |> put_flash(:error, "Cannot view future dates")}
+    else
+      user_id = socket.assigns.current_user.id
+      activities = get_daily_activities(user_id, next_date)
+      summary = generate_daily_summary(activities, next_date)
+
+              {:noreply,
+         socket
+         |> assign(:selected_date, next_date)
+         |> assign(:activities, activities)
+         |> assign(:summary, summary)}
+    end
+  end
+
+    @impl true
+  def handle_event("go_to_today", _params, socket) do
+    today = get_local_today()
+    user_id = socket.assigns.current_user.id
+    activities = get_daily_activities(user_id, today)
+    summary = generate_daily_summary(activities, today)
+
+    {:noreply,
+     socket
+       |> assign(:selected_date, today)
+       |> assign(:activities, activities)
+       |> assign(:summary, summary)}
+  end
+
+  @impl true
+  def handle_event("refresh_in_progress", _params, socket) do
+    # Refresh the current date's activities and summary to get updated durations
+    user_id = socket.assigns.current_user.id
+    selected_date = socket.assigns.selected_date
+    activities = get_daily_activities(user_id, selected_date)
+    summary = generate_daily_summary(activities, selected_date)
+
+    {:noreply,
+     socket
+       |> put_flash(:info, "In-progress activities refreshed")
+       |> assign(:activities, activities)
+       |> assign(:summary, summary)}
+  end
+
+
+
+  @impl true
+  def handle_params(_params, _url, socket) do
+    {:noreply, socket}
+  end
+
+  # Private helper functions
+
+  defp get_daily_activities(user_id, date) do
+    # Convert local date to UTC start/end times for database query
+    # Since button clicks are stored in UTC, we need to query the UTC range
+    # that corresponds to the local date, accounting for timezone offset
+
+    # For EST (-5 hours), local midnight corresponds to UTC 5:00 AM
+    # So for local date 2025-08-24, we want UTC range 2025-08-24 05:00:00 to 2025-08-25 04:59:59
+    timezone_offset_hours = 5  # EST is 5 hours behind UTC
+
+    start_of_day = DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
+    |> DateTime.add(timezone_offset_hours * 3600, :second)
+
+    end_of_day = DateTime.new!(date, ~T[23:59:59], "Etc/UTC")
+    |> DateTime.add(timezone_offset_hours * 3600, :second)
+
+    # Get all button clicks for the user on the specified date
+    clicks = Repo.all(
+      from c in ButtonLog.Buttons.ButtonClick,
+      join: b in ButtonLog.Buttons.Button, on: c.button_id == b.id,
+      where: c.user_id == ^user_id and c.clicked_at >= ^start_of_day and c.clicked_at <= ^end_of_day,
+      order_by: [desc: c.clicked_at],
+      preload: [button: b]
+    )
+
+    # Group clicks by button
+    clicks
+    |> Enum.group_by(fn click -> click.button_id end)
+    |> Enum.map(fn {_button_id, button_clicks} ->
+      button = List.first(button_clicks).button
+
+      # For timed buttons, calculate total active duration including sessions that started before this date
+      total_duration = if button.type == "timed" do
+        calculate_timed_button_duration(button.id, user_id, start_of_day, end_of_day)
+      else
+        0
+      end
+
+      %{
+        button: button,
+        clicks: button_clicks,
+        total_clicks: length(button_clicks),
+        first_click: List.first(button_clicks).clicked_at,
+        last_click: List.last(button_clicks).clicked_at,
+        total_duration: total_duration
+      }
+    end)
+    |> Enum.sort_by(fn activity -> activity.total_clicks end, :desc)
+  end
+
+  defp generate_daily_summary(activities, date) do
+    total_buttons_used = length(activities)
+    total_clicks = Enum.reduce(activities, 0, fn activity, acc -> acc + activity.total_clicks end)
+
+    # Get most active button
+    most_active = if activities != [] do
+      List.first(activities)
+    else
+      nil
+    end
+
+    # Get button types used
+    button_types = activities
+    |> Enum.map(fn activity -> activity.button.type end)
+    |> Enum.uniq()
+    |> Enum.sort()
+
+    # Get in-progress timed buttons
+    in_progress_timed_buttons = get_in_progress_timed_buttons(activities)
+
+    # Calculate total active time from all timed buttons
+    # This includes both completed sessions and currently active sessions
+    total_active_time = activities
+    |> Enum.filter(fn activity -> activity.button.type == "timed" end)
+    |> Enum.reduce(0, fn activity, acc ->
+      # For currently active buttons, add the current session time
+      if activity.button.current_state == "active" do
+        # Get the current session duration (time since it started)
+        current_session_duration = get_current_session_duration(activity)
+        acc + activity.total_duration + current_session_duration
+      else
+        acc + activity.total_duration
+      end
+    end)
+
+    # Format activities for display
+    formatted_activities = Enum.map(activities, fn activity ->
+      format_button_activity(activity)
+    end)
+
+    %{
+      date: date,
+      total_buttons_used: total_buttons_used,
+      total_clicks: total_clicks,
+      most_active_button: most_active,
+      button_types_used: button_types,
+      formatted_activities: formatted_activities,
+      in_progress_timed_buttons: in_progress_timed_buttons,
+      total_active_time: total_active_time,
+      is_today: Date.compare(date, get_local_today()) == :eq,
+      is_empty: activities == []
+    }
+  end
+
+  # Helper function to format button activity for display
+  defp format_button_activity(activity) do
+    button = activity.button
+
+    case button.type do
+      "instant" ->
+        # For instant buttons, show click count
+        click_count = activity.total_clicks
+        count_text = if click_count == 1, do: "once", else: "#{click_count} times"
+        "#{button.name} #{count_text}"
+
+      "timed" ->
+        # For timed buttons, show session count and total duration
+        session_count = count_active_sessions(activity.clicks)
+        count_text = if session_count == 1, do: "once", else: "#{session_count} times"
+
+        # Calculate total duration including current session if active
+        total_duration = if button.current_state == "active" do
+          current_session_duration = get_current_session_duration(activity)
+          activity.total_duration + current_session_duration
+        else
+          activity.total_duration
+        end
+
+        duration_text = if total_duration > 0 do
+          format_duration(total_duration)
+        else
+          "0 minutes"
+        end
+        "#{button.name} #{count_text} for #{duration_text}"
+
+      "state" ->
+        # For state buttons, show click count and current state
+        click_count = activity.total_clicks
+        count_text = if click_count == 1, do: "once", else: "#{click_count} times"
+        state_text = if button.current_state == "active", do: " (currently active)", else: ""
+        "#{button.name} #{count_text}#{state_text}"
+
+      _ ->
+        # Fallback for unknown types
+        click_count = activity.total_clicks
+        count_text = if click_count == 1, do: "once", else: "#{click_count} times"
+        "#{button.name} #{count_text}"
+    end
+  end
+
+
+
+  # Format duration in hours and minutes
+  defp format_duration(total_seconds) when is_integer(total_seconds) and total_seconds > 0 do
+    hours = div(total_seconds, 3600)
+    minutes = div(rem(total_seconds, 3600), 60)
+
+    cond do
+      hours > 0 and minutes > 0 ->
+        "#{hours} hour#{if hours == 1, do: "", else: "s"} #{minutes} minute#{if minutes == 1, do: "", else: "s"}"
+      hours > 0 ->
+        "#{hours} hour#{if hours == 1, do: "", else: "s"}"
+      minutes > 0 ->
+        "#{minutes} minute#{if minutes == 1, do: "", else: "s"}"
+      true ->
+        "less than a minute"
+    end
+  end
+
+  defp format_duration(_), do: "0 minutes"
+
+  defp format_date(date) do
+    Calendar.strftime(date, "%B %d, %Y")
+  end
+
+  defp is_today?(date) do
+    Date.compare(date, get_local_today()) == :eq
+  end
+
+  defp is_yesterday?(date) do
+    Date.compare(date, Date.add(get_local_today(), -1)) == :eq
+  end
+
+  defp is_tomorrow?(date) do
+    Date.compare(date, Date.add(get_local_today(), 1)) == :eq
+  end
+
+  defp get_relative_date_text(date) do
+    cond do
+      is_today?(date) -> "Today"
+      is_yesterday?(date) -> "Yesterday"
+      is_tomorrow?(date) -> "Tomorrow"
+      true -> format_date(date)
+    end
+  end
+
+    # Get today's date in local timezone
+  defp get_local_today() do
+    # Get current time in local timezone
+    # For now, use a simple approach: get UTC time and adjust for typical timezone offset
+    # This will give us the local date for most users
+    utc_now = DateTime.utc_now()
+
+    # Adjust for typical timezone offset (e.g., -5 hours for Eastern Time)
+    # You can adjust this offset based on your location
+    timezone_offset_hours = -5  # Eastern Time (EST/EDT)
+
+    local_now = DateTime.add(utc_now, timezone_offset_hours * 3600, :second)
+    DateTime.to_date(local_now)
+  end
+
+    # Calculate total active duration for a timed button within a date range
+  # This handles sessions that started before the date and multiple active periods
+  defp calculate_timed_button_duration(button_id, user_id, start_of_day, end_of_day) do
+    # Get all clicks for this button within the date range
+    clicks_in_range = Repo.all(
+      from c in ButtonLog.Buttons.ButtonClick,
+      where: c.button_id == ^button_id and c.user_id == ^user_id and c.clicked_at >= ^start_of_day and c.clicked_at <= ^end_of_day,
+      order_by: [asc: c.clicked_at]
+    )
+
+    # Get the last click before the start of the day to see if button was already active
+    last_click_before = Repo.one(
+      from c in ButtonLog.Buttons.ButtonClick,
+      where: c.button_id == ^button_id and c.user_id == ^user_id and c.clicked_at < ^start_of_day,
+      order_by: [desc: c.clicked_at],
+      limit: 1
+    )
+
+    # Get the first click after the end of the day to see if button continued after
+    first_click_after = Repo.one(
+      from c in ButtonLog.Buttons.ButtonClick,
+      where: c.button_id == ^button_id and c.user_id == ^user_id and c.clicked_at > ^end_of_day,
+      order_by: [asc: c.clicked_at],
+      limit: 1
+    )
+
+    # Calculate duration from sessions within the date range
+    duration_from_range = calculate_duration_from_clicks(clicks_in_range, start_of_day, end_of_day)
+
+    # Add duration from session that started before the date (if still active)
+    duration_from_previous = if last_click_before do
+      # If the last click before the date was a "start" action, the button was active at the beginning of the day
+      if last_click_before.action == "start" do
+        # Calculate duration from start of day to first click in range (or end of day if no clicks)
+        first_click_in_range = List.first(clicks_in_range)
+        end_time = if first_click_in_range, do: first_click_in_range.clicked_at, else: end_of_day
+        DateTime.diff(end_time, start_of_day, :second)
+      else
+        0
+      end
+    else
+      0
+    end
+
+    # Add duration from session that continues after the date (if still active)
+    duration_from_after = if first_click_after do
+      # If the first click after the date is an "end" action, the button was active until then
+      if first_click_after.action == "end" do
+        # Calculate duration from last click in range to end of day
+        last_click_in_range = List.last(clicks_in_range)
+        start_time = if last_click_in_range, do: last_click_in_range.clicked_at, else: start_of_day
+        DateTime.diff(end_of_day, start_time, :second)
+      else
+        0
+      end
+    else
+      0
+    end
+
+    duration_from_range + duration_from_previous + duration_from_after
+  end
+
+    # Calculate duration from a list of clicks within a date range
+  defp calculate_duration_from_clicks(clicks, start_of_day, end_of_day) do
+    # Sort clicks by time
+    sorted_clicks = Enum.sort_by(clicks, & &1.clicked_at, :asc)
+
+    # Track active periods
+    active_periods = []
+    current_start = nil
+
+    # Process each click to find start/stop pairs
+    Enum.each(sorted_clicks, fn click ->
+      case click.action do
+        "start" ->
+          # If we already have a start, this is a new session
+          if current_start do
+            # End the previous session at the start of the day or the new start
+            end_time = if current_start < start_of_day, do: start_of_day, else: current_start
+            duration = DateTime.diff(click.clicked_at, end_time, :second)
+            if duration > 0 do
+              active_periods = [{end_time, click.clicked_at} | active_periods]
+            end
+          end
+          current_start = click.clicked_at
+
+        "end" ->
+          # End the current session
+          if current_start do
+            end_time = if current_start < start_of_day, do: start_of_day, else: current_start
+            duration = DateTime.diff(click.clicked_at, end_time, :second)
+            if duration > 0 do
+              active_periods = [{end_time, click.clicked_at} | active_periods]
+            end
+            current_start = nil
+          end
+
+        _ ->
+          # For regular clicks, if we have a start, this extends the session
+          # No action needed for duration calculation
+      end
+    end)
+
+    # If we still have an active session at the end, calculate its duration
+    if current_start do
+      end_time = if current_start < start_of_day, do: start_of_day, else: current_start
+      duration = DateTime.diff(end_of_day, end_time, :second)
+      if duration > 0 do
+        active_periods = [{end_time, end_of_day} | active_periods]
+      end
+    end
+
+    # If we have no explicit start/end actions but multiple clicks, treat them as implicit sessions
+    # This handles the case where buttons are started/stopped by clicking rather than explicit actions
+    if active_periods == [] and length(clicks) > 1 do
+      # Group clicks into potential sessions (clicks that are close together)
+      implicit_sessions = group_clicks_into_sessions(clicks, start_of_day, end_of_day)
+      Enum.reduce(implicit_sessions, 0, fn {start_time, end_time}, acc ->
+        acc + DateTime.diff(end_time, start_time, :second)
+      end)
+    else
+      # Sum up all active periods
+      Enum.reduce(active_periods, 0, fn {start_time, end_time}, acc ->
+        acc + DateTime.diff(end_time, start_time, :second)
+      end)
+    end
+  end
+
+  # Get the duration of the current active session for a button
+  defp get_current_session_duration(activity) do
+    # Find the most recent start action or the most recent click if no explicit start
+    start_time = case Enum.find(activity.clicks, fn click -> click.action == "start" end) do
+      nil ->
+        # No explicit start action, use the most recent click
+        case List.first(activity.clicks) do
+          nil -> nil
+          click -> click.clicked_at
+        end
+      start_click -> start_click.clicked_at
+    end
+
+    if start_time do
+      # Calculate time from start until now
+      now = DateTime.utc_now()
+      DateTime.diff(now, start_time, :second)
+    else
+      0
+    end
+  end
+
+  # Count how many times a timed button was active (sessions, not clicks)
+  def count_active_sessions(clicks) do
+    # Sort clicks by time
+    sorted_clicks = Enum.sort_by(clicks, & &1.clicked_at, :asc)
+
+    # If we have explicit start/end actions, count those
+    start_actions = Enum.count(sorted_clicks, fn click -> click.action == "start" end)
+    end_actions = Enum.count(sorted_clicks, fn click -> click.action == "end" end)
+
+    if start_actions > 0 or end_actions > 0 do
+      # Use explicit actions to count sessions
+      # A session starts with "start" and ends with "end"
+      # If we have more starts than ends, the last session is still active
+      max(start_actions, end_actions)
+    else
+      # No explicit actions, count implicit sessions
+      # Group clicks into pairs to count sessions
+      case length(sorted_clicks) do
+        0 -> 0
+        1 -> 1  # Single click = 1 session
+        _ ->
+          # Multiple clicks = multiple sessions (each pair represents start/stop)
+          # Round up to handle odd number of clicks
+          ceil(length(sorted_clicks) / 2)
+      end
+    end
+  end
+
+  # Group clicks into implicit sessions for buttons without explicit start/end actions
+  defp group_clicks_into_sessions(clicks, start_of_day, end_of_day) do
+    # Sort clicks by time
+    sorted_clicks = Enum.sort_by(clicks, & &1.clicked_at, :asc)
+
+    # If we have 2 or more clicks, treat them as start/stop pairs
+    if length(sorted_clicks) >= 2 do
+      # Group clicks into pairs (start, stop)
+      Enum.chunk_every(sorted_clicks, 2)
+      |> Enum.map(fn click_pair ->
+        case click_pair do
+          [start_click, stop_click] ->
+            # Use the actual click times, but ensure they're within the day bounds
+            start_time = if start_click.clicked_at < start_of_day, do: start_of_day, else: start_click.clicked_at
+            end_time = if stop_click.clicked_at > end_of_day, do: end_of_day, else: stop_click.clicked_at
+            {start_time, end_time}
+
+          [single_click] ->
+            # Single click - treat as a brief session
+            start_time = if single_click.clicked_at < start_of_day, do: start_of_day, else: single_click.clicked_at
+            end_time = if single_click.clicked_at > end_of_day, do: end_of_day, else: single_click.clicked_at
+            {start_time, end_time}
+        end
+      end)
+    else
+      # Single click - treat as a brief session
+      [click] = sorted_clicks
+      start_time = if click.clicked_at < start_of_day, do: start_of_day, else: click.clicked_at
+      end_time = if click.clicked_at > end_of_day, do: end_of_day, else: click.clicked_at
+      [{start_time, end_time}]
+    end
+  end
+
+  # Get in-progress timed buttons from activities
+  defp get_in_progress_timed_buttons(activities) do
+    activities
+    |> Enum.filter(fn activity ->
+      # Only consider timed buttons
+      activity.button.type == "timed"
+    end)
+    |> Enum.filter(fn activity ->
+      # Use the same logic as the buttons page: check button.current_state
+      # This ensures consistency between buttons page and diary
+      case activity.button.current_state do
+        "active" -> true
+        "idle" -> false
+        _ -> false  # Handle any other states
+      end
+    end)
+    |> Enum.map(fn activity ->
+      # For buttons with current_state "active", we need to determine when they started
+      # We'll use the most recent click as the start time, or fall back to a reasonable default
+      start_click = Enum.find(activity.clicks, fn click -> click.action == "start" end)
+      recent_click = List.first(activity.clicks)  # Most recent click
+
+      start_time = if start_click, do: start_click.clicked_at, else: recent_click.clicked_at
+
+      # Calculate total duration including current session if active
+      total_duration_today = if activity.button.current_state == "active" do
+        current_session_duration = get_current_session_duration(activity)
+        activity.total_duration + current_session_duration
+      else
+        activity.total_duration
+      end
+
+      %{
+        button: activity.button,
+        start_time: start_time,
+        duration_so_far: calculate_duration_since_start(start_time),
+        total_clicks: activity.total_clicks,
+        total_duration_today: total_duration_today
+      }
+    end)
+  end
+
+  # Calculate duration since start time
+  defp calculate_duration_since_start(start_time) when is_struct(start_time, DateTime) do
+    now = DateTime.utc_now()
+    DateTime.diff(now, start_time, :second)
+  end
+
+  defp calculate_duration_since_start(_), do: 0
+
+  # Format relative time (e.g., "2 hours ago", "30 minutes ago")
+  defp format_relative_time(start_time) when is_struct(start_time, DateTime) do
+    now = DateTime.utc_now()
+    diff_seconds = DateTime.diff(now, start_time, :second)
+
+    cond do
+      diff_seconds < 60 ->
+        "#{diff_seconds} second#{if diff_seconds == 1, do: "", else: "s"}"
+      diff_seconds < 3600 ->
+        minutes = div(diff_seconds, 60)
+        "#{minutes} minute#{if minutes == 1, do: "", else: "s"}"
+      diff_seconds < 86400 ->
+        hours = div(diff_seconds, 3600)
+        "#{hours} hour#{if hours == 1, do: "", else: "s"}"
+      true ->
+        days = div(diff_seconds, 86400)
+        "#{days} day#{if days == 1, do: "", else: "s"}"
+    end
+  end
+
+  defp format_relative_time(_), do: "unknown time"
+end
