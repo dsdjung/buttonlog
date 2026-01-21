@@ -232,7 +232,7 @@ struct ButtonCard: View {
         case .state:
             return button.currentState == .idle ? "Start" : "Stop"
         case .timed:
-            return button.currentState == .idle ? "Start Timer" : "Stop Timer"
+            return button.currentState == .idle ? "Start" : "Stop"
         }
     }
 }
