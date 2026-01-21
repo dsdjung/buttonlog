@@ -81,15 +81,20 @@
               <%= for button <- @shared_buttons do %>
                 <div class="p-3 border border-gray-200 rounded-lg">
                   <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0" 
-                         style={"background-color: #{button.color}"}>
-                      <%= button.icon %>
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+                         style={"background-color: #{button.color || "#007AFF"}"}>
+                      <%= case button.type do %>
+                        <% "instant" -> %>⚡
+                        <% "timed" -> %>⏱️
+                        <% "state" -> %>🔄
+                        <% _ -> %>📱
+                      <% end %>
                     </div>
                     <div class="flex-1">
                       <h3 class="font-medium text-gray-900"><%= button.name %></h3>
                       <p class="text-sm text-gray-500">
-                        <%= if button.updated_at do %>
-                          Last clicked <%= Calendar.strftime(button.updated_at, "%m/%d %I:%M %p") %>
+                        <%= if button.latest_click_at do %>
+                          Last clicked <%= Calendar.strftime(button.latest_click_at, "%m/%d %I:%M %p") %>
                         <% else %>
                           Never clicked
                         <% end %>
