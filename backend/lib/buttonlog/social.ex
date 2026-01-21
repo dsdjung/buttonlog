@@ -537,6 +537,7 @@ defmodule ButtonLog.Social do
   @doc """
   Gets buttons shared between two friends.
   Returns the friend's buttons that the user has permission to see.
+  Includes current state, last activity time, and location info.
   """
   def get_shared_buttons(user_id, friend_id) do
     # First check if they are actually friends
@@ -544,8 +545,8 @@ defmodule ButtonLog.Social do
       # Check if the friend has granted the user permission to view their buttons
       # Permission is from friend's perspective: did friend allow user to see their buttons?
       if can_view_buttons?(friend_id, user_id) do
-        # Return the friend's buttons
-        ButtonLog.Buttons.list_user_buttons(friend_id)
+        # Return the friend's buttons with latest click details
+        ButtonLog.Buttons.list_user_buttons_with_latest_click(friend_id)
       else
         []
       end

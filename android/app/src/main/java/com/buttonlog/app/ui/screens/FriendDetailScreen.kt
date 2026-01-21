@@ -19,9 +19,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonState
+import com.buttonlog.app.data.model.ButtonType
 import com.buttonlog.app.data.model.Friend
+import com.buttonlog.app.data.model.FriendButton
 import com.buttonlog.app.data.model.FriendActivity
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.ui.viewmodels.FriendsUiState
@@ -363,45 +364,45 @@ private fun FriendInfoCard(friend: Friend) {
 }
 
 @Composable
-private fun FriendButtonCard(button: Button) {
+private fun FriendButtonCard(button: FriendButton) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Button icon
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(button.uiColor),
-                contentAlignment = Alignment.Center
+            // Top row: Icon, name, type, and state
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = getIconForButton(button.icon),
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            // Button info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = button.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Button icon
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(button.uiColor),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Icon(
+                        imageVector = getIconForButton(button.icon),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Button info
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = button.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(4.dp)
@@ -412,32 +413,155 @@ private fun FriendButtonCard(button: Button) {
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
+                }
 
+                // State indicator for state/timed buttons
+                if (button.type != ButtonType.INSTANT) {
+                    Surface(
+                        color = if (button.currentState == ButtonState.ACTIVE)
+                            Color(0xFF34C759).copy(alpha = 0.2f)
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = if (button.currentState == ButtonState.ACTIVE) "Active" else "Idle",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = if (button.currentState == ButtonState.ACTIVE)
+                                Color(0xFF34C759)
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
 
-            // State indicator for state/timed buttons
-            if (button.type != com.buttonlog.app.data.model.ButtonType.INSTANT) {
-                Surface(
-                    color = if (button.currentState == ButtonState.ACTIVE)
-                        Color(0xFF34C759).copy(alpha = 0.2f)
-                    else
-                        MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(6.dp)
+            // Latest activity section
+            HorizontalDivider()
+
+            if (button.latestClickAt != null) {
+                // Last activity time and action
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Text(
-                        text = if (button.currentState == ButtonState.ACTIVE) "Active" else "Idle",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = if (button.currentState == ButtonState.ACTIVE)
-                            Color(0xFF34C759)
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        text = "Last activity:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = button.latestClickAt.take(16).replace("T", " "),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    button.latestClickAction?.let { action ->
+                        Surface(
+                            color = getActionBadgeColor(action),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = action,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = getActionTextColor(action),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Location if available
+                button.latestClickLocation?.let { location ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = formatCoordinates(location.lat, location.lng),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Device/platform info
+                if (button.latestClickDevice != null || button.latestClickPlatform != null) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = getPlatformIcon(button.latestClickPlatform),
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        button.latestClickDevice?.let { device ->
+                            Text(
+                                text = device,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        button.latestClickPlatform?.let { platform ->
+                            Text(
+                                text = "($platform)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "No activity yet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                     )
                 }
             }
         }
+    }
+}
+
+private fun formatCoordinates(lat: Double, lng: Double): String {
+    val latDir = if (lat >= 0) "N" else "S"
+    val lngDir = if (lng >= 0) "E" else "W"
+    return String.format("%.4f°%s %.4f°%s", kotlin.math.abs(lat), latDir, kotlin.math.abs(lng), lngDir)
+}
+
+private fun getPlatformIcon(platform: String?): ImageVector {
+    return when (platform) {
+        "iphone" -> Icons.Default.PhoneIphone
+        "android" -> Icons.Default.PhoneAndroid
+        "web" -> Icons.Default.Language
+        else -> Icons.Default.Devices
     }
 }
 

@@ -119,6 +119,66 @@ struct ButtonFormData {
     }
 }
 
+// Friend's button with latest click info (status, time, location)
+struct FriendButton: Identifiable, Codable, Equatable {
+    let id: String
+    let name: String
+    let description: String?
+    let type: ButtonType
+    let icon: String
+    let color: String
+    let isActive: Bool
+    let currentState: ButtonState
+    let stateChangedAt: Date?
+    let notificationsEnabled: Bool
+    let autoStopEnabled: Bool
+    let calendarSyncEnabled: Bool
+    let userId: String
+    let createdAt: Date
+    let updatedAt: Date
+    // Latest click info
+    let latestClickAt: Date?
+    let latestClickAction: String?
+    let latestClickLocation: ClickLocation?
+    let latestClickDevice: String?
+    let latestClickPlatform: String?
+
+    var hexColor: String {
+        return color.hasPrefix("#") ? color : "#\(color)"
+    }
+
+    var uiColor: Color {
+        return Color(hex: hexColor)
+    }
+
+    var displayAction: String {
+        latestClickAction ?? "click"
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, type, icon, color
+        case isActive = "is_active"
+        case currentState = "current_state"
+        case stateChangedAt = "state_changed_at"
+        case notificationsEnabled = "notifications_enabled"
+        case autoStopEnabled = "auto_stop_enabled"
+        case calendarSyncEnabled = "calendar_sync_enabled"
+        case userId = "user_id"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case latestClickAt = "latest_click_at"
+        case latestClickAction = "latest_click_action"
+        case latestClickLocation = "latest_click_location"
+        case latestClickDevice = "latest_click_device"
+        case latestClickPlatform = "latest_click_platform"
+    }
+}
+
+struct ClickLocation: Codable, Equatable {
+    let lat: Double
+    let lng: Double
+}
+
 // Button click data
 struct ButtonClick: Identifiable, Codable {
     let id: String

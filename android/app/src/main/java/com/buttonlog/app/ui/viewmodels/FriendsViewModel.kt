@@ -2,8 +2,8 @@ package com.buttonlog.app.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.Friend
+import com.buttonlog.app.data.model.FriendButton
 import com.buttonlog.app.data.model.FriendActivity
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.data.model.FriendPermissions
@@ -205,7 +205,7 @@ data class FriendsUiState(
     val pendingRequests: List<Friend> = emptyList(),
     val selectedFriend: Friend? = null,
     val selectedFriendPermissions: FriendPermissions? = null,
-    val friendButtons: List<Button> = emptyList(),
+    val friendButtons: List<FriendButton> = emptyList(),
     val friendActivity: List<FriendActivity> = emptyList(),
     val isLoading: Boolean = false,
     val isLoadingPermissions: Boolean = false,

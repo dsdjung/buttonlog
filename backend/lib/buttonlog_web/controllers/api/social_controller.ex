@@ -334,7 +334,24 @@ defmodule ButtonLogWeb.API.SocialController do
       calendar_sync_enabled: button.calendar_sync_enabled,
       user_id: button.user_id,
       created_at: format_datetime(button.inserted_at),
-      updated_at: format_datetime(button.updated_at)
+      updated_at: format_datetime(button.updated_at),
+      latest_click_at: format_datetime(Map.get(button, :latest_click_at)),
+      latest_click_action: Map.get(button, :latest_click_action),
+      latest_click_location: serialize_location(
+        Map.get(button, :latest_click_location_lat),
+        Map.get(button, :latest_click_location_lng)
+      ),
+      latest_click_device: Map.get(button, :latest_click_device),
+      latest_click_platform: Map.get(button, :latest_click_platform)
+    }
+  end
+
+  defp serialize_location(nil, _), do: nil
+  defp serialize_location(_, nil), do: nil
+  defp serialize_location(lat, lng) do
+    %{
+      lat: Decimal.to_float(lat),
+      lng: Decimal.to_float(lng)
     }
   end
 

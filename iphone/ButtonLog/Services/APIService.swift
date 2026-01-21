@@ -300,7 +300,7 @@ class APIService {
         )
     }
 
-    func getFriendButtons(friendId: String) async throws -> [Button] {
+    func getFriendButtons(friendId: String) async throws -> [FriendButton] {
         return try await makeRequest(endpoint: "/friends/\(friendId)/buttons")
     }
 

@@ -4,8 +4,8 @@ import android.util.Log
 import com.buttonlog.app.data.api.APIService
 import com.buttonlog.app.data.api.FriendPermissionUpdateRequest
 import com.buttonlog.app.data.api.FriendRequestBody
-import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.Friend
+import com.buttonlog.app.data.model.FriendButton
 import com.buttonlog.app.data.model.FriendActivity
 import com.buttonlog.app.data.model.FriendPermissions
 import com.buttonlog.app.data.model.FriendPermissionUpdate
@@ -178,7 +178,7 @@ class FriendsRepository @Inject constructor(
         }
     }
 
-    suspend fun getFriendButtons(friendId: String): Result<List<Button>> {
+    suspend fun getFriendButtons(friendId: String): Result<List<FriendButton>> {
         return try {
             val response = apiService.getFriendButtons(friendId)
 

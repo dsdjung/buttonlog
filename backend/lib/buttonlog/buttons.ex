@@ -240,6 +240,61 @@ defmodule ButtonLog.Buttons do
   end
 
   @doc """
+  Returns the list of buttons for a user with latest click details including location.
+  This is used for friend button views where we want to show status and last activity info.
+  """
+  def list_user_buttons_with_latest_click(user_id) do
+    # First, get all buttons for the user
+    buttons = Repo.all(
+      from b in Button,
+      where: b.user_id == ^user_id,
+      order_by: [asc: b.name]
+    )
+
+    # For each button, get its latest click with location
+    Enum.map(buttons, fn button ->
+      latest_click = Repo.one(
+        from bc in ButtonClick,
+        where: bc.button_id == ^button.id,
+        order_by: [desc: bc.clicked_at],
+        limit: 1,
+        select: %{
+          clicked_at: bc.clicked_at,
+          action: bc.action,
+          location_lat: bc.location_lat,
+          location_lng: bc.location_lng,
+          device: bc.device,
+          platform: bc.platform
+        }
+      )
+
+      %{
+        id: button.id,
+        name: button.name,
+        description: button.description,
+        type: button.type,
+        icon: button.icon,
+        color: button.color,
+        is_active: button.is_active,
+        current_state: button.current_state,
+        state_changed_at: button.state_changed_at,
+        notifications_enabled: button.notifications_enabled,
+        auto_stop_enabled: button.auto_stop_enabled,
+        calendar_sync_enabled: button.calendar_sync_enabled,
+        user_id: button.user_id,
+        inserted_at: button.inserted_at,
+        updated_at: button.updated_at,
+        latest_click_at: latest_click && latest_click.clicked_at,
+        latest_click_action: latest_click && latest_click.action,
+        latest_click_location_lat: latest_click && latest_click.location_lat,
+        latest_click_location_lng: latest_click && latest_click.location_lng,
+        latest_click_device: latest_click && latest_click.device,
+        latest_click_platform: latest_click && latest_click.platform
+      }
+    end)
+  end
+
+  @doc """
   Gets button activity (clicks) for a friend.
   Returns all button clicks for the friend with button information included.
   This is used for viewing a friend's activity history.

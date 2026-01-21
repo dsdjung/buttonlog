@@ -92,6 +92,69 @@ data class ButtonClick(
     val createdAt: Date
 )
 
+// Friend's button with latest click info (status, time, location)
+data class FriendButton(
+    val id: String,
+    val name: String,
+    val description: String?,
+    val type: ButtonType,
+    val icon: String,
+    val color: String,
+    @SerializedName("is_active")
+    val isActive: Boolean,
+    @SerializedName("current_state")
+    val currentState: ButtonState,
+    @SerializedName("state_changed_at")
+    val stateChangedAt: String?,
+    @SerializedName("notifications_enabled")
+    val notificationsEnabled: Boolean,
+    @SerializedName("auto_stop_enabled")
+    val autoStopEnabled: Boolean,
+    @SerializedName("calendar_sync_enabled")
+    val calendarSyncEnabled: Boolean,
+    @SerializedName("user_id")
+    val userId: String,
+    @SerializedName("created_at")
+    val createdAt: String,
+    @SerializedName("updated_at")
+    val updatedAt: String,
+    // Latest click info
+    @SerializedName("latest_click_at")
+    val latestClickAt: String?,
+    @SerializedName("latest_click_action")
+    val latestClickAction: String?,
+    @SerializedName("latest_click_location")
+    val latestClickLocation: ClickLocation?,
+    @SerializedName("latest_click_device")
+    val latestClickDevice: String?,
+    @SerializedName("latest_click_platform")
+    val latestClickPlatform: String?
+) {
+    val hexColor: String
+        get() = if (color.startsWith("#")) color else "#$color"
+
+    val uiColor: Color
+        get() = try {
+            Color(android.graphics.Color.parseColor(hexColor))
+        } catch (e: Exception) {
+            Color(0xFF007AFF)
+        }
+
+    val displayAction: String
+        get() = latestClickAction ?: "click"
+}
+
+data class ClickLocation(
+    val lat: Double,
+    val lng: Double
+)
+
+data class FriendButtonsResponse(
+    val success: Boolean,
+    val data: List<FriendButton> = emptyList(),
+    val error: ApiError?
+)
+
 // API response wrappers for buttons
 data class ButtonsResponse(
     val success: Boolean,
