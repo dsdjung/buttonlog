@@ -267,12 +267,11 @@ defmodule ButtonLogWeb.API.SocialController do
           %{
             id: button.id,
             name: button.name,
-            button_type: button.button_type,
+            button_type: button.type,
             color: button.color,
             icon: button.icon,
             current_state: button.current_state,
-            click_count: button.click_count,
-            last_clicked_at: button.last_clicked_at,
+            last_clicked_at: button.latest_click_at,
             inserted_at: button.inserted_at,
             updated_at: button.updated_at
           }
