@@ -13,14 +13,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.buttonlog.app.ui.screens.AccountScreen
 import com.buttonlog.app.ui.screens.ButtonsScreen
+import com.buttonlog.app.ui.screens.LoginScreen
 import com.buttonlog.app.ui.theme.ButtonLogTheme
+import com.buttonlog.app.ui.viewmodels.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -28,10 +32,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         setContent {
             ButtonLogTheme {
-                MainScreen()
+                val authViewModel: AuthViewModel = hiltViewModel()
+                val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+
+                if (isLoggedIn) {
+                    MainScreen(onLogout = { authViewModel.logout() })
+                } else {
+                    LoginScreen(viewModel = authViewModel)
+                }
             }
         }
     }
@@ -39,7 +50,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogout: () -> Unit = {}) {
     val navController = rememberNavController()
     var showCreateButton by remember { mutableStateOf(false) }
     
@@ -115,7 +126,7 @@ fun MainScreen() {
                     PlaceholderScreen("Notifications")
                 }
                 composable("account") {
-                    PlaceholderScreen("Account")
+                    AccountScreen(onLogout = onLogout)
                 }
             }
             
