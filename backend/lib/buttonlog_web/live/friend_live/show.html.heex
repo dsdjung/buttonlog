@@ -36,8 +36,8 @@
       <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Friend Information</h2>
         <div class="flex items-center space-x-6">
-          <div class="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-            <span class="text-gray-600 text-3xl font-medium uppercase"><%= String.first(@friend.display_name || "?") %></span>
+          <div class="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0" style="width: 96px; height: 96px; background-color: #d1d5db; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="text-gray-600 text-3xl font-medium uppercase" style="color: #4b5563; font-size: 1.875rem; font-weight: 500; text-transform: uppercase;"><%= String.first(@friend.display_name || "?") %></span>
           </div>
           
           <div class="flex-1">
