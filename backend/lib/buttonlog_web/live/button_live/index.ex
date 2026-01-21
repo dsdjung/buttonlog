@@ -114,7 +114,7 @@ defmodule ButtonLogWeb.ButtonLive.Index do
         updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
 
         # Send notifications to friends
-        ButtonLog.Notifications.send_button_click_notifications(button_id, user.id, %{
+        Notifications.send_button_click_notifications(button_id, user.id, %{
           clicked_at: click.clicked_at,
           action: click.action,
           platform: click.platform

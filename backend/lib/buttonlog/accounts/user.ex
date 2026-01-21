@@ -43,7 +43,7 @@ defmodule ButtonLog.Accounts.User do
     has_many :button_clicks, ButtonLog.Buttons.ButtonClick
     has_many :friendships, ButtonLog.Social.Friendship
     has_many :friend_permissions, ButtonLog.Social.FriendPermission
-    has_many :notifications, ButtonLog.Notifications.Notification
+    has_many :notifications, ButtonLog.Notifications.Notification, foreign_key: :recipient_id
     has_many :mobile_connections, ButtonLog.Mobile.Connection
 
     timestamps()

@@ -2,7 +2,6 @@ defmodule ButtonLogWeb.API.SubscriptionController do
   use ButtonLogWeb, :controller
 
   alias ButtonLog.Subscriptions.SubscriptionService
-  alias ButtonLog.Accounts.User
 
   # Plug to ensure user is authenticated
   plug :authenticate_user when action in [:index, :show, :create, :cancel, :pause, :resume, :stats]

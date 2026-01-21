@@ -35,9 +35,8 @@ defmodule ButtonLog.Subscriptions.UserSubscription do
     belongs_to :user, ButtonLog.Accounts.User
     belongs_to :subscription_plan, ButtonLog.Subscriptions.SubscriptionPlan
 
-    # Subscription history
-    has_many :subscription_events, ButtonLog.Subscriptions.SubscriptionEvent
-    has_many :billing_events, ButtonLog.Subscriptions.BillingEvent
+    # Note: subscription_events and billing_events associations can be added
+    # when those modules are implemented for audit/billing history tracking
 
     timestamps()
   end

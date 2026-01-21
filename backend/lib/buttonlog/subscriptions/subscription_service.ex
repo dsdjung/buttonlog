@@ -4,7 +4,6 @@ defmodule ButtonLog.Subscriptions.SubscriptionService do
   and tracking usage limits.
   """
 
-  alias ButtonLog.Accounts.User
   alias ButtonLog.Subscriptions.{SubscriptionPlan, UserSubscription}
   alias ButtonLog.Repo
   import Ecto.Query
@@ -274,7 +273,7 @@ defmodule ButtonLog.Subscriptions.SubscriptionService do
     end
   end
 
-  defp update_usage(subscription, action, context) do
+  defp update_usage(subscription, action, _context) do
     updates = case action do
       :create_button ->
         %{buttons_used: subscription.buttons_used + 1}
@@ -300,8 +299,6 @@ defmodule ButtonLog.Subscriptions.SubscriptionService do
 
   defp maybe_reset_monthly_usage(subscription) do
     if UserSubscription.should_reset_monthly_usage(subscription) do
-      updated_subscription = UserSubscription.reset_monthly_usage(subscription)
-
       # Update in database
       case Repo.update(UserSubscription.changeset(subscription, %{
         clicks_this_month: 0,

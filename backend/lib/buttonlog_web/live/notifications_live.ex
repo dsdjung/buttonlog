@@ -66,11 +66,6 @@ defmodule ButtonLogWeb.NotificationsLive do
          |> put_flash(:info, "Marked #{count} notifications as read")
          |> assign(:notifications, notifications)
          |> assign(:unread_count, 0)}
-
-      {:error, _reason} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Failed to mark notifications as read")}
     end
   end
 

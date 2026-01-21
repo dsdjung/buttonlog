@@ -31,9 +31,7 @@ defmodule ButtonLogWeb.DiaryLive do
     end
   end
 
-
-
-      @impl true
+  @impl true
   def handle_event("select_date", params, socket) do
     IO.inspect(params, label: "select_date params received")
     IO.inspect(socket.assigns.selected_date, label: "current selected_date")
@@ -53,35 +51,6 @@ defmodule ButtonLogWeb.DiaryLive do
     end
   end
 
-
-
-  # Helper function to process date selection
-  defp process_date_selection(date_string, socket) do
-    case Date.from_iso8601(date_string) do
-      {:ok, selected_date} ->
-        IO.inspect(selected_date, label: "parsed selected_date")
-
-        user_id = socket.assigns.current_user.id
-        activities = get_daily_activities(user_id, selected_date)
-        summary = generate_daily_summary(activities, selected_date)
-
-        IO.inspect(activities, label: "new activities")
-        IO.inspect(summary, label: "new summary")
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Date changed to #{Calendar.strftime(selected_date, "%B %d, %Y")}")
-         |> assign(:selected_date, selected_date)
-         |> assign(:activities, activities)
-         |> assign(:summary, summary)}
-
-      {:error, reason} ->
-        IO.inspect(reason, label: "date parsing error")
-        {:noreply, socket |> put_flash(:error, "Invalid date format: #{inspect(reason)}")}
-    end
-  end
-
-  @impl true
   def handle_event("previous_day", _params, socket) do
     current_date = socket.assigns.selected_date
     previous_date = Date.add(current_date, -1)
@@ -97,7 +66,6 @@ defmodule ButtonLogWeb.DiaryLive do
      |> assign(:summary, summary)}
   end
 
-  @impl true
   def handle_event("next_day", _params, socket) do
     current_date = socket.assigns.selected_date
     next_date = Date.add(current_date, 1)
@@ -119,7 +87,6 @@ defmodule ButtonLogWeb.DiaryLive do
     end
   end
 
-    @impl true
   def handle_event("go_to_today", _params, socket) do
     today = get_local_today()
     user_id = socket.assigns.current_user.id
@@ -133,7 +100,6 @@ defmodule ButtonLogWeb.DiaryLive do
        |> assign(:summary, summary)}
   end
 
-  @impl true
   def handle_event("refresh_in_progress", _params, socket) do
     # Refresh the current date's activities and summary to get updated durations
     user_id = socket.assigns.current_user.id
@@ -156,6 +122,26 @@ defmodule ButtonLogWeb.DiaryLive do
   end
 
   # Private helper functions
+
+  # Helper function to process date selection
+  defp process_date_selection(date_string, socket) do
+    case Date.from_iso8601(date_string) do
+      {:ok, selected_date} ->
+        user_id = socket.assigns.current_user.id
+        activities = get_daily_activities(user_id, selected_date)
+        summary = generate_daily_summary(activities, selected_date)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Date changed to #{Calendar.strftime(selected_date, "%B %d, %Y")}")
+         |> assign(:selected_date, selected_date)
+         |> assign(:activities, activities)
+         |> assign(:summary, summary)}
+
+      {:error, reason} ->
+        {:noreply, socket |> put_flash(:error, "Invalid date format: #{inspect(reason)}")}
+    end
+  end
 
   defp get_daily_activities(user_id, date) do
     # Convert local date to UTC start/end times for database query
@@ -429,68 +415,66 @@ defmodule ButtonLogWeb.DiaryLive do
     duration_from_range + duration_from_previous + duration_from_after
   end
 
-    # Calculate duration from a list of clicks within a date range
+  # Calculate duration from a list of clicks within a date range
   defp calculate_duration_from_clicks(clicks, start_of_day, end_of_day) do
     # Sort clicks by time
     sorted_clicks = Enum.sort_by(clicks, & &1.clicked_at, :asc)
 
-    # Track active periods
-    active_periods = []
-    current_start = nil
+    # Process each click to find start/stop pairs using reduce
+    {active_periods, current_start} =
+      Enum.reduce(sorted_clicks, {[], nil}, fn click, {periods, curr_start} ->
+        case click.action do
+          "start" ->
+            # If we already have a start, end the previous session
+            new_periods =
+              if curr_start do
+                end_time = if DateTime.compare(curr_start, start_of_day) == :lt, do: start_of_day, else: curr_start
+                duration = DateTime.diff(click.clicked_at, end_time, :second)
+                if duration > 0, do: [{end_time, click.clicked_at} | periods], else: periods
+              else
+                periods
+              end
+            {new_periods, click.clicked_at}
 
-    # Process each click to find start/stop pairs
-    Enum.each(sorted_clicks, fn click ->
-      case click.action do
-        "start" ->
-          # If we already have a start, this is a new session
-          if current_start do
-            # End the previous session at the start of the day or the new start
-            end_time = if current_start < start_of_day, do: start_of_day, else: current_start
-            duration = DateTime.diff(click.clicked_at, end_time, :second)
-            if duration > 0 do
-              active_periods = [{end_time, click.clicked_at} | active_periods]
+          "end" ->
+            # End the current session
+            if curr_start do
+              end_time = if DateTime.compare(curr_start, start_of_day) == :lt, do: start_of_day, else: curr_start
+              duration = DateTime.diff(click.clicked_at, end_time, :second)
+              new_periods = if duration > 0, do: [{end_time, click.clicked_at} | periods], else: periods
+              {new_periods, nil}
+            else
+              {periods, nil}
             end
-          end
-          current_start = click.clicked_at
 
-        "end" ->
-          # End the current session
-          if current_start do
-            end_time = if current_start < start_of_day, do: start_of_day, else: current_start
-            duration = DateTime.diff(click.clicked_at, end_time, :second)
-            if duration > 0 do
-              active_periods = [{end_time, click.clicked_at} | active_periods]
-            end
-            current_start = nil
-          end
-
-        _ ->
-          # For regular clicks, if we have a start, this extends the session
-          # No action needed for duration calculation
-      end
-    end)
+          _ ->
+            # For regular clicks, no action needed for duration calculation
+            {periods, curr_start}
+        end
+      end)
 
     # If we still have an active session at the end, calculate its duration
-    if current_start do
-      end_time = if current_start < start_of_day, do: start_of_day, else: current_start
-      duration = DateTime.diff(end_of_day, end_time, :second)
-      if duration > 0 do
-        active_periods = [{end_time, end_of_day} | active_periods]
+    final_periods =
+      if current_start do
+        end_time = if DateTime.compare(current_start, start_of_day) == :lt, do: start_of_day, else: current_start
+        duration = DateTime.diff(end_of_day, end_time, :second)
+        if duration > 0, do: [{end_time, end_of_day} | active_periods], else: active_periods
+      else
+        active_periods
       end
-    end
 
     # If we have no explicit start/end actions but multiple clicks, treat them as implicit sessions
     # This handles the case where buttons are started/stopped by clicking rather than explicit actions
-    if active_periods == [] and length(clicks) > 1 do
+    if final_periods == [] and length(clicks) > 1 do
       # Group clicks into potential sessions (clicks that are close together)
       implicit_sessions = group_clicks_into_sessions(clicks, start_of_day, end_of_day)
-      Enum.reduce(implicit_sessions, 0, fn {start_time, end_time}, acc ->
-        acc + DateTime.diff(end_time, start_time, :second)
+      Enum.reduce(implicit_sessions, 0, fn {session_start, session_end}, acc ->
+        acc + DateTime.diff(session_end, session_start, :second)
       end)
     else
       # Sum up all active periods
-      Enum.reduce(active_periods, 0, fn {start_time, end_time}, acc ->
-        acc + DateTime.diff(end_time, start_time, :second)
+      Enum.reduce(final_periods, 0, fn {period_start, period_end}, acc ->
+        acc + DateTime.diff(period_end, period_start, :second)
       end)
     end
   end

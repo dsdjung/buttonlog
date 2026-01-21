@@ -250,7 +250,7 @@ defmodule ButtonLog.Subscriptions do
   """
   def needs_upgrade?(user_id) do
     case get_user_subscription(user_id) do
-      %{plan: plan, subscription: subscription} when not is_nil(subscription) ->
+      %{plan: _plan, subscription: subscription} when not is_nil(subscription) ->
         # Check if user is approaching limits
         usage = get_user_usage(user_id)
         limits = get_user_limits(user_id)
