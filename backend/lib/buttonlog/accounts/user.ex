@@ -64,6 +64,7 @@ defmodule ButtonLog.Accounts.User do
     |> validate_inclusion(:activity_visibility, ["public", "friends", "private"])
     |> validate_inclusion(:subscription_tier, ["free", "premium", "enterprise"])
     |> unique_constraint(:username)
+    |> unique_constraint(:email)
     |> validate_oauth_constraints()
   end
 
