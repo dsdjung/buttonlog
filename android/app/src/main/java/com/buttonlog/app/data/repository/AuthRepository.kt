@@ -4,7 +4,7 @@ import android.content.SharedPreferences
 import com.buttonlog.app.data.api.APIService
 import com.buttonlog.app.data.api.LoginCredentials
 import com.buttonlog.app.data.api.RegistrationData
-import com.buttonlog.app.data.model.AuthUser
+import com.buttonlog.app.data.model.AuthUserData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,12 +33,17 @@ class AuthRepository @Inject constructor(
         return sharedPreferences.getString(KEY_AUTH_TOKEN, null)
     }
 
-    suspend fun login(email: String, password: String): Result<AuthUser> {
+    suspend fun login(email: String, password: String): Result<AuthUserData> {
         return try {
             val response = apiService.login(LoginCredentials(email, password))
-            saveAuthData(response)
-            _isLoggedIn.value = true
-            Result.success(response)
+            if (response.success && response.data != null) {
+                saveAuthData(response.data)
+                _isLoggedIn.value = true
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Login failed"
+                Result.failure(Exception(errorMessage))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -50,7 +55,7 @@ class AuthRepository @Inject constructor(
         passwordConfirmation: String,
         displayName: String = "",
         username: String = ""
-    ): Result<AuthUser> {
+    ): Result<AuthUserData> {
         return try {
             val response = apiService.register(
                 RegistrationData(
@@ -61,9 +66,14 @@ class AuthRepository @Inject constructor(
                     passwordConfirmation = passwordConfirmation
                 )
             )
-            saveAuthData(response)
-            _isLoggedIn.value = true
-            Result.success(response)
+            if (response.success && response.data != null) {
+                saveAuthData(response.data)
+                _isLoggedIn.value = true
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Registration failed"
+                Result.failure(Exception(errorMessage))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -78,11 +88,11 @@ class AuthRepository @Inject constructor(
         _isLoggedIn.value = false
     }
 
-    private fun saveAuthData(authUser: AuthUser) {
+    private fun saveAuthData(authUserData: AuthUserData) {
         sharedPreferences.edit()
-            .putString(KEY_AUTH_TOKEN, authUser.token)
-            .putString(KEY_USER_ID, authUser.user.id)
-            .putString(KEY_USER_EMAIL, authUser.user.email)
+            .putString(KEY_AUTH_TOKEN, authUserData.token)
+            .putString(KEY_USER_ID, authUserData.user.id)
+            .putString(KEY_USER_EMAIL, authUserData.user.email)
             .apply()
     }
 }

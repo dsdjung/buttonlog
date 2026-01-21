@@ -9,10 +9,10 @@ interface APIService {
     // MARK: - Authentication Endpoints
     
     @POST("auth/login")
-    suspend fun login(@Body credentials: LoginCredentials): AuthUser
-    
+    suspend fun login(@Body credentials: LoginCredentials): AuthResponse
+
     @POST("auth/register")
-    suspend fun register(@Body data: RegistrationData): AuthUser
+    suspend fun register(@Body data: RegistrationData): AuthResponse
     
     @DELETE("auth/logout")
     suspend fun logout()

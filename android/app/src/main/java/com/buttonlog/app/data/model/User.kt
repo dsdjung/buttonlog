@@ -6,28 +6,27 @@ import java.util.*
 data class User(
     val id: String,
     val email: String,
-    val username: String,
+    val username: String?,
     @SerializedName("display_name")
-    val displayName: String,
-    val avatar: String?,
-    val timezone: String,
-    val language: String,
-    @SerializedName("subscription_tier")
-    val subscriptionTier: SubscriptionTier,
-    @SerializedName("subscription_expires_at")
-    val subscriptionExpiresAt: Date?,
-    @SerializedName("default_history_sharing")
-    val defaultHistorySharing: Boolean,
-    @SerializedName("allow_friend_requests")
-    val allowFriendRequests: Boolean,
+    val displayName: String?,
+    @SerializedName("first_name")
+    val firstName: String?,
+    @SerializedName("last_name")
+    val lastName: String?,
     @SerializedName("profile_visibility")
-    val profileVisibility: ProfileVisibility,
+    val profileVisibility: String?,
     @SerializedName("activity_visibility")
-    val activityVisibility: ActivityVisibility,
+    val activityVisibility: String?,
+    @SerializedName("subscription_tier")
+    val subscriptionTier: String?,
+    @SerializedName("is_active")
+    val isActive: Boolean?,
+    @SerializedName("email_verified")
+    val emailVerified: Boolean?,
     @SerializedName("created_at")
-    val createdAt: Date,
+    val createdAt: String?,
     @SerializedName("updated_at")
-    val updatedAt: Date
+    val updatedAt: String?
 )
 
 enum class SubscriptionTier(val displayName: String) {
@@ -63,12 +62,31 @@ enum class ActivityVisibility(val displayName: String) {
     PRIVATE("Private")
 }
 
-// User authentication data
-data class AuthUser(
+// User authentication data (inner data from API response)
+data class AuthUserData(
     val user: User,
     val token: String,
     @SerializedName("refresh_token")
     val refreshToken: String?
+)
+
+// API response wrapper for authentication
+data class AuthResponse(
+    val success: Boolean,
+    val data: AuthUserData?,
+    val error: ApiError?
+)
+
+// API error response
+data class ApiError(
+    val code: String?,
+    val message: String?,
+    val details: List<ApiErrorDetail>?
+)
+
+data class ApiErrorDetail(
+    val field: String?,
+    val message: String?
 )
 
 // User profile update data
