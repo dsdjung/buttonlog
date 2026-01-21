@@ -11,11 +11,25 @@ defmodule ButtonLogWeb.API.SocialController do
       success: true,
       data: Enum.map(friends, fn friend ->
         %{
-          id: friend.id,
-          username: friend.username,
-          display_name: friend.display_name,
-          avatar: friend.avatar,
-          friendship_status: friend.friendship_status
+          id: friend.friendship_id,
+          friend_id: friend.id,
+          friend_user: %{
+            id: friend.id,
+            username: friend.username,
+            display_name: friend.display_name,
+            first_name: nil,
+            last_name: nil,
+            profile_visibility: "public"
+          },
+          status: friend.friendship_status,
+          permissions: %{
+            can_see_buttons: true,
+            can_see_activity: true,
+            receive_notifications: true,
+            can_comment: true
+          },
+          created_at: DateTime.utc_now() |> DateTime.to_iso8601(),
+          updated_at: DateTime.utc_now() |> DateTime.to_iso8601()
         }
       end)
     })
