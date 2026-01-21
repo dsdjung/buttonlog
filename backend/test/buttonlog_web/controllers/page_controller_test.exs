@@ -1,8 +1,8 @@
 defmodule ButtonLogWeb.PageControllerTest do
   use ButtonLogWeb.ConnCase
 
-  test "GET /", %{conn: conn} do
+  test "GET / redirects to /buttons", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Peace of mind from prototype to production"
+    assert redirected_to(conn, 302) == "/buttons"
   end
 end

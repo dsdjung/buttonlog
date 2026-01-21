@@ -59,6 +59,7 @@ enum class FriendshipStatus {
 }
 
 data class FriendPermissions(
+    // For inline permissions in friends list
     @SerializedName("can_see_buttons")
     val canSeeButtons: Boolean = true,
     @SerializedName("can_see_activity")
@@ -66,7 +67,14 @@ data class FriendPermissions(
     @SerializedName("receive_notifications")
     val receiveNotifications: Boolean = true,
     @SerializedName("can_comment")
-    val canComment: Boolean = true
+    val canComment: Boolean = true,
+    // For permissions endpoint (different field names from backend)
+    @SerializedName("can_view_buttons")
+    val canViewButtons: Boolean = true,
+    @SerializedName("can_view_history")
+    val canViewHistory: Boolean = false,
+    @SerializedName("can_receive_notifications")
+    val canReceiveNotifications: Boolean = true
 )
 
 data class FriendPermissionUpdate(
@@ -91,7 +99,7 @@ data class FriendRequest(
 // API response wrappers
 data class FriendsResponse(
     val success: Boolean,
-    val data: List<Friend>,
+    val data: List<Friend> = emptyList(),
     val error: ApiError?
 )
 

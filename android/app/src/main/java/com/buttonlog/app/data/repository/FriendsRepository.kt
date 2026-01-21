@@ -1,5 +1,6 @@
 package com.buttonlog.app.data.repository
 
+import android.util.Log
 import com.buttonlog.app.data.api.APIService
 import com.buttonlog.app.data.api.FriendPermissionUpdateRequest
 import com.buttonlog.app.data.api.FriendRequestBody
@@ -13,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val TAG = "FriendsRepository"
 
 @Singleton
 class FriendsRepository @Inject constructor(
@@ -41,14 +44,20 @@ class FriendsRepository @Inject constructor(
             _isLoading.value = true
             _error.value = null
 
+            Log.d(TAG, "Fetching friends...")
             val response = apiService.getFriends()
+            Log.d(TAG, "Friends response - success: ${response.success}, data count: ${response.data.size}")
             if (response.success) {
                 _friends.value = response.data
+                Log.d(TAG, "Friends loaded: ${response.data.map { it.friendUser.displayNameOrUsername }}")
             } else {
-                _error.value = response.error?.message ?: "Failed to fetch friends"
+                val errorMsg = response.error?.message ?: "Failed to fetch friends"
+                Log.e(TAG, "Friends API error: $errorMsg")
+                _error.value = errorMsg
             }
 
         } catch (e: Exception) {
+            Log.e(TAG, "Exception fetching friends", e)
             _error.value = e.message ?: "Failed to fetch friends"
         } finally {
             _isLoading.value = false
