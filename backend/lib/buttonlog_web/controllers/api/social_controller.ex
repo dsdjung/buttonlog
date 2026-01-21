@@ -263,25 +263,7 @@ defmodule ButtonLogWeb.API.SocialController do
       conn
       |> json(%{
         success: true,
-        data: Enum.map(buttons, fn button ->
-          %{
-            id: button.id,
-            name: button.name,
-            description: button[:description],
-            type: button.type,
-            icon: button.icon,
-            color: button.color,
-            is_active: button.is_active,
-            current_state: button.current_state,
-            state_changed_at: button.state_changed_at,
-            notifications_enabled: button.notifications_enabled,
-            auto_stop_enabled: button.auto_stop_enabled,
-            calendar_sync_enabled: button.calendar_sync_enabled,
-            user_id: button.user_id,
-            created_at: button.inserted_at,
-            updated_at: button.updated_at
-          }
-        end)
+        data: Enum.map(buttons, &serialize_button/1)
       })
     else
       conn
@@ -294,6 +276,36 @@ defmodule ButtonLogWeb.API.SocialController do
         }
       })
     end
+  end
+
+  defp serialize_button(button) do
+    %{
+      id: button.id,
+      name: button.name,
+      description: button.description,
+      type: button.type,
+      icon: button.icon || "star.fill",
+      color: button.color || "#007AFF",
+      is_active: button.is_active,
+      current_state: button.current_state || "idle",
+      state_changed_at: format_datetime(button.state_changed_at),
+      notifications_enabled: button.notifications_enabled,
+      auto_stop_enabled: button.auto_stop_enabled,
+      calendar_sync_enabled: button.calendar_sync_enabled,
+      user_id: button.user_id,
+      created_at: format_datetime(button.inserted_at),
+      updated_at: format_datetime(button.updated_at)
+    }
+  end
+
+  defp format_datetime(nil), do: nil
+  defp format_datetime(%NaiveDateTime{} = datetime) do
+    datetime
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_iso8601()
+  end
+  defp format_datetime(%DateTime{} = datetime) do
+    DateTime.to_iso8601(datetime)
   end
 
   defp format_changeset_errors(changeset) do
