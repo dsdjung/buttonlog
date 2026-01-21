@@ -369,13 +369,6 @@ private fun FriendButtonCard(button: Button) {
                         )
                     }
 
-                    if (button.clickCount > 0) {
-                        Text(
-                            text = "${button.clickCount} clicks",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
 
