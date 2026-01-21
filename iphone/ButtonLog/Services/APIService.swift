@@ -3,8 +3,8 @@ import Combine
 
 class APIService {
     static let shared = APIService()
-    
-    private let baseURL = "http://localhost:4001/api"
+
+    private let baseURL = "http://localhost:14015/api"
     private let session = URLSession.shared
     
     private init() {}
@@ -183,6 +183,29 @@ class APIService {
     
     func logout() async throws {
         try await makeVoidRequest(endpoint: "/auth/logout", method: .DELETE)
+    }
+
+    // OAuth callback - exchange code for token
+    func exchangeOAuthCode(provider: String, code: String, state: String?) async throws -> AuthResponse {
+        var body: [String: Any] = [
+            "provider": provider,
+            "code": code
+        ]
+        if let state = state {
+            body["state"] = state
+        }
+
+        return try await makeRequest(
+            endpoint: "/auth/oauth/callback",
+            method: .POST,
+            body: body,
+            requiresAuth: false
+        )
+    }
+
+    // Get OAuth URL for provider
+    var oauthBaseURL: String {
+        return baseURL.replacingOccurrences(of: "/api", with: "")
     }
     
     // MARK: - User Management
