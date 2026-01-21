@@ -13,7 +13,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.buttonlog.app.ui.components.ButtonCard
-import com.buttonlog.app.ui.components.SearchBar
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

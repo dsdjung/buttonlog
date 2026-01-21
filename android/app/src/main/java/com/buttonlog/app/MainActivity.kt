@@ -5,15 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -21,7 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.buttonlog.app.ui.screens.*
+import com.buttonlog.app.ui.screens.ButtonsScreen
 import com.buttonlog.app.ui.theme.ButtonLogTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -111,13 +109,13 @@ fun MainScreen() {
                     )
                 }
                 composable("friends") {
-                    FriendsScreen()
+                    PlaceholderScreen("Friends")
                 }
                 composable("notifications") {
-                    NotificationsScreen()
+                    PlaceholderScreen("Notifications")
                 }
                 composable("account") {
-                    AccountScreen()
+                    PlaceholderScreen("Account")
                 }
             }
             
@@ -139,11 +137,30 @@ fun MainScreen() {
         }
     }
     
-    // Create Button Dialog
+    // Create Button Dialog - TODO: Implement
     if (showCreateButton) {
-        CreateButtonDialog(
-            onDismiss = { showCreateButton = false },
-            onButtonCreated = { showCreateButton = false }
+        AlertDialog(
+            onDismissRequest = { showCreateButton = false },
+            title = { Text("Create Button") },
+            text = { Text("Button creation will be implemented here.") },
+            confirmButton = {
+                TextButton(onClick = { showCreateButton = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun PlaceholderScreen(title: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "$title Screen",
+            style = MaterialTheme.typography.headlineMedium
         )
     }
 }

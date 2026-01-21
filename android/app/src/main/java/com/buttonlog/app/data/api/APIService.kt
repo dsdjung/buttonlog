@@ -115,7 +115,7 @@ sealed class ApiException(message: String) : Exception(message) {
 // MARK: - API Configuration
 
 object ApiConfig {
-    const val BASE_URL = "http://10.0.2.2:4000/api/" // Android emulator localhost
+    const val BASE_URL = "http://10.0.2.2:14015/api/" // Android emulator localhost (port 14015)
     const val TIMEOUT_SECONDS = 30L
     
     // Headers

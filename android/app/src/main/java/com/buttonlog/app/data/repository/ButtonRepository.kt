@@ -136,7 +136,7 @@ class ButtonRepository @Inject constructor(
         }
     }
     
-    fun getButton(by id: String): Button? {
+    fun getButton(id: String): Button? {
         return _buttons.value.find { it.id == id }
     }
     

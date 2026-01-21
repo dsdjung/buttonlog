@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonState
 import com.buttonlog.app.data.model.ButtonType
+import kotlinx.coroutines.delay
 
 @Composable
 fun ButtonCard(
@@ -35,7 +36,15 @@ fun ButtonCard(
         animationSpec = tween(durationMillis = 100),
         label = "scale"
     )
-    
+
+    // Reset pressed state after animation
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            delay(100)
+            isPressed = false
+        }
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -51,18 +60,13 @@ fun ButtonCard(
         ) {
             // Header section
             ButtonHeader(button = button)
-            
+
             // Action button
             ButtonActionButton(
                 button = button,
                 onClick = {
                     isPressed = true
                     onClick()
-                    // Reset pressed state after animation
-                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                        kotlinx.coroutines.delay(100)
-                        isPressed = false
-                    }
                 }
             )
         }
