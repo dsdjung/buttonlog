@@ -37,3 +37,4 @@ defmodule ButtonLog.Notifications.FriendNotificationPermission do
   end
 end
 
+

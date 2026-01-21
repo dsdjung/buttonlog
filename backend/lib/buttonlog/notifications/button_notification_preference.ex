@@ -35,3 +35,4 @@ defmodule ButtonLog.Notifications.ButtonNotificationPreference do
   end
 end
 
+

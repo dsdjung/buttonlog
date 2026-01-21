@@ -82,6 +82,16 @@ defmodule ButtonLogWeb.Router do
     get "/notifications", API.NotificationController, :index
     put "/notifications/:id/read", API.NotificationController, :mark_read
     delete "/notifications/:id", API.ButtonController, :delete
+
+    # Subscription endpoints
+    get "/subscriptions", API.SubscriptionController, :index
+    get "/subscriptions/current", API.SubscriptionController, :show
+    post "/subscriptions", API.SubscriptionController, :create
+    delete "/subscriptions", API.SubscriptionController, :cancel
+    post "/subscriptions/pause", API.SubscriptionController, :pause
+    post "/subscriptions/resume", API.SubscriptionController, :resume
+    get "/subscriptions/stats", API.SubscriptionController, :stats
+    post "/subscriptions/check-permission", API.SubscriptionController, :check_permission
   end
 
   scope "/api", ButtonLogWeb do

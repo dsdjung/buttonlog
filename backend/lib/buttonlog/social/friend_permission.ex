@@ -35,3 +35,4 @@ defmodule ButtonLog.Social.FriendPermission do
   end
 end
 
+

@@ -1,0 +1,102 @@
+package com.buttonlog.app.ui.viewmodels
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.buttonlog.app.data.model.Button
+import com.buttonlog.app.data.model.ButtonFormData
+import com.buttonlog.app.data.repository.ButtonRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class ButtonsViewModel @Inject constructor(
+    private val buttonRepository: ButtonRepository
+) : ViewModel() {
+    
+    private val _uiState = MutableStateFlow(ButtonsUiState())
+    val uiState: StateFlow<ButtonsUiState> = _uiState.asStateFlow()
+    
+    init {
+        // Set up search filtering
+        combine(
+            buttonRepository.buttons,
+            _uiState.map { it.searchQuery }
+        ) { buttons, query ->
+            val filteredButtons = if (query.isEmpty()) {
+                buttons
+            } else {
+                buttons.filter { button ->
+                    button.name.contains(query, ignoreCase = true) ||
+                    (button.description?.contains(query, ignoreCase = true) ?: false)
+                }
+            }
+            filteredButtons
+        }.onEach { filteredButtons ->
+            _uiState.update { it.copy(filteredButtons = filteredButtons) }
+        }.launchIn(viewModelScope)
+        
+        // Observe buttons from repository
+        buttonRepository.buttons.onEach { buttons ->
+            _uiState.update { it.copy(buttons = buttons) }
+        }.launchIn(viewModelScope)
+        
+        // Observe loading state
+        buttonRepository.isLoading.onEach { isLoading ->
+            _uiState.update { it.copy(isLoading = isLoading) }
+        }.launchIn(viewModelScope)
+        
+        // Observe errors
+        buttonRepository.error.onEach { error ->
+            _uiState.update { it.copy(error = error) }
+        }.launchIn(viewModelScope)
+    }
+    
+    fun fetchButtons() {
+        viewModelScope.launch {
+            buttonRepository.fetchButtons()
+        }
+    }
+    
+    fun updateSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+    
+    fun clickButton(buttonId: String) {
+        viewModelScope.launch {
+            buttonRepository.clickButton(buttonId)
+        }
+    }
+    
+    fun createButton(buttonData: ButtonFormData) {
+        viewModelScope.launch {
+            buttonRepository.createButton(buttonData)
+        }
+    }
+    
+    fun updateButton(button: Button) {
+        viewModelScope.launch {
+            buttonRepository.updateButton(button)
+        }
+    }
+    
+    fun deleteButton(buttonId: String) {
+        viewModelScope.launch {
+            buttonRepository.deleteButton(buttonId)
+        }
+    }
+    
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
+    }
+}
+
+data class ButtonsUiState(
+    val buttons: List<Button> = emptyList(),
+    val filteredButtons: List<Button> = emptyList(),
+    val searchQuery: String = "",
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+

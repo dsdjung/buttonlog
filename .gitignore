@@ -1,0 +1,48 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editor files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# Android
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+android/*.log
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+
+# iOS
+iphone/*.xcuserstate
+iphone/**/*.xcuserstate
+iphone/**/xcuserdata/
+iphone/DerivedData/
+iphone/**/*.xcworkspace/xcuserdata/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Secrets
+*.pem
+*.key
+credentials.json
