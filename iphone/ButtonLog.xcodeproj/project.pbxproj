@@ -28,6 +28,7 @@
 		CD11234567890029 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890028 /* NotificationsView.swift */; };
 		CD11234567890031 /* DiaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890030 /* DiaryView.swift */; };
 		CD11234567890033 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890032 /* AccountView.swift */; };
+		CD11234567890035 /* ButtonHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890034 /* ButtonHistoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +54,7 @@
 		CD11234567890028 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		CD11234567890030 /* DiaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryView.swift; sourceTree = "<group>"; };
 		CD11234567890032 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		CD11234567890034 /* ButtonHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonHistoryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +148,7 @@
 				CD11234567890028 /* NotificationsView.swift */,
 				CD11234567890030 /* DiaryView.swift */,
 				CD11234567890032 /* AccountView.swift */,
+				CD11234567890034 /* ButtonHistoryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -239,6 +242,7 @@
 				CD11234567890029 /* NotificationsView.swift in Sources */,
 				CD11234567890031 /* DiaryView.swift in Sources */,
 				CD11234567890033 /* AccountView.swift in Sources */,
+				CD11234567890035 /* ButtonHistoryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
