@@ -163,10 +163,17 @@ defmodule ButtonLogWeb.ButtonLive.Index do
 
   @impl true
   def handle_info({:button_created, button}, socket) do
-    # For new buttons, we need to add the latest_click_at field (nil for new buttons)
-    button_with_latest_click = Map.put(button, :latest_click_at, nil)
-    buttons = [button_with_latest_click | socket.assigns.buttons]
-    {:noreply, socket |> assign(:buttons, buttons)}
+    # Only add the button if it's not already in our list (avoids duplicates for the creator)
+    already_exists = Enum.any?(socket.assigns.buttons, fn b -> b.id == button.id end)
+
+    if already_exists do
+      {:noreply, socket}
+    else
+      # For new buttons from other users, add the latest_click_at field (nil for new buttons)
+      button_with_latest_click = Map.put(button, :latest_click_at, nil)
+      buttons = [button_with_latest_click | socket.assigns.buttons]
+      {:noreply, socket |> assign(:buttons, buttons)}
+    end
   end
 
   @impl true
