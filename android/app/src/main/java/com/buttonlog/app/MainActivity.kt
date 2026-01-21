@@ -25,6 +25,7 @@ import com.buttonlog.app.data.repository.ButtonRepository
 import com.buttonlog.app.ui.screens.AccountScreen
 import com.buttonlog.app.ui.screens.ButtonHistoryScreen
 import com.buttonlog.app.ui.screens.ButtonsScreen
+import com.buttonlog.app.ui.screens.DiaryScreen
 import com.buttonlog.app.ui.screens.EditButtonScreen
 import com.buttonlog.app.ui.screens.LoginScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
@@ -80,6 +81,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         icon = Icons.Default.People
                     ),
                     NavigationItem(
+                        route = "diary",
+                        title = "Diary",
+                        icon = Icons.Default.Book
+                    ),
+                    NavigationItem(
                         route = "notifications",
                         title = "Notifications",
                         icon = Icons.Default.Notifications
@@ -132,6 +138,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 }
                 composable("friends") {
                     PlaceholderScreen("Friends")
+                }
+                composable("diary") {
+                    DiaryScreen(viewModel = buttonsViewModel)
                 }
                 composable("notifications") {
                     PlaceholderScreen("Notifications")
