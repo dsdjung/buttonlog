@@ -18,21 +18,21 @@ interface APIService {
     suspend fun logout()
     
     // MARK: - Button Endpoints
-    
+
     @GET("buttons")
-    suspend fun getButtons(): List<Button>
-    
+    suspend fun getButtons(): ButtonsResponse
+
     @POST("buttons")
-    suspend fun createButton(@Body button: ButtonFormData): Button
-    
+    suspend fun createButton(@Body button: CreateButtonRequest): ButtonResponse
+
     @PUT("buttons/{id}")
-    suspend fun updateButton(@Path("id") id: String, @Body button: Button): Button
-    
+    suspend fun updateButton(@Path("id") id: String, @Body button: UpdateButtonRequest): ButtonResponse
+
     @DELETE("buttons/{id}")
     suspend fun deleteButton(@Path("id") id: String)
-    
+
     @POST("buttons/{id}/click")
-    suspend fun clickButton(@Path("id") id: String): ButtonClick
+    suspend fun clickButton(@Path("id") id: String): ButtonClickResponse
     
     // MARK: - User Endpoints
     
@@ -81,6 +81,28 @@ data class RegistrationData(
 
 data class FriendRequest(
     val username: String
+)
+
+// Button request wrappers (backend expects {"button": {...}})
+data class CreateButtonRequest(
+    val button: ButtonFormData
+)
+
+data class UpdateButtonRequest(
+    val button: ButtonUpdateData
+)
+
+data class ButtonUpdateData(
+    val name: String?,
+    val description: String?,
+    val icon: String?,
+    val color: String?,
+    @SerializedName("notifications_enabled")
+    val notificationsEnabled: Boolean?,
+    @SerializedName("auto_stop_enabled")
+    val autoStopEnabled: Boolean?,
+    @SerializedName("calendar_sync_enabled")
+    val calendarSyncEnabled: Boolean?
 )
 
 data class Notification(

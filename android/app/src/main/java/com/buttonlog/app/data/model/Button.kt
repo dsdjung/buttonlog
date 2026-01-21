@@ -86,8 +86,38 @@ data class ButtonClick(
     @SerializedName("location_lng")
     val locationLng: Double?,
     val device: String?,
-    val platform: String,
+    val platform: String?,
+    val action: String?,
     @SerializedName("created_at")
     val createdAt: Date
+)
+
+// API response wrappers for buttons
+data class ButtonsResponse(
+    val success: Boolean,
+    val data: List<Button>?,
+    val error: ApiError?,
+    val meta: ApiMeta?
+)
+
+data class ButtonResponse(
+    val success: Boolean,
+    val data: Button?,
+    val error: ApiError?,
+    val meta: ApiMeta?
+)
+
+data class ButtonClickResponse(
+    val success: Boolean,
+    val data: ButtonClick?,
+    val error: ApiError?,
+    val meta: ApiMeta?
+)
+
+data class ApiMeta(
+    val timestamp: String?,
+    @SerializedName("request_id")
+    val requestId: String?,
+    val count: Int?
 )
 

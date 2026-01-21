@@ -1,6 +1,9 @@
 package com.buttonlog.app.data.repository
 
 import com.buttonlog.app.data.api.APIService
+import com.buttonlog.app.data.api.ButtonUpdateData
+import com.buttonlog.app.data.api.CreateButtonRequest
+import com.buttonlog.app.data.api.UpdateButtonRequest
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonClick
@@ -27,10 +30,14 @@ class ButtonRepository @Inject constructor(
         try {
             _isLoading.value = true
             _error.value = null
-            
-            val fetchedButtons = apiService.getButtons()
-            _buttons.value = fetchedButtons
-            
+
+            val response = apiService.getButtons()
+            if (response.success && response.data != null) {
+                _buttons.value = response.data
+            } else {
+                _error.value = response.error?.message ?: "Failed to fetch buttons"
+            }
+
         } catch (e: Exception) {
             _error.value = e.message ?: "Failed to fetch buttons"
         } finally {
@@ -42,12 +49,17 @@ class ButtonRepository @Inject constructor(
         return try {
             _isLoading.value = true
             _error.value = null
-            
-            val newButton = apiService.createButton(buttonData)
-            _buttons.value = _buttons.value + newButton
-            
-            Result.success(newButton)
-            
+
+            val response = apiService.createButton(CreateButtonRequest(buttonData))
+            if (response.success && response.data != null) {
+                _buttons.value = _buttons.value + response.data
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to create button"
+                _error.value = errorMessage
+                Result.failure(Exception(errorMessage))
+            }
+
         } catch (e: Exception) {
             _error.value = e.message ?: "Failed to create button"
             Result.failure(e)
@@ -60,18 +72,33 @@ class ButtonRepository @Inject constructor(
         return try {
             _isLoading.value = true
             _error.value = null
-            
-            val updatedButton = apiService.updateButton(button.id, button)
-            val currentButtons = _buttons.value.toMutableList()
-            val index = currentButtons.indexOfFirst { it.id == button.id }
-            
-            if (index != -1) {
-                currentButtons[index] = updatedButton
-                _buttons.value = currentButtons
+
+            val updateData = ButtonUpdateData(
+                name = button.name,
+                description = button.description,
+                icon = button.icon,
+                color = button.color,
+                notificationsEnabled = button.notificationsEnabled,
+                autoStopEnabled = button.autoStopEnabled,
+                calendarSyncEnabled = button.calendarSyncEnabled
+            )
+            val response = apiService.updateButton(button.id, UpdateButtonRequest(updateData))
+            if (response.success && response.data != null) {
+                val currentButtons = _buttons.value.toMutableList()
+                val index = currentButtons.indexOfFirst { it.id == button.id }
+
+                if (index != -1) {
+                    currentButtons[index] = response.data
+                    _buttons.value = currentButtons
+                }
+
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to update button"
+                _error.value = errorMessage
+                Result.failure(Exception(errorMessage))
             }
-            
-            Result.success(updatedButton)
-            
+
         } catch (e: Exception) {
             _error.value = e.message ?: "Failed to update button"
             Result.failure(e)
@@ -101,35 +128,40 @@ class ButtonRepository @Inject constructor(
     suspend fun clickButton(buttonId: String): Result<ButtonClick> {
         return try {
             _error.value = null
-            
-            val click = apiService.clickButton(buttonId)
-            
-            // Update button state if it's a state button
-            val currentButtons = _buttons.value.toMutableList()
-            val buttonIndex = currentButtons.indexOfFirst { it.id == buttonId }
-            
-            if (buttonIndex != -1) {
-                val button = currentButtons[buttonIndex]
-                if (button.type == com.buttonlog.app.data.model.ButtonType.STATE) {
-                    // Toggle state
-                    val newState = if (button.currentState == com.buttonlog.app.data.model.ButtonState.IDLE) {
-                        com.buttonlog.app.data.model.ButtonState.ACTIVE
-                    } else {
-                        com.buttonlog.app.data.model.ButtonState.IDLE
+
+            val response = apiService.clickButton(buttonId)
+            if (response.success && response.data != null) {
+                // Update button state if it's a state button
+                val currentButtons = _buttons.value.toMutableList()
+                val buttonIndex = currentButtons.indexOfFirst { it.id == buttonId }
+
+                if (buttonIndex != -1) {
+                    val button = currentButtons[buttonIndex]
+                    if (button.type == com.buttonlog.app.data.model.ButtonType.STATE) {
+                        // Toggle state
+                        val newState = if (button.currentState == com.buttonlog.app.data.model.ButtonState.IDLE) {
+                            com.buttonlog.app.data.model.ButtonState.ACTIVE
+                        } else {
+                            com.buttonlog.app.data.model.ButtonState.IDLE
+                        }
+
+                        val updatedButton = button.copy(
+                            currentState = newState,
+                            stateChangedAt = java.util.Date()
+                        )
+
+                        currentButtons[buttonIndex] = updatedButton
+                        _buttons.value = currentButtons
                     }
-                    
-                    val updatedButton = button.copy(
-                        currentState = newState,
-                        stateChangedAt = java.util.Date()
-                    )
-                    
-                    currentButtons[buttonIndex] = updatedButton
-                    _buttons.value = currentButtons
                 }
+
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to click button"
+                _error.value = errorMessage
+                Result.failure(Exception(errorMessage))
             }
-            
-            Result.success(click)
-            
+
         } catch (e: Exception) {
             _error.value = e.message ?: "Failed to click button"
             Result.failure(e)
