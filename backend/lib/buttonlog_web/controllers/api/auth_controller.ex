@@ -18,16 +18,52 @@ defmodule ButtonLogWeb.API.AuthController do
         })
 
       {:error, changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{
-          success: false,
-          error: %{
-            code: "VALIDATION_ERROR",
-            message: "Invalid registration data",
-            details: format_changeset_errors(changeset)
-          }
-        })
+        # Check if the error is due to email already existing
+        email_taken = changeset.errors
+          |> Enum.any?(fn {field, {_msg, opts}} ->
+            field == :email && Keyword.get(opts, :constraint) == :unique
+          end)
+
+        if email_taken do
+          # Try to log in with the provided credentials
+          email = user_params["email"]
+          password = user_params["password"]
+
+          case Accounts.authenticate_user(email, password) do
+            {:ok, user} ->
+              token = Token.create_token(user.id)
+              conn
+              |> json(%{
+                success: true,
+                data: %{
+                  user: serialize_user(user),
+                  token: token
+                }
+              })
+
+            {:error, :invalid_credentials} ->
+              conn
+              |> put_status(:unauthorized)
+              |> json(%{
+                success: false,
+                error: %{
+                  code: "INVALID_CREDENTIALS",
+                  message: "Email already registered. Incorrect password."
+                }
+              })
+          end
+        else
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "VALIDATION_ERROR",
+              message: "Invalid registration data",
+              details: format_changeset_errors(changeset)
+            }
+          })
+        end
     end
   end
 
