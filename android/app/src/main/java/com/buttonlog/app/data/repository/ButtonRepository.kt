@@ -131,29 +131,9 @@ class ButtonRepository @Inject constructor(
 
             val response = apiService.clickButton(buttonId)
             if (response.success && response.data != null) {
-                // Update button state if it's a state button
-                val currentButtons = _buttons.value.toMutableList()
-                val buttonIndex = currentButtons.indexOfFirst { it.id == buttonId }
-
-                if (buttonIndex != -1) {
-                    val button = currentButtons[buttonIndex]
-                    if (button.type == com.buttonlog.app.data.model.ButtonType.STATE) {
-                        // Toggle state
-                        val newState = if (button.currentState == com.buttonlog.app.data.model.ButtonState.IDLE) {
-                            com.buttonlog.app.data.model.ButtonState.ACTIVE
-                        } else {
-                            com.buttonlog.app.data.model.ButtonState.IDLE
-                        }
-
-                        val updatedButton = button.copy(
-                            currentState = newState,
-                            stateChangedAt = java.util.Date()
-                        )
-
-                        currentButtons[buttonIndex] = updatedButton
-                        _buttons.value = currentButtons
-                    }
-                }
+                // Refetch buttons to get updated state from server
+                // This ensures we have the latest button state after clicking
+                fetchButtons()
 
                 Result.success(response.data)
             } else {
