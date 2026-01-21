@@ -46,15 +46,30 @@ interface APIService {
     suspend fun updateUserProfile(@Body user: User): User
     
     // MARK: - Social Endpoints
-    
+
     @GET("friends")
-    suspend fun getFriends(): List<User>
-    
+    suspend fun getFriends(): FriendsResponse
+
     @POST("friends/request")
-    suspend fun sendFriendRequest(@Body request: FriendRequest): Unit
-    
+    suspend fun sendFriendRequest(@Body request: FriendRequestBody): GenericResponse
+
     @PUT("friends/{id}/accept")
-    suspend fun acceptFriendRequest(@Path("id") id: String): Unit
+    suspend fun acceptFriendRequest(@Path("id") id: String): GenericResponse
+
+    @DELETE("friends/{id}")
+    suspend fun removeFriend(@Path("id") id: String): GenericResponse
+
+    @GET("friends/{friendId}/permissions")
+    suspend fun getFriendPermissions(@Path("friendId") friendId: String): FriendPermissionsResponse
+
+    @PUT("friends/{friendId}/permissions")
+    suspend fun updateFriendPermissions(
+        @Path("friendId") friendId: String,
+        @Body permissions: FriendPermissionUpdateRequest
+    ): FriendPermissionsResponse
+
+    @GET("friends/{friendId}/buttons")
+    suspend fun getFriendButtons(@Path("friendId") friendId: String): FriendButtonsResponse
     
     // MARK: - Notification Endpoints
     
@@ -82,8 +97,22 @@ data class RegistrationData(
     val passwordConfirmation: String
 )
 
-data class FriendRequest(
-    val username: String
+data class FriendRequestBody(
+    val email: String? = null,
+    val username: String? = null,
+    @SerializedName("friend_id")
+    val friendId: String? = null,
+    val message: String? = null
+)
+
+data class FriendPermissionUpdateRequest(
+    val permissions: FriendPermissionUpdate
+)
+
+data class GenericResponse(
+    val success: Boolean,
+    val data: Any?,
+    val error: ApiError?
 )
 
 // Button request wrappers (backend expects {"button": {...}})

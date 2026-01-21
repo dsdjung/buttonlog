@@ -154,6 +154,20 @@ defmodule ButtonLog.Notifications do
   end
 
   @doc """
+  Gets notifications from a specific friend (where friend is the sender).
+  Used for viewing friend's activity in friend profile views.
+  """
+  def get_notifications_from_friend(user_id, friend_id, limit \\ 20) do
+    Repo.all(
+      from n in Notification,
+      where: n.recipient_id == ^user_id and n.sender_id == ^friend_id,
+      order_by: [desc: n.inserted_at],
+      limit: ^limit,
+      preload: [:sender, :button]
+    )
+  end
+
+  @doc """
   Marks a notification as read.
   """
   def mark_notification_read(notification_id, user_id) do

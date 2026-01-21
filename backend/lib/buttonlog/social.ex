@@ -536,19 +536,35 @@ defmodule ButtonLog.Social do
 
   @doc """
   Gets buttons shared between two friends.
+  Returns the friend's buttons that the user has permission to see.
   """
-  def get_shared_buttons(_user_id, _friend_id) do
-    # This would typically check friend permissions and return shared buttons
-    # For now, return an empty list - implement based on your button sharing logic
-    []
+  def get_shared_buttons(user_id, friend_id) do
+    # First check if they are actually friends
+    if are_friends?(user_id, friend_id) do
+      # Check if the friend has granted the user permission to view their buttons
+      # Permission is from friend's perspective: did friend allow user to see their buttons?
+      if can_view_buttons?(friend_id, user_id) do
+        # Return the friend's buttons
+        ButtonLog.Buttons.list_user_buttons(friend_id)
+      else
+        []
+      end
+    else
+      []
+    end
   end
 
   @doc """
   Gets notifications shared between two friends.
+  Returns notifications where the friend was the sender (their button clicks).
   """
-  def get_shared_notifications(_user_id, _friend_id) do
-    # This would typically check friend permissions and return shared notifications
-    # For now, return an empty list - implement based on your notification sharing logic
-    []
+  def get_shared_notifications(user_id, friend_id) do
+    # Check if they are actually friends
+    if are_friends?(user_id, friend_id) do
+      # Get notifications where friend sent to user (friend's button clicks)
+      Notifications.get_notifications_from_friend(user_id, friend_id)
+    else
+      []
+    end
   end
 end

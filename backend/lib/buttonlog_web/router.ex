@@ -78,6 +78,7 @@ defmodule ButtonLogWeb.Router do
     delete "/friends/:id", API.SocialController, :remove_friend
     get "/friends/:friend_id/permissions", API.SocialController, :get_permissions
     put "/friends/:friend_id/permissions", API.SocialController, :update_permissions
+    get "/friends/:friend_id/buttons", API.SocialController, :friend_buttons
 
     # Notification endpoints
     get "/notifications", API.NotificationController, :index

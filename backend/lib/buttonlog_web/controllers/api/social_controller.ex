@@ -253,6 +253,44 @@ defmodule ButtonLogWeb.API.SocialController do
     end
   end
 
+  def friend_buttons(conn, %{"friend_id" => friend_id}) do
+    user = conn.assigns.current_user
+
+    # Check if they are friends first
+    if Social.are_friends?(user.id, friend_id) do
+      buttons = Social.get_shared_buttons(user.id, friend_id)
+
+      conn
+      |> json(%{
+        success: true,
+        data: Enum.map(buttons, fn button ->
+          %{
+            id: button.id,
+            name: button.name,
+            button_type: button.button_type,
+            color: button.color,
+            icon: button.icon,
+            current_state: button.current_state,
+            click_count: button.click_count,
+            last_clicked_at: button.last_clicked_at,
+            inserted_at: button.inserted_at,
+            updated_at: button.updated_at
+          }
+        end)
+      })
+    else
+      conn
+      |> put_status(:forbidden)
+      |> json(%{
+        success: false,
+        error: %{
+          code: "NOT_FRIENDS",
+          message: "You are not friends with this user"
+        }
+      })
+    end
+  end
+
   defp format_changeset_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
       Enum.reduce(opts, msg, fn {key, value}, acc ->

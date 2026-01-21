@@ -299,7 +299,11 @@ class APIService {
             body: permissions.toRequestBody()
         )
     }
-    
+
+    func getFriendButtons(friendId: String) async throws -> [Button] {
+        return try await makeRequest(endpoint: "/friends/\(friendId)/buttons")
+    }
+
     // MARK: - Notifications
     
     func getNotifications() async throws -> [AppNotification] {

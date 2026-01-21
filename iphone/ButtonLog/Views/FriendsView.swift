@@ -203,7 +203,7 @@ struct AddFriendView: View {
 struct FriendDetailView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject private var appState: AppState
-    
+
     let friend: Friend
     @State private var permissions = FriendPermissionUpdate(
         canSeeButtons: false,
@@ -213,7 +213,8 @@ struct FriendDetailView: View {
     )
     @State private var isLoading = false
     @State private var showingRemoveAlert = false
-    
+    @State private var showingFriendButtons = false
+
     var body: some View {
         NavigationView {
             Form {
@@ -222,27 +223,37 @@ struct FriendDetailView: View {
                         Text(friend.friendUser.fullName)
                             .font(.title2)
                             .fontWeight(.semibold)
-                        
+
                         if let username = friend.friendUser.username {
                             Text("@\(username)")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
-                        
+
                         Text("Friends since \(friend.createdAt, style: .date)")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     .padding(.vertical, 8)
                 }
-                
+
+                Section("Activity") {
+                    NavigationLink(destination: FriendButtonsView(friend: friend)) {
+                        HStack {
+                            Image(systemName: "square.grid.2x2")
+                                .foregroundColor(.blue)
+                            Text("View Buttons")
+                        }
+                    }
+                }
+
                 Section("Permissions") {
                     Toggle("Can see your buttons", isOn: $permissions.canSeeButtons)
                     Toggle("Can see your activity", isOn: $permissions.canSeeActivity)
                     Toggle("Receive notifications", isOn: $permissions.receiveNotifications)
                     Toggle("Can comment", isOn: $permissions.canComment)
                 }
-                
+
                 Section {
                     SwiftUI.Button("Remove Friend", role: .destructive) {
                         showingRemoveAlert = true
