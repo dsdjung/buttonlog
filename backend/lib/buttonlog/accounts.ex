@@ -51,9 +51,34 @@ defmodule ButtonLog.Accounts do
   Registers a new user.
   """
   def register_user(attrs \\ %{}) do
+    # Auto-generate username and display_name from email if not provided
+    attrs = maybe_generate_defaults(attrs)
+
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
+  end
+
+  defp maybe_generate_defaults(attrs) do
+    attrs = stringify_keys(attrs)
+
+    email = attrs["email"] || ""
+    base_name = email |> String.split("@") |> List.first() || "user"
+
+    # Use existing generate_unique_username function (defined below)
+    username = if Map.has_key?(attrs, "username"), do: attrs["username"], else: generate_unique_username(base_name)
+    display_name = if Map.has_key?(attrs, "display_name"), do: attrs["display_name"], else: base_name
+
+    attrs
+    |> Map.put("username", username)
+    |> Map.put("display_name", display_name)
+  end
+
+  defp stringify_keys(map) when is_map(map) do
+    Map.new(map, fn
+      {k, v} when is_atom(k) -> {Atom.to_string(k), v}
+      {k, v} -> {k, v}
+    end)
   end
 
   @doc """
