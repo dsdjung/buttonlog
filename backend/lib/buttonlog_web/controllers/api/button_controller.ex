@@ -182,7 +182,7 @@ defmodule ButtonLogWeb.API.ButtonController do
       {:ok, click} ->
         json(conn, %{
           success: true,
-          data: click,
+          data: serialize_click(click),
           meta: %{
             timestamp: DateTime.utc_now(),
             request_id: generate_request_id()
@@ -256,6 +256,22 @@ defmodule ButtonLogWeb.API.ButtonController do
       user_id: button.user_id,
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at)
+    }
+  end
+
+  defp serialize_click(click) do
+    %{
+      id: click.id,
+      button_id: click.button_id,
+      user_id: click.user_id,
+      clicked_at: format_datetime(click.clicked_at),
+      duration: click.duration,
+      location_lat: click.location_lat && Decimal.to_float(click.location_lat),
+      location_lng: click.location_lng && Decimal.to_float(click.location_lng),
+      device: click.device,
+      platform: click.platform,
+      action: click.action,
+      created_at: format_datetime(click.inserted_at)
     }
   end
 
