@@ -198,9 +198,17 @@ class AuthenticationManager: NSObject, ObservableObject {
         do {
             let user = try await apiService.getCurrentUser()
             currentUser = user
+        } catch let error as APIError {
+            // Only logout on authentication errors (401), not network issues
+            if case .serverError(let message) = error,
+               message.lowercased().contains("401") ||
+               message.lowercased().contains("unauthorized") ||
+               message.lowercased().contains("invalid token") {
+                await logout()
+            }
+            // For other errors (network, server down, etc.), keep the user logged in
         } catch {
-            // Token might be invalid, logout
-            await logout()
+            // For unexpected errors, keep user logged in to avoid losing session on network issues
         }
     }
 
