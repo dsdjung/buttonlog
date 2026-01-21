@@ -29,7 +29,7 @@ defmodule ButtonLog.Social.FriendPermission do
     |> changeset(attrs)
     |> put_change(:user_id, user_id)
     |> put_change(:friend_id, friend_id)
-    |> put_change(:can_view_history, false)
+    |> put_change(:can_view_history, true)
     |> put_change(:can_receive_notifications, true)
     |> put_change(:can_view_buttons, true)
   end

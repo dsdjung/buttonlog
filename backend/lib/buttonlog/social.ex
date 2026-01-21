@@ -304,7 +304,7 @@ defmodule ButtonLog.Social do
   """
   def can_view_history?(user_id, friend_id) do
     case get_friend_permissions(user_id, friend_id) do
-      nil -> false
+      nil -> true  # Default to true if no permissions set (matching can_view_buttons behavior)
       permissions -> permissions.can_view_history
     end
   end
