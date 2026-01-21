@@ -114,9 +114,16 @@ defmodule ButtonLogWeb.API.AuthController do
       subscription_tier: user.subscription_tier || "free",
       is_active: true,
       email_verified: user.email_verified || false,
-      created_at: user.inserted_at,
-      updated_at: user.updated_at
+      created_at: format_datetime(user.inserted_at),
+      updated_at: format_datetime(user.updated_at)
     }
+  end
+
+  defp format_datetime(nil), do: nil
+  defp format_datetime(datetime) do
+    datetime
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_iso8601()
   end
 end
 
