@@ -29,6 +29,9 @@ config :buttonlog, ButtonLogWeb.Endpoint,
 
 
 
+# Configure Joken for JWT tokens
+config :joken, default_signer: "Kh7LIE0FWdaQ/ThYYCasCt7AUPeIPkfgOp0oPWAfUH7ig2y0ukEFTMIjofcXolgh"
+
 # Configure Swoosh for email
 config :swoosh, :api_client, false
 
