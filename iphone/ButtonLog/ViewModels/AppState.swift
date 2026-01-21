@@ -220,23 +220,34 @@ class AppState: ObservableObject {
     }
     
     // MARK: - Subscriptions
-    
+
     func loadSubscriptionData() async {
         isLoadingSubscription = true
-        
+
+        // Load each subscription component independently to avoid one failure breaking everything
+        // Plans endpoint is public and should always work
         do {
-            async let plans = apiService.getSubscriptionPlans()
-            async let subscription = apiService.getCurrentSubscription()
-            async let stats = apiService.getSubscriptionStats()
-            
-            subscriptionPlans = try await plans
-            currentSubscription = try await subscription
-            subscriptionStats = try await stats
-            
+            subscriptionPlans = try await apiService.getSubscriptionPlans()
         } catch {
-            errorMessage = "Failed to load subscription data: \(error.localizedDescription)"
+            // Plans are critical, but don't show error to user
         }
-        
+
+        // Current subscription - might be nil for free users
+        do {
+            currentSubscription = try await apiService.getCurrentSubscription()
+        } catch {
+            // User might not have a subscription, that's fine
+            currentSubscription = nil
+        }
+
+        // Stats endpoint might not be implemented or available for all users
+        do {
+            subscriptionStats = try await apiService.getSubscriptionStats()
+        } catch {
+            // Stats are optional, don't show error
+            subscriptionStats = nil
+        }
+
         isLoadingSubscription = false
     }
     
