@@ -1,6 +1,7 @@
 package com.buttonlog.app.data.api
 
 import com.buttonlog.app.data.model.*
+import com.google.gson.annotations.SerializedName
 import retrofit2.http.*
 
 interface APIService {

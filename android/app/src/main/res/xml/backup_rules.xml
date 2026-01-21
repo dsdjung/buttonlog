@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Sample backup rules file; see https://developer.android.com/guide/topics/data/autobackup
+   for more information.
+   Note: This file is ignored for devices running API 31+.
+-->
+<full-backup-content>
+    <!-- Include shared preferences -->
+    <include domain="sharedpref" path="."/>
+    <!-- Exclude sensitive authentication data -->
+    <exclude domain="sharedpref" path="auth_prefs.xml"/>
+    <!-- Exclude local database (will be re-synced from server) -->
+    <exclude domain="database" path="buttonlog.db"/>
+</full-backup-content>

@@ -61,7 +61,7 @@ class ButtonRepository @Inject constructor(
             _isLoading.value = true
             _error.value = null
             
-            val updatedButton = apiService.updateButton(button)
+            val updatedButton = apiService.updateButton(button.id, button)
             val currentButtons = _buttons.value.toMutableList()
             val index = currentButtons.indexOfFirst { it.id == button.id }
             
