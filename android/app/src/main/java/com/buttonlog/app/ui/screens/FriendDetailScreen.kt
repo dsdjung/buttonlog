@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonState
 import com.buttonlog.app.data.model.Friend
+import com.buttonlog.app.data.model.FriendActivity
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.ui.viewmodels.FriendsUiState
 
@@ -109,6 +110,49 @@ fun FriendDetailScreen(
                 else -> {
                     items(uiState.friendButtons) { button ->
                         FriendButtonCard(button = button)
+                    }
+                }
+            }
+
+            // Activity History section
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Activity History",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            when {
+                uiState.isLoadingFriendActivity -> {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+
+                uiState.activityPermissionDenied -> {
+                    item {
+                        ActivityPermissionDeniedCard(friendName = friend.friendUser.displayNameOrUsername)
+                    }
+                }
+
+                uiState.friendActivity.isEmpty() -> {
+                    item {
+                        EmptyActivityCard(friendName = friend.friendUser.displayNameOrUsername)
+                    }
+                }
+
+                else -> {
+                    items(uiState.friendActivity) { activity ->
+                        FriendActivityCard(activity = activity)
                     }
                 }
             }
@@ -470,5 +514,181 @@ private fun getIconForButton(iconName: String): ImageVector {
         "pencil" -> Icons.Default.Edit
         "gear" -> Icons.Default.Settings
         else -> Icons.Default.Star
+    }
+}
+
+@Composable
+private fun FriendActivityCard(activity: FriendActivity) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Button icon
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(parseColor(activity.buttonColor ?: "#007AFF")),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = activity.buttonTypeEmoji,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+
+            // Activity info
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = activity.buttonName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    // Action badge
+                    Surface(
+                        color = getActionBadgeColor(activity.displayAction),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = activity.displayAction,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = getActionTextColor(activity.displayAction),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = activity.clickedAt.take(16).replace("T", " "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    activity.duration?.let { duration ->
+                        Text(
+                            text = "•",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${duration}s",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityPermissionDeniedCard(friendName: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Activity History Private",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = "$friendName has not granted you permission to view their activity history",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyActivityCard(friendName: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.Schedule,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "No Activity Yet",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = "$friendName hasn't recorded any button activity yet",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+private fun parseColor(colorString: String): Color {
+    return try {
+        Color(android.graphics.Color.parseColor(colorString))
+    } catch (e: Exception) {
+        Color(0xFF007AFF)
+    }
+}
+
+private fun getActionBadgeColor(action: String): Color {
+    return when (action) {
+        "start" -> Color(0xFF34C759).copy(alpha = 0.2f)
+        "end" -> Color(0xFFFF3B30).copy(alpha = 0.2f)
+        else -> Color(0xFF007AFF).copy(alpha = 0.2f)
+    }
+}
+
+private fun getActionTextColor(action: String): Color {
+    return when (action) {
+        "start" -> Color(0xFF34C759)
+        "end" -> Color(0xFFFF3B30)
+        else -> Color(0xFF007AFF)
     }
 }

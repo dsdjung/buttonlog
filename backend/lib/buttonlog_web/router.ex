@@ -79,6 +79,7 @@ defmodule ButtonLogWeb.Router do
     get "/friends/:friend_id/permissions", API.SocialController, :get_permissions
     put "/friends/:friend_id/permissions", API.SocialController, :update_permissions
     get "/friends/:friend_id/buttons", API.SocialController, :friend_buttons
+    get "/friends/:friend_id/activity", API.SocialController, :friend_activity
 
     # Notification endpoints
     get "/notifications", API.NotificationController, :index

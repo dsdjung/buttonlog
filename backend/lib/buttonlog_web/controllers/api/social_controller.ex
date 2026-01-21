@@ -278,6 +278,46 @@ defmodule ButtonLogWeb.API.SocialController do
     end
   end
 
+  def friend_activity(conn, %{"friend_id" => friend_id} = params) do
+    user = conn.assigns.current_user
+    limit = Map.get(params, "limit", "50") |> String.to_integer()
+
+    case Social.get_friend_activity(user.id, friend_id, limit) do
+      {:error, :not_friends} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FRIENDS",
+            message: "You are not friends with this user"
+          }
+        })
+
+      {:error, :permission_denied} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "PERMISSION_DENIED",
+            message: "This friend has not granted you permission to view their activity history"
+          }
+        })
+
+      activity when is_list(activity) ->
+        conn
+        |> json(%{
+          success: true,
+          data: Enum.map(activity, &serialize_activity/1),
+          meta: %{
+            count: length(activity),
+            limit: limit
+          }
+        })
+    end
+  end
+
   defp serialize_button(button) do
     %{
       id: button.id,
@@ -295,6 +335,24 @@ defmodule ButtonLogWeb.API.SocialController do
       user_id: button.user_id,
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at)
+    }
+  end
+
+  defp serialize_activity(activity) do
+    %{
+      id: activity.id,
+      button_id: activity.button_id,
+      button_name: activity.button_name,
+      button_type: activity.button_type,
+      button_icon: activity.button_icon || "star.fill",
+      button_color: activity.button_color || "#007AFF",
+      user_id: activity.user_id,
+      clicked_at: format_datetime(activity.clicked_at),
+      duration: activity.duration,
+      action: activity.action,
+      device: activity.device,
+      platform: activity.platform,
+      created_at: format_datetime(activity.inserted_at)
     }
   end
 

@@ -238,4 +238,34 @@ defmodule ButtonLog.Buttons do
   def change_button_click(%ButtonClick{} = button_click, attrs \\ %{}) do
     ButtonClick.changeset(button_click, attrs)
   end
+
+  @doc """
+  Gets button activity (clicks) for a friend.
+  Returns all button clicks for the friend with button information included.
+  This is used for viewing a friend's activity history.
+  """
+  def list_friend_button_activity(friend_id, limit \\ 50) do
+    Repo.all(
+      from bc in ButtonClick,
+      join: b in Button, on: b.id == bc.button_id,
+      where: b.user_id == ^friend_id,
+      order_by: [desc: bc.clicked_at],
+      limit: ^limit,
+      select: %{
+        id: bc.id,
+        button_id: bc.button_id,
+        button_name: b.name,
+        button_type: b.type,
+        button_icon: b.icon,
+        button_color: b.color,
+        user_id: bc.user_id,
+        clicked_at: bc.clicked_at,
+        duration: bc.duration,
+        action: bc.action,
+        device: bc.device,
+        platform: bc.platform,
+        inserted_at: bc.inserted_at
+      }
+    )
+  end
 end

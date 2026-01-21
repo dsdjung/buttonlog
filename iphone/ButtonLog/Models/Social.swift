@@ -111,7 +111,7 @@ struct FriendPermissionUpdate {
     var canSeeActivity: Bool
     var receiveNotifications: Bool
     var canComment: Bool
-    
+
     func toRequestBody() -> [String: Any] {
         return [
             "can_see_buttons": canSeeButtons,
@@ -119,5 +119,50 @@ struct FriendPermissionUpdate {
             "receive_notifications": receiveNotifications,
             "can_comment": canComment
         ]
+    }
+}
+
+struct FriendActivity: Identifiable, Codable {
+    let id: String
+    let buttonId: String
+    let buttonName: String
+    let buttonType: String
+    let buttonIcon: String?
+    let buttonColor: String?
+    let userId: String
+    let clickedAt: Date
+    let duration: Int?
+    let action: String?
+    let device: String?
+    let platform: String?
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case buttonId = "button_id"
+        case buttonName = "button_name"
+        case buttonType = "button_type"
+        case buttonIcon = "button_icon"
+        case buttonColor = "button_color"
+        case userId = "user_id"
+        case clickedAt = "clicked_at"
+        case duration
+        case action
+        case device
+        case platform
+        case createdAt = "created_at"
+    }
+
+    var displayAction: String {
+        return action ?? "click"
+    }
+
+    var buttonTypeEmoji: String {
+        switch buttonType {
+        case "instant": return "⚡"
+        case "timed": return "⏱️"
+        case "state": return "🔄"
+        default: return "📱"
+        }
     }
 }

@@ -567,4 +567,25 @@ defmodule ButtonLog.Social do
       []
     end
   end
+
+  @doc """
+  Gets button activity history for a friend.
+  Returns the friend's button clicks (activity) that the user has permission to see.
+  Requires can_view_history permission to be true.
+  """
+  def get_friend_activity(user_id, friend_id, limit \\ 50) do
+    # First check if they are actually friends
+    if are_friends?(user_id, friend_id) do
+      # Check if the friend has granted the user permission to view their history
+      # Permission is from friend's perspective: did friend allow user to see their history?
+      if can_view_history?(friend_id, user_id) do
+        # Return the friend's button activity
+        ButtonLog.Buttons.list_friend_button_activity(friend_id, limit)
+      else
+        {:error, :permission_denied}
+      end
+    else
+      {:error, :not_friends}
+    end
+  end
 end

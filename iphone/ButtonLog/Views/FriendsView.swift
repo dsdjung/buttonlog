@@ -245,6 +245,14 @@ struct FriendDetailView: View {
                             Text("View Buttons")
                         }
                     }
+
+                    NavigationLink(destination: FriendActivityView(friend: friend)) {
+                        HStack {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .foregroundColor(.orange)
+                            Text("View Activity History")
+                        }
+                    }
                 }
 
                 Section("Permissions") {

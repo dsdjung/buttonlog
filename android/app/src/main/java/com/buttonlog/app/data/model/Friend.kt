@@ -114,3 +114,50 @@ data class FriendButtonsResponse(
     val data: List<Button>,
     val error: ApiError?
 )
+
+data class FriendActivity(
+    val id: String,
+    @SerializedName("button_id")
+    val buttonId: String,
+    @SerializedName("button_name")
+    val buttonName: String,
+    @SerializedName("button_type")
+    val buttonType: String,
+    @SerializedName("button_icon")
+    val buttonIcon: String?,
+    @SerializedName("button_color")
+    val buttonColor: String?,
+    @SerializedName("user_id")
+    val userId: String,
+    @SerializedName("clicked_at")
+    val clickedAt: String,
+    val duration: Int?,
+    val action: String?,
+    val device: String?,
+    val platform: String?,
+    @SerializedName("created_at")
+    val createdAt: String
+) {
+    val displayAction: String
+        get() = action ?: "click"
+
+    val buttonTypeEmoji: String
+        get() = when (buttonType) {
+            "instant" -> "⚡"
+            "timed" -> "⏱️"
+            "state" -> "🔄"
+            else -> "📱"
+        }
+}
+
+data class FriendActivityResponse(
+    val success: Boolean,
+    val data: List<FriendActivity> = emptyList(),
+    val error: ApiError?,
+    val meta: ActivityMeta?
+)
+
+data class ActivityMeta(
+    val count: Int,
+    val limit: Int
+)

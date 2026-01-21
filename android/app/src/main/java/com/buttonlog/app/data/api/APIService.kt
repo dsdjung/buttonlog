@@ -70,7 +70,13 @@ interface APIService {
 
     @GET("friends/{friendId}/buttons")
     suspend fun getFriendButtons(@Path("friendId") friendId: String): FriendButtonsResponse
-    
+
+    @GET("friends/{friendId}/activity")
+    suspend fun getFriendActivity(
+        @Path("friendId") friendId: String,
+        @Query("limit") limit: Int = 50
+    ): FriendActivityResponse
+
     // MARK: - Notification Endpoints
     
     @GET("notifications")

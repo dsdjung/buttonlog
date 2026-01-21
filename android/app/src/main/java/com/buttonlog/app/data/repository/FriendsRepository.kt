@@ -6,6 +6,7 @@ import com.buttonlog.app.data.api.FriendPermissionUpdateRequest
 import com.buttonlog.app.data.api.FriendRequestBody
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.Friend
+import com.buttonlog.app.data.model.FriendActivity
 import com.buttonlog.app.data.model.FriendPermissions
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.data.model.FriendshipStatus
@@ -193,6 +194,28 @@ class FriendsRepository @Inject constructor(
         }
     }
 
+    suspend fun getFriendActivity(friendId: String, limit: Int = 50): Result<List<FriendActivity>> {
+        return try {
+            val response = apiService.getFriendActivity(friendId, limit)
+
+            if (response.success) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to get friend's activity"
+                // Check if this is a permission denied error
+                if (errorMessage.contains("permission", ignoreCase = true) ||
+                    errorMessage.contains("PERMISSION_DENIED", ignoreCase = true)) {
+                    Result.failure(PermissionDeniedException(errorMessage))
+                } else {
+                    Result.failure(Exception(errorMessage))
+                }
+            }
+
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun getFriend(friendId: String): Friend? {
         return _friends.value.find { it.friendId == friendId }
     }
@@ -201,3 +224,5 @@ class FriendsRepository @Inject constructor(
         _error.value = null
     }
 }
+
+class PermissionDeniedException(message: String) : Exception(message)

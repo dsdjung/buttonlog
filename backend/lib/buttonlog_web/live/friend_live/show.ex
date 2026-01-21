@@ -20,6 +20,13 @@ defmodule ButtonLogWeb.FriendLive.Show do
           shared_buttons = Social.get_shared_buttons(user_id, friend_id)
           shared_notifications = Social.get_shared_notifications(user_id, friend_id)
 
+          # Get friend activity (requires can_view_history permission)
+          {friend_activity, can_view_history} =
+            case Social.get_friend_activity(user_id, friend_id, 20) do
+              {:error, :permission_denied} -> {[], false}
+              activity when is_list(activity) -> {activity, true}
+            end
+
           {:ok,
            socket
            |> assign(:current_user, current_user)
@@ -27,6 +34,8 @@ defmodule ButtonLogWeb.FriendLive.Show do
            |> assign(:friendship, friendship)
            |> assign(:shared_buttons, shared_buttons)
            |> assign(:shared_notifications, shared_notifications)
+           |> assign(:friend_activity, friend_activity)
+           |> assign(:can_view_history, can_view_history)
            |> assign(:page_title, "#{friend.display_name}'s Profile")}
 
         false ->

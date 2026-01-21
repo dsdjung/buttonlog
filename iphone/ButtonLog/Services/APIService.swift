@@ -304,6 +304,10 @@ class APIService {
         return try await makeRequest(endpoint: "/friends/\(friendId)/buttons")
     }
 
+    func getFriendActivity(friendId: String, limit: Int = 50) async throws -> [FriendActivity] {
+        return try await makeRequest(endpoint: "/friends/\(friendId)/activity?limit=\(limit)")
+    }
+
     // MARK: - Notifications
     
     func getNotifications() async throws -> [AppNotification] {

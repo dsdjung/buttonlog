@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.Friend
+import com.buttonlog.app.data.model.FriendActivity
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.data.model.FriendPermissions
 import com.buttonlog.app.data.model.FriendshipStatus
 import com.buttonlog.app.data.repository.FriendsRepository
+import com.buttonlog.app.data.repository.PermissionDeniedException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -142,17 +144,48 @@ class FriendsViewModel @Inject constructor(
         }
     }
 
+    fun loadFriendActivity(friendId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingFriendActivity = true, activityPermissionDenied = false) }
+            val result = friendsRepository.getFriendActivity(friendId)
+            result.fold(
+                onSuccess = { activity ->
+                    _uiState.update {
+                        it.copy(
+                            friendActivity = activity,
+                            isLoadingFriendActivity = false,
+                            activityPermissionDenied = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    val isPermissionDenied = error is PermissionDeniedException
+                    _uiState.update {
+                        it.copy(
+                            error = if (isPermissionDenied) null else error.message,
+                            isLoadingFriendActivity = false,
+                            activityPermissionDenied = isPermissionDenied
+                        )
+                    }
+                }
+            )
+        }
+    }
+
     fun selectFriend(friend: Friend?) {
         _uiState.update {
             it.copy(
                 selectedFriend = friend,
                 friendButtons = emptyList(),
-                selectedFriendPermissions = null
+                friendActivity = emptyList(),
+                selectedFriendPermissions = null,
+                activityPermissionDenied = false
             )
         }
         friend?.let {
             loadFriendPermissions(it.friendId)
             loadFriendButtons(it.friendId)
+            loadFriendActivity(it.friendId)
         }
     }
 
@@ -173,9 +206,12 @@ data class FriendsUiState(
     val selectedFriend: Friend? = null,
     val selectedFriendPermissions: FriendPermissions? = null,
     val friendButtons: List<Button> = emptyList(),
+    val friendActivity: List<FriendActivity> = emptyList(),
     val isLoading: Boolean = false,
     val isLoadingPermissions: Boolean = false,
     val isLoadingFriendButtons: Boolean = false,
+    val isLoadingFriendActivity: Boolean = false,
+    val activityPermissionDenied: Boolean = false,
     val friendRequestSent: Boolean = false,
     val error: String? = null
 )
