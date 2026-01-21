@@ -5,6 +5,7 @@ config :buttonlog, ButtonLog.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
+  port: 15442,
   database: "buttonlog_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
@@ -19,7 +20,7 @@ config :buttonlog, ButtonLog.Repo,
 config :buttonlog, ButtonLogWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4001, protocol_options: [max_header_name_length: 64, max_header_value_length: 4096, max_headers: 100]],
+  http: [ip: {127, 0, 0, 1}, port: 14015, protocol_options: [max_header_name_length: 64, max_header_value_length: 4096, max_headers: 100]],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
@@ -31,7 +32,7 @@ config :ueberauth, Ueberauth,
     google: {Ueberauth.Strategy.Google, [
       client_id: System.get_env("GOOGLE_CLIENT_ID") || "your-google-client-id-here",
       client_secret: System.get_env("GOOGLE_CLIENT_SECRET") || "your-google-client-secret-here",
-      redirect_uri: System.get_env("GOOGLE_REDIRECT_URI") || "http://localhost:4001/auth/google/callback"
+      redirect_uri: System.get_env("GOOGLE_REDIRECT_URI") || "http://localhost:14015/auth/google/callback"
     ]}
   ]
 

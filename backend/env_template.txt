@@ -1,9 +1,14 @@
-# Google OAuth Configuration
+# ButtonLog Environment Configuration
 # Copy this file to .env and fill in your actual values
+# Port Allocation: Web 14015 (dev), 14016 (test), DB 15442
 
+# Database Configuration
+export DATABASE_PORT=15442
+
+# Google OAuth Configuration
 export GOOGLE_CLIENT_ID="your-google-client-id-here"
 export GOOGLE_CLIENT_SECRET="your-google-client-secret-here"
-export GOOGLE_REDIRECT_URI="http://localhost:4001/auth/google/callback"
+export GOOGLE_REDIRECT_URI="http://localhost:14015/auth/google/callback"
 
 # Facebook OAuth (optional)
 export FACEBOOK_CLIENT_ID="your-facebook-client-id-here"
@@ -12,5 +17,3 @@ export FACEBOOK_CLIENT_SECRET="your-facebook-client-secret-here"
 # Apple OAuth (optional)
 export APPLE_CLIENT_ID="your-apple-client-id-here"
 export APPLE_CLIENT_SECRET="your-apple-client-secret-here"
-
-

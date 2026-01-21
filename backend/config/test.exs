@@ -5,6 +5,7 @@ config :buttonlog, ButtonLog.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
+  port: 15442,
   database: "buttonlog_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
@@ -12,7 +13,7 @@ config :buttonlog, ButtonLog.Repo,
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :buttonlog, ButtonLogWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4102],
+  http: [ip: {127, 0, 0, 1}, port: 14016],
   secret_key_base: "test-secret-key-base-here",
   server: false
 
