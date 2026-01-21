@@ -109,12 +109,6 @@ data class FriendPermissionsResponse(
     val error: ApiError?
 )
 
-data class FriendButtonsResponse(
-    val success: Boolean,
-    val data: List<Button>,
-    val error: ApiError?
-)
-
 data class FriendActivity(
     val id: String,
     @SerializedName("button_id")
