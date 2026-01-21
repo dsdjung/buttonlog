@@ -12,12 +12,7 @@ defmodule ButtonLogWeb.API.AuthController do
         |> json(%{
           success: true,
           data: %{
-            user: %{
-              id: user.id,
-              email: user.email,
-              username: user.username,
-              display_name: user.display_name
-            },
+            user: serialize_user(user),
             token: token
           }
         })
@@ -44,12 +39,7 @@ defmodule ButtonLogWeb.API.AuthController do
         |> json(%{
           success: true,
           data: %{
-            user: %{
-              id: user.id,
-              email: user.email,
-              username: user.username,
-              display_name: user.display_name
-            },
+            user: serialize_user(user),
             token: token
           }
         })
@@ -109,6 +99,24 @@ defmodule ButtonLogWeb.API.AuthController do
     |> Enum.map(fn {field, errors} ->
       %{field: field, message: List.first(errors)}
     end)
+  end
+
+  defp serialize_user(user) do
+    %{
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      display_name: user.display_name,
+      first_name: nil,
+      last_name: nil,
+      profile_visibility: user.profile_visibility || "friends",
+      activity_visibility: user.activity_visibility || "friends",
+      subscription_tier: user.subscription_tier || "free",
+      is_active: true,
+      email_verified: user.email_verified || false,
+      created_at: user.inserted_at,
+      updated_at: user.updated_at
+    }
   end
 end
 
