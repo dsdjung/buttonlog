@@ -28,6 +28,9 @@ import kotlinx.coroutines.delay
 fun ButtonCard(
     button: Button,
     onClick: () -> Unit,
+    onEditClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var isPressed by remember { mutableStateOf(false) }
@@ -59,7 +62,12 @@ fun ButtonCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header section
-            ButtonHeader(button = button)
+            ButtonHeader(
+                button = button,
+                onEditClick = onEditClick,
+                onHistoryClick = onHistoryClick,
+                onDeleteClick = onDeleteClick
+            )
 
             // Action button
             ButtonActionButton(
@@ -74,7 +82,14 @@ fun ButtonCard(
 }
 
 @Composable
-private fun ButtonHeader(button: Button) {
+private fun ButtonHeader(
+    button: Button,
+    onEditClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -94,9 +109,9 @@ private fun ButtonHeader(button: Button) {
                 modifier = Modifier.size(24.dp)
             )
         }
-        
+
         Spacer(modifier = Modifier.width(12.dp))
-        
+
         // Button info
         Column(
             modifier = Modifier.weight(1f)
@@ -106,7 +121,7 @@ private fun ButtonHeader(button: Button) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
-            
+
             button.description?.let { description ->
                 if (description.isNotEmpty()) {
                     Text(
@@ -117,9 +132,9 @@ private fun ButtonHeader(button: Button) {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Tags
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -130,16 +145,59 @@ private fun ButtonHeader(button: Button) {
                 }
             }
         }
-        
-        // Settings button
-        IconButton(
-            onClick = { /* Show button settings */ }
-        ) {
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = "Button settings",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
+        // Settings button with dropdown menu
+        Box {
+            IconButton(
+                onClick = { showMenu = true }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Button settings",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Edit") },
+                    onClick = {
+                        showMenu = false
+                        onEditClick()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Edit, contentDescription = null)
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("History") },
+                    onClick = {
+                        showMenu = false
+                        onHistoryClick()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.History, contentDescription = null)
+                    }
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                    onClick = {
+                        showMenu = false
+                        onDeleteClick()
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                )
+            }
         }
     }
 }

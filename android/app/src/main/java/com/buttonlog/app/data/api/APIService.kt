@@ -33,7 +33,10 @@ interface APIService {
 
     @POST("buttons/{id}/click")
     suspend fun clickButton(@Path("id") id: String): ButtonClickResponse
-    
+
+    @GET("buttons/{id}/history")
+    suspend fun getButtonHistory(@Path("id") id: String, @Query("limit") limit: Int = 50): ButtonHistoryResponse
+
     // MARK: - User Endpoints
     
     @GET("users/profile")

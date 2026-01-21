@@ -20,9 +20,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.buttonlog.app.data.model.Button
+import com.buttonlog.app.data.repository.ButtonRepository
 import com.buttonlog.app.ui.screens.AccountScreen
+import com.buttonlog.app.ui.screens.ButtonHistoryScreen
 import com.buttonlog.app.ui.screens.ButtonsScreen
+import com.buttonlog.app.ui.screens.EditButtonScreen
 import com.buttonlog.app.ui.screens.LoginScreen
+import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.theme.ButtonLogTheme
 import com.buttonlog.app.ui.viewmodels.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,7 +58,10 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(onLogout: () -> Unit = {}) {
     val navController = rememberNavController()
     var showCreateButton by remember { mutableStateOf(false) }
-    
+    var buttonToEdit by remember { mutableStateOf<Button?>(null) }
+    var buttonToViewHistory by remember { mutableStateOf<Button?>(null) }
+    val buttonsViewModel: ButtonsViewModel = hiltViewModel()
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     
@@ -116,7 +124,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             ) {
                 composable("home") {
                     ButtonsScreen(
-                        onCreateButton = { showCreateButton = true }
+                        onCreateButton = { showCreateButton = true },
+                        onEditButton = { button -> buttonToEdit = button },
+                        onViewHistory = { button -> buttonToViewHistory = button },
+                        viewModel = buttonsViewModel
                     )
                 }
                 composable("friends") {
@@ -159,6 +170,27 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     Text("OK")
                 }
             }
+        )
+    }
+
+    // Edit Button Screen
+    buttonToEdit?.let { button ->
+        EditButtonScreen(
+            button = button,
+            onSave = { updatedButton ->
+                buttonsViewModel.updateButton(updatedButton)
+                buttonToEdit = null
+            },
+            onNavigateBack = { buttonToEdit = null }
+        )
+    }
+
+    // Button History Screen
+    buttonToViewHistory?.let { button ->
+        ButtonHistoryScreen(
+            button = button,
+            buttonRepository = buttonsViewModel.buttonRepository,
+            onNavigateBack = { buttonToViewHistory = null }
         )
     }
 }

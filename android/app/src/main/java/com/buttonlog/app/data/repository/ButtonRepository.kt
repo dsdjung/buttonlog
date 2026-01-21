@@ -171,6 +171,20 @@ class ButtonRepository @Inject constructor(
     fun getButton(id: String): Button? {
         return _buttons.value.find { it.id == id }
     }
+
+    suspend fun getButtonHistory(buttonId: String, limit: Int = 50): Result<List<ButtonClick>> {
+        return try {
+            val response = apiService.getButtonHistory(buttonId, limit)
+            if (response.success && response.data != null) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to fetch history"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     
     fun getButtonsByType(type: com.buttonlog.app.data.model.ButtonType): List<Button> {
         return _buttons.value.filter { it.type == type }

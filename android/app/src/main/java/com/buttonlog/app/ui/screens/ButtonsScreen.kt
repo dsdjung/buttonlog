@@ -19,14 +19,17 @@ import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 @Composable
 fun ButtonsScreen(
     onCreateButton: () -> Unit,
+    onEditButton: (com.buttonlog.app.data.model.Button) -> Unit = {},
+    onViewHistory: (com.buttonlog.app.data.model.Button) -> Unit = {},
     viewModel: ButtonsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
+    var buttonToDelete by remember { mutableStateOf<com.buttonlog.app.data.model.Button?>(null) }
+
     LaunchedEffect(Unit) {
         viewModel.fetchButtons()
     }
-    
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -36,7 +39,7 @@ fun ButtonsScreen(
             onQueryChange = { viewModel.updateSearchQuery(it) },
             modifier = Modifier.padding(16.dp)
         )
-        
+
         when {
             uiState.isLoading -> {
                 Box(
@@ -46,22 +49,65 @@ fun ButtonsScreen(
                     CircularProgressIndicator()
                 }
             }
-            
+
             uiState.buttons.isEmpty() -> {
                 EmptyStateView(onCreateButton = onCreateButton)
             }
-            
+
             else -> {
                 ButtonsList(
                     buttons = uiState.filteredButtons,
                     onButtonClick = { buttonId ->
                         viewModel.clickButton(buttonId)
+                    },
+                    onEditClick = { button ->
+                        onEditButton(button)
+                    },
+                    onHistoryClick = { button ->
+                        onViewHistory(button)
+                    },
+                    onDeleteClick = { button ->
+                        buttonToDelete = button
                     }
                 )
             }
         }
     }
-    
+
+    // Delete confirmation dialog
+    buttonToDelete?.let { button ->
+        AlertDialog(
+            onDismissRequest = { buttonToDelete = null },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text("Delete Button") },
+            text = { Text("Are you sure you want to delete \"${button.name}\"? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteButton(button.id)
+                        buttonToDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { buttonToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     // Error handling
     uiState.error?.let { error ->
         LaunchedEffect(error) {
@@ -117,7 +163,10 @@ private fun EmptyStateView(onCreateButton: () -> Unit) {
 @Composable
 private fun ButtonsList(
     buttons: List<com.buttonlog.app.data.model.Button>,
-    onButtonClick: (String) -> Unit
+    onButtonClick: (String) -> Unit,
+    onEditClick: (com.buttonlog.app.data.model.Button) -> Unit,
+    onHistoryClick: (com.buttonlog.app.data.model.Button) -> Unit,
+    onDeleteClick: (com.buttonlog.app.data.model.Button) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -127,7 +176,10 @@ private fun ButtonsList(
         items(buttons) { button ->
             ButtonCard(
                 button = button,
-                onClick = { onButtonClick(button.id) }
+                onClick = { onButtonClick(button.id) },
+                onEditClick = { onEditClick(button) },
+                onHistoryClick = { onHistoryClick(button) },
+                onDeleteClick = { onDeleteClick(button) }
             )
         }
     }

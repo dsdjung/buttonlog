@@ -114,6 +114,13 @@ data class ButtonClickResponse(
     val meta: ApiMeta?
 )
 
+data class ButtonHistoryResponse(
+    val success: Boolean,
+    val data: List<ButtonClick>?,
+    val error: ApiError?,
+    val meta: ApiMeta?
+)
+
 data class ApiMeta(
     val timestamp: String?,
     @SerializedName("request_id")

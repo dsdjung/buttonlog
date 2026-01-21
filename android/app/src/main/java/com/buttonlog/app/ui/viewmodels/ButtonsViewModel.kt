@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ButtonsViewModel @Inject constructor(
-    private val buttonRepository: ButtonRepository
+    val buttonRepository: ButtonRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ButtonsUiState())
