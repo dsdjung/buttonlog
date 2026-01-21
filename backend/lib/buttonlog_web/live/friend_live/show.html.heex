@@ -37,10 +37,10 @@
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Friend Information</h2>
         <div class="flex items-center space-x-6">
           <%= if @friend.avatar do %>
-            <img src={@friend.avatar} alt="Avatar" class="w-24 h-24 rounded-full">
+            <img src={@friend.avatar} alt="Avatar" class="w-24 h-24 rounded-full"/>
           <% else %>
             <div class="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center">
-              <span class="text-gray-600 text-3xl font-medium"><%= String.first(@friend.display_name) %></span>
+              <span class="text-gray-600 text-3xl font-medium"><%= String.first(@friend.display_name || "?") %></span>
             </div>
           <% end %>
           
