@@ -261,7 +261,11 @@ class APIService {
     func clickButton(id: String) async throws -> ButtonClick {
         return try await makeRequest(endpoint: "/buttons/\(id)/click", method: .POST)
     }
-    
+
+    func getButtonHistory(id: String, limit: Int = 50) async throws -> [ButtonClick] {
+        return try await makeRequest(endpoint: "/buttons/\(id)/history?limit=\(limit)")
+    }
+
     // MARK: - Friends & Social
     
     func getFriends() async throws -> [Friend] {

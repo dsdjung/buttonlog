@@ -221,6 +221,39 @@ defmodule ButtonLogWeb.API.ButtonController do
     end
   end
 
+  def history(conn, %{"id" => id} = params) do
+    user = conn.assigns.current_user
+    limit = Map.get(params, "limit", "50") |> String.to_integer()
+
+    case Buttons.list_button_clicks(id, user.id, limit) do
+      {:ok, clicks} ->
+        json(conn, %{
+          success: true,
+          data: Enum.map(clicks, &serialize_click/1),
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id(),
+            count: length(clicks)
+          }
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FOUND",
+            message: "Button not found"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+    end
+  end
+
   defp generate_request_id do
     "req_#{:crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)}"
   end

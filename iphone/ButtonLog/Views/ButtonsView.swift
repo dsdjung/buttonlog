@@ -5,6 +5,7 @@ struct ButtonsView: View {
     @State private var searchText = ""
     @State private var showingCreateButton = false
     @State private var selectedButton: Button?
+    @State private var historyButton: Button?
     
     var filteredButtons: [Button] {
         if searchText.isEmpty {
@@ -55,6 +56,9 @@ struct ButtonsView: View {
                                 },
                                 onEdit: {
                                     selectedButton = button
+                                },
+                                onHistory: {
+                                    historyButton = button
                                 }
                             )
                         }
@@ -82,6 +86,9 @@ struct ButtonsView: View {
         .sheet(item: $selectedButton) { button in
             EditButtonView(button: button)
         }
+        .sheet(item: $historyButton) { button in
+            ButtonHistoryView(button: button)
+        }
     }
 }
 
@@ -89,7 +96,8 @@ struct ButtonCard: View {
     let button: Button
     let onTap: () -> Void
     let onEdit: () -> Void
-    
+    let onHistory: () -> Void
+
     @State private var isPressed = false
     
     var body: some View {
@@ -132,11 +140,19 @@ struct ButtonCard: View {
                 
                 // Settings menu
                 Menu {
-                    SwiftUI.Button("Edit", action: onEdit)
-                    SwiftUI.Button("Delete", role: .destructive) {
+                    SwiftUI.Button(action: onHistory) {
+                        Label("History", systemImage: "clock")
+                    }
+                    SwiftUI.Button(action: onEdit) {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    Divider()
+                    SwiftUI.Button(role: .destructive) {
                         Task {
                             await AppState().deleteButton(id: button.id)
                         }
+                    } label: {
+                        Label("Delete", systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
