@@ -267,12 +267,18 @@ defmodule ButtonLogWeb.API.SocialController do
           %{
             id: button.id,
             name: button.name,
-            button_type: button.type,
-            color: button.color,
+            description: button[:description],
+            type: button.type,
             icon: button.icon,
+            color: button.color,
+            is_active: button.is_active,
             current_state: button.current_state,
-            last_clicked_at: button.latest_click_at,
-            inserted_at: button.inserted_at,
+            state_changed_at: button.state_changed_at,
+            notifications_enabled: button.notifications_enabled,
+            auto_stop_enabled: button.auto_stop_enabled,
+            calendar_sync_enabled: button.calendar_sync_enabled,
+            user_id: button.user_id,
+            created_at: button.inserted_at,
             updated_at: button.updated_at
           }
         end)
