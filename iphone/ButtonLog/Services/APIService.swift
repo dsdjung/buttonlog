@@ -156,13 +156,15 @@ class APIService {
     }
     
     func register(email: String, password: String, confirmPassword: String) async throws -> AuthResponse {
-        let body = [
-            "email": email,
-            "password": password,
-            "confirm_password": confirmPassword
+        let body: [String: Any] = [
+            "user": [
+                "email": email,
+                "password": password,
+                "password_confirmation": confirmPassword
+            ]
         ]
-        
-        return try await makeRequest<AuthResponse>(
+
+        return try await makeRequest(
             endpoint: "/auth/register",
             method: .POST,
             body: body,
