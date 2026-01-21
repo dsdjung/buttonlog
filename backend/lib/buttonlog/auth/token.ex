@@ -15,7 +15,7 @@ defmodule ButtonLog.Auth.Token do
   end
 
   def verify_token(token) do
-    case Joken.verify_and_validate(token, token_config()) do
+    case verify_and_validate(token) do
       {:ok, claims} -> {:ok, claims["user_id"]}
       {:error, reason} -> {:error, reason}
     end
