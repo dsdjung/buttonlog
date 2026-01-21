@@ -24,7 +24,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
           {friend_activity, can_view_history} =
             case Social.get_friend_activity(user_id, friend_id, 20) do
               {:error, :permission_denied} -> {[], false}
-              activity when is_list(activity) -> {activity, true}
+              {activities, _next_cursor, _has_more} -> {activities, true}
             end
 
           {:ok,

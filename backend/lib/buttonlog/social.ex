@@ -579,7 +579,14 @@ defmodule ButtonLog.Social do
     - :cursor - ISO8601 datetime string for pagination
     - :cursor_id - ID for tie-breaking when timestamps match
   """
-  def get_friend_activity(user_id, friend_id, opts \\ []) do
+  def get_friend_activity(user_id, friend_id, opts \\ [])
+
+  # Handle legacy call with integer limit for backward compatibility
+  def get_friend_activity(user_id, friend_id, limit) when is_integer(limit) do
+    get_friend_activity(user_id, friend_id, limit: limit)
+  end
+
+  def get_friend_activity(user_id, friend_id, opts) when is_list(opts) do
     # First check if they are actually friends
     if are_friends?(user_id, friend_id) do
       # Check if the friend has granted the user permission to view their history
