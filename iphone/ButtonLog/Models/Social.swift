@@ -135,7 +135,7 @@ struct FriendActivity: Identifiable, Codable {
     let action: String?
     let device: String?
     let platform: String?
-    let createdAt: Date
+    let createdAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case id
