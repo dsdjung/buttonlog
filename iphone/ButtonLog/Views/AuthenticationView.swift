@@ -101,17 +101,13 @@ struct AuthenticationView: View {
                     }
                     .disabled(authManager.isLoading)
                     
-                    // OAuth Buttons
+                    // Google Login Button
                     VStack(spacing: 12) {
                         Text("Or continue with")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        
-                        VStack(spacing: 8) {
-                            OAuthButton(provider: .apple, authManager: authManager)
-                            OAuthButton(provider: .google, authManager: authManager)
-                            OAuthButton(provider: .facebook, authManager: authManager)
-                        }
+
+                        GoogleSignInButton(authManager: authManager)
                     }
                     .padding(.top, 20)
                     .padding(.horizontal, 20)
@@ -161,67 +157,34 @@ struct AuthenticationView: View {
     }
 }
 
-struct OAuthButton: View {
-    let provider: OAuthProvider
+struct GoogleSignInButton: View {
     let authManager: AuthenticationManager
-    
+
     var body: some View {
         SwiftUI.Button(action: {
             Task {
-                await authManager.loginWithOAuth(provider: provider)
+                await authManager.loginWithGoogle()
             }
         }) {
             HStack {
-                Image(systemName: iconName)
+                Image(systemName: "globe")
                     .font(.title3)
-                
-                Text("Continue with \(provider.displayName)")
+
+                Text("Continue with Google")
                     .font(.headline)
-                
+
                 Spacer()
             }
-            .foregroundColor(textColor)
+            .foregroundColor(.black)
             .padding()
-            .background(backgroundColor)
+            .background(Color.white)
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(borderColor, lineWidth: 1)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
             )
         }
         .disabled(authManager.isLoading)
-    }
-    
-    private var iconName: String {
-        switch provider {
-        case .apple: return "apple.logo"
-        case .google: return "globe"
-        case .facebook: return "f.cursive"
-        }
-    }
-    
-    private var backgroundColor: Color {
-        switch provider {
-        case .apple: return .black
-        case .google: return .white
-        case .facebook: return Color(red: 66/255, green: 103/255, blue: 178/255)
-        }
-    }
-    
-    private var textColor: Color {
-        switch provider {
-        case .apple: return .white
-        case .google: return .black
-        case .facebook: return .white
-        }
-    }
-    
-    private var borderColor: Color {
-        switch provider {
-        case .apple: return .clear
-        case .google: return .gray.opacity(0.3)
-        case .facebook: return .clear
-        }
     }
 }
 

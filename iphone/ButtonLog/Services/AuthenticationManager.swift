@@ -80,28 +80,14 @@ class AuthenticationManager: NSObject, ObservableObject {
         isLoading = false
     }
 
-    func loginWithOAuth(provider: OAuthProvider) async {
+    func loginWithGoogle() async {
         isLoading = true
         errorMessage = nil
 
         let baseURL = apiService.oauthBaseURL
-
-        // Build OAuth URL based on provider
-        let authURL: URL?
         let callbackURLScheme = "buttonlog"
 
-        switch provider {
-        case .google:
-            authURL = URL(string: "\(baseURL)/auth/google?mobile=true")
-        case .facebook:
-            authURL = URL(string: "\(baseURL)/auth/facebook?mobile=true")
-        case .apple:
-            // Sign in with Apple uses native API
-            await loginWithApple()
-            return
-        }
-
-        guard let url = authURL else {
+        guard let url = URL(string: "\(baseURL)/auth/google?mobile=true") else {
             errorMessage = "Failed to create OAuth URL"
             isLoading = false
             return
@@ -133,7 +119,7 @@ class AuthenticationManager: NSObject, ObservableObject {
                     }
 
                     // Parse the callback URL for token or code
-                    await self?.handleOAuthCallback(callbackURL, provider: provider)
+                    await self?.handleOAuthCallback(callbackURL)
                 }
             }
 
@@ -143,7 +129,7 @@ class AuthenticationManager: NSObject, ObservableObject {
         }
     }
 
-    private func handleOAuthCallback(_ url: URL, provider: OAuthProvider) async {
+    private func handleOAuthCallback(_ url: URL) async {
         // Parse URL components
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             errorMessage = "Failed to parse callback URL"
@@ -168,7 +154,7 @@ class AuthenticationManager: NSObject, ObservableObject {
 
             do {
                 let response = try await apiService.exchangeOAuthCode(
-                    provider: provider.apiName,
+                    provider: "google",
                     code: code,
                     state: state
                 )
@@ -194,62 +180,6 @@ class AuthenticationManager: NSObject, ObservableObject {
 
         errorMessage = "Invalid OAuth callback"
         isLoading = false
-    }
-
-    private func loginWithApple() async {
-        let appleIDProvider = ASAuthorizationAppleIDProvider()
-        let request = appleIDProvider.createRequest()
-        request.requestedScopes = [.fullName, .email]
-
-        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
-
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            let delegate = AppleSignInDelegate { [weak self] result in
-                Task { @MainActor in
-                    switch result {
-                    case .success(let credential):
-                        await self?.handleAppleSignIn(credential)
-                    case .failure(let error):
-                        if (error as NSError).code == ASAuthorizationError.canceled.rawValue {
-                            self?.errorMessage = nil
-                        } else {
-                            self?.errorMessage = error.localizedDescription
-                        }
-                    }
-                    self?.isLoading = false
-                    continuation.resume()
-                }
-            }
-
-            authorizationController.delegate = delegate
-            authorizationController.presentationContextProvider = self
-            authorizationController.performRequests()
-
-            // Keep delegate alive during the request
-            objc_setAssociatedObject(authorizationController, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN)
-        }
-    }
-
-    private func handleAppleSignIn(_ credential: ASAuthorizationAppleIDCredential) async {
-        guard let identityToken = credential.identityToken,
-              let tokenString = String(data: identityToken, encoding: .utf8) else {
-            errorMessage = "Failed to get Apple ID token"
-            return
-        }
-
-        do {
-            let response = try await apiService.exchangeOAuthCode(
-                provider: "apple",
-                code: tokenString,
-                state: nil
-            )
-
-            KeychainManager.shared.saveToken(response.token)
-            isAuthenticated = true
-            currentUser = response.user
-        } catch {
-            errorMessage = error.localizedDescription
-        }
     }
 
     func logout() async {
@@ -315,58 +245,3 @@ extension AuthenticationManager: ASWebAuthenticationPresentationContextProviding
     }
 }
 
-// MARK: - ASAuthorizationControllerPresentationContextProviding
-
-extension AuthenticationManager: ASAuthorizationControllerPresentationContextProviding {
-    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first else {
-            return ASPresentationAnchor()
-        }
-        return window
-    }
-}
-
-// MARK: - Apple Sign In Delegate
-
-private class AppleSignInDelegate: NSObject, ASAuthorizationControllerDelegate {
-    private let completion: (Result<ASAuthorizationAppleIDCredential, Error>) -> Void
-
-    init(completion: @escaping (Result<ASAuthorizationAppleIDCredential, Error>) -> Void) {
-        self.completion = completion
-    }
-
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-            completion(.success(appleIDCredential))
-        }
-    }
-
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-        completion(.failure(error))
-    }
-}
-
-// MARK: - OAuthProvider
-
-enum OAuthProvider {
-    case google
-    case facebook
-    case apple
-
-    var displayName: String {
-        switch self {
-        case .google: return "Google"
-        case .facebook: return "Facebook"
-        case .apple: return "Apple"
-        }
-    }
-
-    var apiName: String {
-        switch self {
-        case .google: return "google"
-        case .facebook: return "facebook"
-        case .apple: return "apple"
-        }
-    }
-}
