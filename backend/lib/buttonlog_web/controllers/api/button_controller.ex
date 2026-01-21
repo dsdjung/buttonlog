@@ -8,7 +8,7 @@ defmodule ButtonLogWeb.API.ButtonController do
 
     json(conn, %{
       success: true,
-      data: buttons,
+      data: Enum.map(buttons, &serialize_button/1),
       meta: %{
         timestamp: DateTime.utc_now(),
         request_id: generate_request_id()
@@ -23,7 +23,7 @@ defmodule ButtonLogWeb.API.ButtonController do
       {:ok, button} ->
         json(conn, %{
           success: true,
-          data: button,
+          data: serialize_button(button),
           meta: %{
             timestamp: DateTime.utc_now(),
             request_id: generate_request_id()
@@ -56,7 +56,7 @@ defmodule ButtonLogWeb.API.ButtonController do
         |> put_status(:created)
         |> json(%{
           success: true,
-          data: button,
+          data: serialize_button(button),
           meta: %{
             timestamp: DateTime.utc_now(),
             request_id: generate_request_id()
@@ -88,7 +88,7 @@ defmodule ButtonLogWeb.API.ButtonController do
       {:ok, button} ->
         json(conn, %{
           success: true,
-          data: button,
+          data: serialize_button(button),
           meta: %{
             timestamp: DateTime.utc_now(),
             request_id: generate_request_id()
@@ -237,6 +237,36 @@ defmodule ButtonLogWeb.API.ButtonController do
         message: List.first(messages)
       }
     end)
+  end
+
+  defp serialize_button(button) do
+    %{
+      id: button.id,
+      name: button.name,
+      description: button.description,
+      type: button.type,
+      icon: button.icon || "star.fill",
+      color: button.color || "#007AFF",
+      is_active: button.is_active,
+      current_state: button.current_state || "idle",
+      state_changed_at: format_datetime(button.state_changed_at),
+      notifications_enabled: button.notifications_enabled,
+      auto_stop_enabled: button.auto_stop_enabled,
+      calendar_sync_enabled: button.calendar_sync_enabled,
+      user_id: button.user_id,
+      created_at: format_datetime(button.inserted_at),
+      updated_at: format_datetime(button.updated_at)
+    }
+  end
+
+  defp format_datetime(nil), do: nil
+  defp format_datetime(%NaiveDateTime{} = datetime) do
+    datetime
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_iso8601()
+  end
+  defp format_datetime(%DateTime{} = datetime) do
+    DateTime.to_iso8601(datetime)
   end
 end
 
