@@ -99,9 +99,15 @@ struct ActivityRow: View {
                 }
 
                 HStack {
-                    Text(activity.clickedAt, style: .relative)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    if let clickedAt = activity.clickedAt {
+                        Text(clickedAt, style: .relative)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("Unknown time")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
 
                     if let duration = activity.duration {
                         Text("•")

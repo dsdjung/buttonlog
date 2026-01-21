@@ -130,7 +130,7 @@ struct FriendActivity: Identifiable, Codable {
     let buttonIcon: String?
     let buttonColor: String?
     let userId: String
-    let clickedAt: Date
+    let clickedAt: Date?
     let duration: Int?
     let action: String?
     let device: String?

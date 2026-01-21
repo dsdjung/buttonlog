@@ -437,12 +437,16 @@ struct ValidationError: Codable {
 }
 
 struct APIMetadata: Codable {
-    let timestamp: Date
-    let requestId: String
-    
+    let timestamp: Date?
+    let requestId: String?
+    let count: Int?
+    let limit: Int?
+
     enum CodingKeys: String, CodingKey {
         case timestamp
         case requestId = "request_id"
+        case count
+        case limit
     }
 }
 
