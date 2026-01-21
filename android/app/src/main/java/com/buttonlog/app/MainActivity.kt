@@ -230,6 +230,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             },
             onUpdatePermissions = { friendId, permissions ->
                 friendsViewModel.updateFriendPermissions(friendId, permissions)
+            },
+            onLoadMoreActivity = {
+                friendsViewModel.loadMoreActivity(friend.friendId)
             }
         )
     }

@@ -4,45 +4,65 @@ struct FriendActivityView: View {
     let friend: Friend
     @State private var activities: [FriendActivity] = []
     @State private var isLoading = true
+    @State private var isLoadingMore = false
     @State private var errorMessage: String?
     @State private var hasPermission = true
+    @State private var hasMore = false
+    @State private var nextCursor: ActivityCursor?
 
     var body: some View {
         Group {
-            if isLoading {
+            if isLoading && activities.isEmpty {
                 ProgressView("Loading activity...")
             } else if !hasPermission {
                 NoPermissionView(friendName: friend.friendUser.displayNameOrUsername)
-            } else if let error = errorMessage {
+            } else if let error = errorMessage, activities.isEmpty {
                 ErrorView(message: error) {
-                    Task { await loadActivity() }
+                    Task { await loadActivity(refresh: true) }
                 }
             } else if activities.isEmpty {
                 EmptyActivityView(friendName: friend.friendUser.displayNameOrUsername)
             } else {
-                ActivityListView(activities: activities)
+                ActivityListView(
+                    activities: activities,
+                    hasMore: hasMore,
+                    isLoadingMore: isLoadingMore,
+                    onLoadMore: {
+                        Task { await loadMore() }
+                    }
+                )
             }
         }
         .navigationTitle("\(friend.friendUser.displayNameOrUsername)'s Activity")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            await loadActivity()
+            await loadActivity(refresh: true)
         }
         .refreshable {
-            await loadActivity()
+            await loadActivity(refresh: true)
         }
     }
 
-    private func loadActivity() async {
-        isLoading = true
-        errorMessage = nil
+    private func loadActivity(refresh: Bool) async {
+        if refresh {
+            isLoading = true
+            errorMessage = nil
+            nextCursor = nil
+        }
 
         do {
-            let fetchedActivities = try await APIService.shared.getFriendActivity(friendId: friend.friendId)
+            let page = try await APIService.shared.getFriendActivity(friendId: friend.friendId, cursor: refresh ? nil : nextCursor)
             await MainActor.run {
-                activities = fetchedActivities
+                if refresh {
+                    activities = page.activities
+                } else {
+                    activities.append(contentsOf: page.activities)
+                }
+                hasMore = page.hasMore
+                nextCursor = page.nextCursor
                 hasPermission = true
                 isLoading = false
+                isLoadingMore = false
             }
         } catch let error as APIError {
             await MainActor.run {
@@ -53,22 +73,61 @@ struct FriendActivityView: View {
                     errorMessage = error.localizedDescription
                 }
                 isLoading = false
+                isLoadingMore = false
             }
         } catch {
             await MainActor.run {
                 errorMessage = error.localizedDescription
                 isLoading = false
+                isLoadingMore = false
             }
         }
+    }
+
+    private func loadMore() async {
+        guard hasMore, !isLoadingMore, nextCursor != nil else { return }
+        isLoadingMore = true
+        await loadActivity(refresh: false)
     }
 }
 
 struct ActivityListView: View {
     let activities: [FriendActivity]
+    let hasMore: Bool
+    let isLoadingMore: Bool
+    let onLoadMore: () -> Void
 
     var body: some View {
-        List(activities) { activity in
-            ActivityRow(activity: activity)
+        List {
+            ForEach(activities) { activity in
+                ActivityRow(activity: activity)
+                    .onAppear {
+                        // Load more when approaching the end
+                        if activity.id == activities.last?.id && hasMore && !isLoadingMore {
+                            onLoadMore()
+                        }
+                    }
+            }
+
+            if isLoadingMore {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .padding()
+                    Spacer()
+                }
+                .listRowSeparator(.hidden)
+            } else if hasMore {
+                SwiftUI.Button(action: onLoadMore) {
+                    HStack {
+                        Spacer()
+                        Text("Load More")
+                            .foregroundColor(.accentColor)
+                        Spacer()
+                    }
+                }
+                .listRowSeparator(.hidden)
+            }
         }
     }
 }
@@ -110,7 +169,7 @@ struct ActivityRow: View {
                     }
 
                     if let duration = activity.duration {
-                        Text("•")
+                        Text("\u{2022}")
                             .foregroundColor(.secondary)
                         Text("\(duration)s")
                             .font(.caption)

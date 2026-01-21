@@ -8,6 +8,7 @@ import com.buttonlog.app.data.model.FriendActivity
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.data.model.FriendPermissions
 import com.buttonlog.app.data.model.FriendshipStatus
+import com.buttonlog.app.data.model.ActivityCursor
 import com.buttonlog.app.data.repository.FriendsRepository
 import com.buttonlog.app.data.repository.PermissionDeniedException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -144,16 +145,28 @@ class FriendsViewModel @Inject constructor(
         }
     }
 
-    fun loadFriendActivity(friendId: String) {
+    fun loadFriendActivity(friendId: String, refresh: Boolean = true) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingFriendActivity = true, activityPermissionDenied = false) }
-            val result = friendsRepository.getFriendActivity(friendId)
+            val currentCursor = if (refresh) null else _uiState.value.activityNextCursor
+
+            _uiState.update {
+                it.copy(
+                    isLoadingFriendActivity = refresh && it.friendActivity.isEmpty(),
+                    isLoadingMoreActivity = !refresh,
+                    activityPermissionDenied = false
+                )
+            }
+
+            val result = friendsRepository.getFriendActivity(friendId, cursor = currentCursor)
             result.fold(
-                onSuccess = { activity ->
+                onSuccess = { page ->
                     _uiState.update {
                         it.copy(
-                            friendActivity = activity,
+                            friendActivity = if (refresh) page.activities else it.friendActivity + page.activities,
+                            activityHasMore = page.hasMore,
+                            activityNextCursor = page.nextCursor,
                             isLoadingFriendActivity = false,
+                            isLoadingMoreActivity = false,
                             activityPermissionDenied = false
                         )
                     }
@@ -164,11 +177,19 @@ class FriendsViewModel @Inject constructor(
                         it.copy(
                             error = if (isPermissionDenied) null else error.message,
                             isLoadingFriendActivity = false,
+                            isLoadingMoreActivity = false,
                             activityPermissionDenied = isPermissionDenied
                         )
                     }
                 }
             )
+        }
+    }
+
+    fun loadMoreActivity(friendId: String) {
+        val state = _uiState.value
+        if (state.activityHasMore && !state.isLoadingMoreActivity && state.activityNextCursor != null) {
+            loadFriendActivity(friendId, refresh = false)
         }
     }
 
@@ -179,13 +200,15 @@ class FriendsViewModel @Inject constructor(
                 friendButtons = emptyList(),
                 friendActivity = emptyList(),
                 selectedFriendPermissions = null,
-                activityPermissionDenied = false
+                activityPermissionDenied = false,
+                activityHasMore = false,
+                activityNextCursor = null
             )
         }
         friend?.let {
             loadFriendPermissions(it.friendId)
             loadFriendButtons(it.friendId)
-            loadFriendActivity(it.friendId)
+            loadFriendActivity(it.friendId, refresh = true)
         }
     }
 
@@ -207,10 +230,13 @@ data class FriendsUiState(
     val selectedFriendPermissions: FriendPermissions? = null,
     val friendButtons: List<FriendButton> = emptyList(),
     val friendActivity: List<FriendActivity> = emptyList(),
+    val activityHasMore: Boolean = false,
+    val activityNextCursor: ActivityCursor? = null,
     val isLoading: Boolean = false,
     val isLoadingPermissions: Boolean = false,
     val isLoadingFriendButtons: Boolean = false,
     val isLoadingFriendActivity: Boolean = false,
+    val isLoadingMoreActivity: Boolean = false,
     val activityPermissionDenied: Boolean = false,
     val friendRequestSent: Boolean = false,
     val error: String? = null

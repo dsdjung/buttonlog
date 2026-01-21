@@ -280,9 +280,15 @@ defmodule ButtonLogWeb.API.SocialController do
 
   def friend_activity(conn, %{"friend_id" => friend_id} = params) do
     user = conn.assigns.current_user
-    limit = Map.get(params, "limit", "50") |> String.to_integer()
+    limit = params |> Map.get("limit", "20") |> String.to_integer() |> min(100)
+    cursor = Map.get(params, "cursor")
+    cursor_id = Map.get(params, "cursor_id")
 
-    case Social.get_friend_activity(user.id, friend_id, limit) do
+    opts = [limit: limit]
+    opts = if cursor, do: Keyword.put(opts, :cursor, cursor), else: opts
+    opts = if cursor_id, do: Keyword.put(opts, :cursor_id, cursor_id), else: opts
+
+    case Social.get_friend_activity(user.id, friend_id, opts) do
       {:error, :not_friends} ->
         conn
         |> put_status(:forbidden)
@@ -305,17 +311,27 @@ defmodule ButtonLogWeb.API.SocialController do
           }
         })
 
-      activity when is_list(activity) ->
+      {activities, next_cursor, has_more} ->
         conn
         |> json(%{
           success: true,
-          data: Enum.map(activity, &serialize_activity/1),
+          data: Enum.map(activities, &serialize_activity/1),
           meta: %{
-            count: length(activity),
-            limit: limit
+            count: length(activities),
+            limit: limit,
+            has_more: has_more,
+            next_cursor: serialize_cursor(next_cursor)
           }
         })
     end
+  end
+
+  defp serialize_cursor(nil), do: nil
+  defp serialize_cursor(%{clicked_at: clicked_at, id: id}) do
+    %{
+      clicked_at: format_datetime(clicked_at),
+      id: id
+    }
   end
 
   defp serialize_button(button) do

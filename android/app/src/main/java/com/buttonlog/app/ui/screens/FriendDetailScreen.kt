@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,7 +35,8 @@ fun FriendDetailScreen(
     uiState: FriendsUiState,
     onNavigateBack: () -> Unit,
     onRemoveFriend: (String) -> Unit,
-    onUpdatePermissions: (String, FriendPermissionUpdate) -> Unit
+    onUpdatePermissions: (String, FriendPermissionUpdate) -> Unit,
+    onLoadMoreActivity: () -> Unit = {}
 ) {
     var showRemoveDialog by remember { mutableStateOf(false) }
     var canSeeButtons by remember { mutableStateOf(friend.permissions.canSeeButtons) }
@@ -126,7 +128,7 @@ fun FriendDetailScreen(
             }
 
             when {
-                uiState.isLoadingFriendActivity -> {
+                uiState.isLoadingFriendActivity && uiState.friendActivity.isEmpty() -> {
                     item {
                         Box(
                             modifier = Modifier
@@ -152,8 +154,38 @@ fun FriendDetailScreen(
                 }
 
                 else -> {
-                    items(uiState.friendActivity) { activity ->
+                    itemsIndexed(uiState.friendActivity) { index, activity ->
                         FriendActivityCard(activity = activity)
+
+                        // Load more when reaching the end
+                        if (index == uiState.friendActivity.lastIndex && uiState.activityHasMore && !uiState.isLoadingMoreActivity) {
+                            LaunchedEffect(Unit) {
+                                onLoadMoreActivity()
+                            }
+                        }
+                    }
+
+                    // Loading more indicator
+                    if (uiState.isLoadingMoreActivity) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
+                    } else if (uiState.activityHasMore) {
+                        item {
+                            TextButton(
+                                onClick = onLoadMoreActivity,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Load More")
+                            }
+                        }
                     }
                 }
             }

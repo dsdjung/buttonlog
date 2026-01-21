@@ -153,5 +153,15 @@ data class FriendActivityResponse(
 
 data class ActivityMeta(
     val count: Int,
-    val limit: Int
+    val limit: Int,
+    @SerializedName("has_more")
+    val hasMore: Boolean = false,
+    @SerializedName("next_cursor")
+    val nextCursor: ActivityCursor? = null
+)
+
+data class ActivityCursor(
+    @SerializedName("clicked_at")
+    val clickedAt: String,
+    val id: String
 )

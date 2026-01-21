@@ -74,7 +74,9 @@ interface APIService {
     @GET("friends/{friendId}/activity")
     suspend fun getFriendActivity(
         @Path("friendId") friendId: String,
-        @Query("limit") limit: Int = 50
+        @Query("limit") limit: Int = 20,
+        @Query("cursor") cursor: String? = null,
+        @Query("cursor_id") cursorId: String? = null
     ): FriendActivityResponse
 
     // MARK: - Notification Endpoints

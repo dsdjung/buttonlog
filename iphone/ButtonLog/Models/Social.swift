@@ -166,3 +166,21 @@ struct FriendActivity: Identifiable, Codable {
         }
     }
 }
+
+// Pagination cursor for activity history
+struct ActivityCursor: Codable {
+    let clickedAt: String
+    let id: String
+
+    enum CodingKeys: String, CodingKey {
+        case clickedAt = "clicked_at"
+        case id
+    }
+}
+
+// Simple struct for paginated activity results
+struct ActivityPage {
+    let activities: [FriendActivity]
+    let hasMore: Bool
+    let nextCursor: ActivityCursor?
+}

@@ -570,23 +570,49 @@ defmodule ButtonLog.Social do
   end
 
   @doc """
-  Gets button activity history for a friend.
+  Gets button activity history for a friend with pagination support.
   Returns the friend's button clicks (activity) that the user has permission to see.
   Requires can_view_history permission to be true.
+
+  Options:
+    - :limit - number of items per page (default 20)
+    - :cursor - ISO8601 datetime string for pagination
+    - :cursor_id - ID for tie-breaking when timestamps match
   """
-  def get_friend_activity(user_id, friend_id, limit \\ 50) do
+  def get_friend_activity(user_id, friend_id, opts \\ []) do
     # First check if they are actually friends
     if are_friends?(user_id, friend_id) do
       # Check if the friend has granted the user permission to view their history
       # Permission is from friend's perspective: did friend allow user to see their history?
       if can_view_history?(friend_id, user_id) do
-        # Return the friend's button activity
-        ButtonLog.Buttons.list_friend_button_activity(friend_id, limit)
+        # Parse cursor if provided as string
+        opts = parse_cursor_opts(opts)
+        # Return the friend's button activity with pagination
+        ButtonLog.Buttons.list_friend_button_activity(friend_id, opts)
       else
         {:error, :permission_denied}
       end
     else
       {:error, :not_friends}
+    end
+  end
+
+  defp parse_cursor_opts(opts) do
+    case Keyword.get(opts, :cursor) do
+      nil -> opts
+      cursor_str when is_binary(cursor_str) ->
+        case DateTime.from_iso8601(cursor_str) do
+          {:ok, datetime, _} ->
+            Keyword.put(opts, :cursor, datetime)
+          _ ->
+            # Try NaiveDateTime
+            case NaiveDateTime.from_iso8601(cursor_str) do
+              {:ok, naive} ->
+                Keyword.put(opts, :cursor, DateTime.from_naive!(naive, "Etc/UTC"))
+              _ -> opts
+            end
+        end
+      _ -> opts
     end
   end
 end

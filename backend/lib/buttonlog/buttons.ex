@@ -298,14 +298,18 @@ defmodule ButtonLog.Buttons do
   Gets button activity (clicks) for a friend.
   Returns all button clicks for the friend with button information included.
   This is used for viewing a friend's activity history.
+  Supports cursor-based pagination using clicked_at timestamp.
   """
-  def list_friend_button_activity(friend_id, limit \\ 50) do
-    Repo.all(
+  def list_friend_button_activity(friend_id, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 20)
+    cursor = Keyword.get(opts, :cursor)
+
+    query =
       from bc in ButtonClick,
       join: b in Button, on: b.id == bc.button_id,
       where: b.user_id == ^friend_id,
-      order_by: [desc: bc.clicked_at],
-      limit: ^limit,
+      order_by: [desc: bc.clicked_at, desc: bc.id],
+      limit: ^(limit + 1),
       select: %{
         id: bc.id,
         button_id: bc.button_id,
@@ -321,6 +325,30 @@ defmodule ButtonLog.Buttons do
         platform: bc.platform,
         inserted_at: bc.inserted_at
       }
-    )
+
+    query =
+      if cursor do
+        from [bc, b] in query,
+          where: bc.clicked_at < ^cursor or (bc.clicked_at == ^cursor and bc.id < ^Keyword.get(opts, :cursor_id, ""))
+      else
+        query
+      end
+
+    results = Repo.all(query)
+
+    # Check if there are more results
+    has_more = length(results) > limit
+    activities = Enum.take(results, limit)
+
+    # Get the next cursor from the last item
+    next_cursor =
+      if has_more and length(activities) > 0 do
+        last = List.last(activities)
+        %{clicked_at: last.clicked_at, id: last.id}
+      else
+        nil
+      end
+
+    {activities, next_cursor, has_more}
   end
 end

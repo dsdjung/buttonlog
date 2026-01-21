@@ -7,6 +7,8 @@ import com.buttonlog.app.data.api.FriendRequestBody
 import com.buttonlog.app.data.model.Friend
 import com.buttonlog.app.data.model.FriendButton
 import com.buttonlog.app.data.model.FriendActivity
+import com.buttonlog.app.data.model.FriendActivityResponse
+import com.buttonlog.app.data.model.ActivityCursor
 import com.buttonlog.app.data.model.FriendPermissions
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.data.model.FriendshipStatus
@@ -194,12 +196,27 @@ class FriendsRepository @Inject constructor(
         }
     }
 
-    suspend fun getFriendActivity(friendId: String, limit: Int = 50): Result<List<FriendActivity>> {
+    suspend fun getFriendActivity(
+        friendId: String,
+        limit: Int = 20,
+        cursor: ActivityCursor? = null
+    ): Result<ActivityPage> {
         return try {
-            val response = apiService.getFriendActivity(friendId, limit)
+            val response = apiService.getFriendActivity(
+                friendId = friendId,
+                limit = limit,
+                cursor = cursor?.clickedAt,
+                cursorId = cursor?.id
+            )
 
             if (response.success) {
-                Result.success(response.data)
+                Result.success(
+                    ActivityPage(
+                        activities = response.data,
+                        hasMore = response.meta?.hasMore ?: false,
+                        nextCursor = response.meta?.nextCursor
+                    )
+                )
             } else {
                 val errorMessage = response.error?.message ?: "Failed to get friend's activity"
                 // Check if this is a permission denied error
@@ -226,3 +243,9 @@ class FriendsRepository @Inject constructor(
 }
 
 class PermissionDeniedException(message: String) : Exception(message)
+
+data class ActivityPage(
+    val activities: List<FriendActivity>,
+    val hasMore: Boolean,
+    val nextCursor: ActivityCursor?
+)

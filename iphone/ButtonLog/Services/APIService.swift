@@ -20,31 +20,73 @@ class APIService {
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             throw APIError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         // Add auth token if required
         if requiresAuth, let token = KeychainManager.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        
+
         // Add body if provided
         if let body = body {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
-        
+
         let (data, response) = try await session.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
-        
+
         if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
             let apiResponse = try JSONDecoder.iso8601.decode(APIResponse<T>.self, from: data)
             if apiResponse.success {
                 return apiResponse.data
+            } else {
+                throw APIError.serverError(apiResponse.error?.message ?? "Unknown error")
+            }
+        } else {
+            let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
+            throw APIError.serverError(errorResponse?.error?.message ?? "HTTP \(httpResponse.statusCode)")
+        }
+    }
+
+    // Returns both data and metadata (for paginated responses)
+    private func makeRequestWithMeta<T: Codable>(
+        endpoint: String,
+        method: HTTPMethod = .GET,
+        body: [String: Any]? = nil,
+        requiresAuth: Bool = true
+    ) async throws -> (data: T, meta: APIMetadata?) {
+        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if requiresAuth, let token = KeychainManager.shared.getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        if let body = body {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+            let apiResponse = try JSONDecoder.iso8601.decode(APIResponse<T>.self, from: data)
+            if apiResponse.success {
+                return (apiResponse.data, apiResponse.meta)
             } else {
                 throw APIError.serverError(apiResponse.error?.message ?? "Unknown error")
             }
@@ -304,8 +346,17 @@ class APIService {
         return try await makeRequest(endpoint: "/friends/\(friendId)/buttons")
     }
 
-    func getFriendActivity(friendId: String, limit: Int = 50) async throws -> [FriendActivity] {
-        return try await makeRequest(endpoint: "/friends/\(friendId)/activity?limit=\(limit)")
+    func getFriendActivity(friendId: String, limit: Int = 20, cursor: ActivityCursor? = nil) async throws -> ActivityPage {
+        var endpoint = "/friends/\(friendId)/activity?limit=\(limit)"
+        if let cursor = cursor {
+            endpoint += "&cursor=\(cursor.clickedAt)&cursor_id=\(cursor.id)"
+        }
+        let result: (data: [FriendActivity], meta: APIMetadata?) = try await makeRequestWithMeta(endpoint: endpoint)
+        return ActivityPage(
+            activities: result.data,
+            hasMore: result.meta?.hasMore ?? false,
+            nextCursor: result.meta?.nextCursor
+        )
     }
 
     // MARK: - Notifications
@@ -441,12 +492,16 @@ struct APIMetadata: Codable {
     let requestId: String?
     let count: Int?
     let limit: Int?
+    let hasMore: Bool?
+    let nextCursor: ActivityCursor?
 
     enum CodingKeys: String, CodingKey {
         case timestamp
         case requestId = "request_id"
         case count
         case limit
+        case hasMore = "has_more"
+        case nextCursor = "next_cursor"
     }
 }
 
