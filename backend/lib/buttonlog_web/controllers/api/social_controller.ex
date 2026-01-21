@@ -21,32 +21,80 @@ defmodule ButtonLogWeb.API.SocialController do
     })
   end
 
-  def send_friend_request(conn, %{"friend_id" => friend_id}) do
+  def send_friend_request(conn, params) do
     user = conn.assigns.current_user
 
-    case Social.send_friend_request(user.id, friend_id) do
-      {:ok, friendship} ->
-        conn
-        |> put_status(:created)
-        |> json(%{
-          success: true,
-          data: %{
-            id: friendship.id,
-            status: friendship.status,
-            friend_id: friendship.friend_id
-          }
-        })
+    # Support lookup by friend_id, email, or username
+    friend_result = cond do
+      Map.has_key?(params, "friend_id") ->
+        {:ok, params["friend_id"]}
 
-      {:error, :already_friends} ->
-        conn
-        |> put_status(:conflict)
-        |> json(%{
-          success: false,
-          error: %{
-            code: "ALREADY_FRIENDS",
-            message: "Friend request already exists"
-          }
-        })
+      Map.has_key?(params, "email") ->
+        case ButtonLog.Accounts.get_user_by_email(params["email"]) do
+          nil -> {:error, :user_not_found}
+          friend -> {:ok, friend.id}
+        end
+
+      Map.has_key?(params, "username") ->
+        case ButtonLog.Accounts.get_user_by_username(params["username"]) do
+          nil -> {:error, :user_not_found}
+          friend -> {:ok, friend.id}
+        end
+
+      true ->
+        {:error, :missing_identifier}
+    end
+
+    case friend_result do
+      {:ok, friend_id} ->
+        # Don't allow sending friend request to yourself
+        if friend_id == user.id do
+          conn
+          |> put_status(:bad_request)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "INVALID_REQUEST",
+              message: "Cannot send friend request to yourself"
+            }
+          })
+        else
+          case Social.send_friend_request(user.id, friend_id) do
+            {:ok, friendship} ->
+              conn
+              |> put_status(:created)
+              |> json(%{
+                success: true,
+                data: %{
+                  id: friendship.id,
+                  status: friendship.status,
+                  friend_id: friendship.friend_id
+                }
+              })
+
+            {:error, :already_friends} ->
+              conn
+              |> put_status(:conflict)
+              |> json(%{
+                success: false,
+                error: %{
+                  code: "ALREADY_FRIENDS",
+                  message: "Friend request already exists"
+                }
+              })
+
+            {:error, :user_not_found} ->
+              conn
+              |> put_status(:not_found)
+              |> json(%{
+                success: false,
+                error: %{
+                  code: "USER_NOT_FOUND",
+                  message: "User not found"
+                }
+              })
+          end
+        end
 
       {:error, :user_not_found} ->
         conn
@@ -56,6 +104,17 @@ defmodule ButtonLogWeb.API.SocialController do
           error: %{
             code: "USER_NOT_FOUND",
             message: "User not found"
+          }
+        })
+
+      {:error, :missing_identifier} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "MISSING_IDENTIFIER",
+            message: "Please provide friend_id, email, or username"
           }
         })
     end
