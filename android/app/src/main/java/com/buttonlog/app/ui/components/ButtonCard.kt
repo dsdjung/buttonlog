@@ -207,6 +207,18 @@ private fun ButtonActionButton(
     button: Button,
     onClick: () -> Unit
 ) {
+    // Determine action text and icon based on button type and state
+    val (actionText, actionIcon) = when (button.type) {
+        ButtonType.INSTANT -> "Click!" to Icons.Default.TouchApp
+        ButtonType.TIMED, ButtonType.STATE -> {
+            if (button.currentState == ButtonState.ACTIVE) {
+                "Stop" to Icons.Default.Stop
+            } else {
+                "Start" to Icons.Default.PlayArrow
+            }
+        }
+    }
+
     Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -221,18 +233,18 @@ private fun ButtonActionButton(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Default.TouchApp,
+                imageVector = actionIcon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp)
             )
-            
+
             Text(
-                text = "Click!",
+                text = actionText,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
     }
 }
