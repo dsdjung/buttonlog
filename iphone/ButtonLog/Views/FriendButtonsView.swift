@@ -103,26 +103,12 @@ struct FriendButtonCard: View {
                 Text(button.name)
                     .font(.headline)
 
-                HStack(spacing: 8) {
-                    Text(button.type.displayName)
-                        .font(.caption)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color(.systemGray5))
-                        .cornerRadius(4)
-
-                    if button.clickCount > 0 {
-                        Text("\(button.clickCount) clicks")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                if let lastClick = button.lastClickedAt {
-                    Text("Last: \(lastClick, style: .relative) ago")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
+                Text(button.type.displayName)
+                    .font(.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color(.systemGray5))
+                    .cornerRadius(4)
             }
 
             Spacer()
@@ -176,7 +162,7 @@ struct FriendButtonCard: View {
                     displayName: "John Doe",
                     firstName: "John",
                     lastName: "Doe",
-                    profileVisibility: .friendsOnly
+                    profileVisibility: .friends
                 ),
                 status: .accepted,
                 permissions: FriendPermissions(
