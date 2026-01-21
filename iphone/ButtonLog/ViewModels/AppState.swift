@@ -103,35 +103,14 @@ class AppState: ObservableObject {
     
     func clickButton(id: String) async -> Bool {
         do {
-            let click = try await apiService.clickButton(id: id)
-            
-            // Update button state if needed
+            _ = try await apiService.clickButton(id: id)
+
+            // Reload the specific button to get updated state from server
+            let updatedButton = try await apiService.getButton(id: id)
             if let index = buttons.firstIndex(where: { $0.id == id }) {
-                var button = buttons[index]
-                
-                // Update state based on button type and click action
-                if button.type == .state {
-                    button = Button(
-                        id: button.id,
-                        name: button.name,
-                        description: button.description,
-                        type: button.type,
-                        icon: button.icon,
-                        color: button.color,
-                        isActive: button.isActive,
-                        currentState: button.currentState == .idle ? .active : .idle,
-                        stateChangedAt: click.clickedAt,
-                        notificationsEnabled: button.notificationsEnabled,
-                        autoStopEnabled: button.autoStopEnabled,
-                        calendarSyncEnabled: button.calendarSyncEnabled,
-                        userId: button.userId,
-                        createdAt: button.createdAt,
-                        updatedAt: button.updatedAt
-                    )
-                    buttons[index] = button
-                }
+                buttons[index] = updatedButton
             }
-            
+
             return true
         } catch {
             errorMessage = "Failed to click button: \(error.localizedDescription)"

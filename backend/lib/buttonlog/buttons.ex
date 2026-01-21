@@ -95,8 +95,11 @@ defmodule ButtonLog.Buttons do
           "timed" ->
             handle_timed_button_click(button, user_id)
 
+          "state" ->
+            handle_state_button_click(button, user_id)
+
           _other_type ->
-            # For instant and state buttons, just record a click
+            # For instant buttons, just record a click
             %ButtonClick{}
             |> ButtonClick.create_changeset(%{
               device: "web",
@@ -108,6 +111,35 @@ defmodule ButtonLog.Buttons do
 
       error -> error
     end
+  end
+
+  defp handle_state_button_click(button, user_id) do
+    # Toggle state: idle -> active, active -> idle
+    {new_state, action} =
+      case button.current_state do
+        "idle" -> {"active", "start"}
+        "active" -> {"idle", "end"}
+        _ -> {"active", "start"}
+      end
+
+    Repo.transaction(fn ->
+      # Update button state
+      button
+      |> Button.changeset(%{
+        current_state: new_state,
+        state_changed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+      })
+      |> Repo.update!()
+
+      # Create the button click record
+      %ButtonClick{}
+      |> ButtonClick.create_changeset(%{
+        device: "web",
+        platform: "web",
+        action: action
+      }, button.id, user_id)
+      |> Repo.insert!()
+    end)
   end
 
   defp handle_timed_button_click(button, user_id) do
