@@ -148,6 +148,7 @@ class FriendsViewModel @Inject constructor(
     fun loadFriendActivity(friendId: String, refresh: Boolean = true) {
         viewModelScope.launch {
             val currentCursor = if (refresh) null else _uiState.value.activityNextCursor
+            android.util.Log.d("FriendsViewModel", "loadFriendActivity: friendId=$friendId, refresh=$refresh, cursor=$currentCursor")
 
             _uiState.update {
                 it.copy(
@@ -160,9 +161,12 @@ class FriendsViewModel @Inject constructor(
             val result = friendsRepository.getFriendActivity(friendId, cursor = currentCursor)
             result.fold(
                 onSuccess = { page ->
+                    android.util.Log.d("FriendsViewModel", "loadFriendActivity success: received ${page.activities.size} activities, hasMore=${page.hasMore}")
                     _uiState.update {
+                        val newActivities = if (refresh) page.activities else it.friendActivity + page.activities
+                        android.util.Log.d("FriendsViewModel", "loadFriendActivity: total activities now ${newActivities.size}")
                         it.copy(
-                            friendActivity = if (refresh) page.activities else it.friendActivity + page.activities,
+                            friendActivity = newActivities,
                             activityHasMore = page.hasMore,
                             activityNextCursor = page.nextCursor,
                             isLoadingFriendActivity = false,

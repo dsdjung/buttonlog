@@ -51,13 +51,16 @@ struct FriendActivityView: View {
         }
 
         do {
+            print("[FriendActivityView] Loading activity for friend: \(friend.friendId), refresh: \(refresh)")
             let page = try await APIService.shared.getFriendActivity(friendId: friend.friendId, cursor: refresh ? nil : nextCursor)
+            print("[FriendActivityView] Received \(page.activities.count) activities, hasMore: \(page.hasMore)")
             await MainActor.run {
                 if refresh {
                     activities = page.activities
                 } else {
                     activities.append(contentsOf: page.activities)
                 }
+                print("[FriendActivityView] Total activities now: \(activities.count)")
                 hasMore = page.hasMore
                 nextCursor = page.nextCursor
                 hasPermission = true

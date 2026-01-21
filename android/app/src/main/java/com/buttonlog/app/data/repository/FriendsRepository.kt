@@ -202,12 +202,15 @@ class FriendsRepository @Inject constructor(
         cursor: ActivityCursor? = null
     ): Result<ActivityPage> {
         return try {
+            Log.d(TAG, "getFriendActivity: friendId=$friendId, limit=$limit, cursor=$cursor")
             val response = apiService.getFriendActivity(
                 friendId = friendId,
                 limit = limit,
                 cursor = cursor?.clickedAt,
                 cursorId = cursor?.id
             )
+
+            Log.d(TAG, "getFriendActivity response: success=${response.success}, data.size=${response.data.size}, meta=${response.meta}")
 
             if (response.success) {
                 Result.success(
