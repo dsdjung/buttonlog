@@ -56,11 +56,17 @@
                 <p class="text-gray-400 text-xs mt-2">Coming soon...</p>
               </div>
 
-              <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Notification Preferences</h3>
-                <p class="text-gray-600 text-sm">Customize how you receive notifications</p>
-                <p class="text-gray-400 text-xs mt-2">Coming soon...</p>
-              </div>
+              <a href={~p"/account/webhooks"} class="block p-4 bg-purple-50 rounded-lg border border-purple-200 hover:bg-purple-100 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-lg font-medium text-purple-900">Webhook Notifications</h3>
+                    <p class="text-purple-700 text-sm">Send button clicks to external services</p>
+                  </div>
+                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                  </svg>
+                </div>
+              </a>
 
               <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">Privacy Settings</h3>

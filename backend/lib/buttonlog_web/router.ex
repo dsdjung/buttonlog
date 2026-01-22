@@ -40,6 +40,7 @@ defmodule ButtonLogWeb.Router do
     live "/friends", FriendsLive, :index
     live "/friends/:id", FriendLive.Show, :show
     live "/account", AccountLive, :index
+    live "/account/webhooks", WebhookSettingsLive, :index
     live "/diary", DiaryLive, :index
     live "/support", SupportLive, :index
     live "/support/:id", SupportLive, :show

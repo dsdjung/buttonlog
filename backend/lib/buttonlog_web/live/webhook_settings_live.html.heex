@@ -1,0 +1,349 @@
+<div class="min-h-screen bg-gray-50">
+  <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+    <div class="py-8">
+      <%= if @current_user do %>
+        <div class="max-w-4xl mx-auto">
+          <!-- Page Header -->
+          <div class="mb-8">
+            <div class="flex items-center gap-4 mb-4">
+              <a href={~p"/account"} class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+              </a>
+              <div>
+                <h1 class="text-3xl font-bold text-gray-900">Webhook Settings</h1>
+                <p class="text-gray-600 mt-1">Configure external notifications for button clicks</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info Banner -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div>
+                <h3 class="font-medium text-blue-900">What are webhooks?</h3>
+                <p class="text-blue-800 text-sm mt-1">
+                  Webhooks send button click data to external services in real-time.
+                  Use this to integrate ButtonLog with automation tools, custom dashboards,
+                  or third-party services like Zapier, IFTTT, or your own applications.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings Form -->
+          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Default Webhook Configuration</h2>
+
+            <.form for={@form} phx-submit="save" phx-change="validate" class="space-y-6">
+              <!-- Webhook URL -->
+              <div>
+                <label for="webhook_url" class="block text-sm font-medium text-gray-700 mb-2">
+                  Webhook URL <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="url"
+                  name="settings[default_webhook_url]"
+                  id="webhook_url"
+                  value={@form.params["default_webhook_url"] || ""}
+                  placeholder="https://your-server.com/webhook/buttonlog"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p class="text-gray-500 text-sm mt-1">
+                  The HTTP endpoint that will receive button click events. Must be HTTPS in production.
+                </p>
+              </div>
+
+              <!-- Enable/Disable Toggle -->
+              <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                  <label for="webhook_enabled" class="text-sm font-medium text-gray-900">
+                    Enable Webhooks
+                  </label>
+                  <p class="text-gray-500 text-sm">Send button click events to your webhook URL</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="settings[default_webhook_enabled]"
+                    id="webhook_enabled"
+                    value="true"
+                    checked={@form.params["default_webhook_enabled"] == true || @form.params["default_webhook_enabled"] == "true"}
+                    class="sr-only peer"
+                  />
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <!-- Webhook Secret -->
+              <div>
+                <label for="webhook_secret" class="block text-sm font-medium text-gray-700 mb-2">
+                  Webhook Secret (optional)
+                </label>
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    name="settings[webhook_secret]"
+                    id="webhook_secret"
+                    value={@form.params["webhook_secret"] || ""}
+                    placeholder="your-secret-key"
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                  />
+                  <button
+                    type="button"
+                    phx-click="generate_secret"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                  >
+                    Generate
+                  </button>
+                </div>
+                <p class="text-gray-500 text-sm mt-1">
+                  Used to sign webhook payloads (HMAC-SHA256). Verify this signature on your server to ensure requests are from ButtonLog.
+                </p>
+              </div>
+
+              <!-- Retry Settings -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div>
+                    <label for="retry_failed" class="text-sm font-medium text-gray-900">
+                      Retry Failed Deliveries
+                    </label>
+                    <p class="text-gray-500 text-sm">Automatically retry failed webhook calls</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="settings[retry_failed]"
+                      id="retry_failed"
+                      value="true"
+                      checked={@form.params["retry_failed"] == true || @form.params["retry_failed"] == "true"}
+                      class="sr-only peer"
+                    />
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div>
+                  <label for="max_retries" class="block text-sm font-medium text-gray-700 mb-2">
+                    Max Retries
+                  </label>
+                  <select
+                    name="settings[max_retries]"
+                    id="max_retries"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <%= for n <- [1, 2, 3, 5, 10] do %>
+                      <option value={n} selected={to_string(@form.params["max_retries"] || 3) == to_string(n)}>
+                        <%= n %> <%= if n == 1, do: "retry", else: "retries" %>
+                      </option>
+                    <% end %>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Save Button -->
+              <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  phx-click="test_webhook"
+                  disabled={@testing || !(@form.params["default_webhook_url"] && @form.params["default_webhook_url"] != "")}
+                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <%= if @testing do %>
+                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Testing...
+                  <% else %>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Test Webhook
+                  <% end %>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={@saving}
+                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <%= if @saving do %>
+                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Saving...
+                  <% else %>
+                    Save Settings
+                  <% end %>
+                </button>
+              </div>
+            </.form>
+
+            <!-- Test Result -->
+            <%= if @test_result do %>
+              <div class={"mt-4 p-4 rounded-lg border #{if @test_result.success, do: "bg-green-50 border-green-200", else: "bg-red-50 border-red-200"}"}>
+                <div class="flex items-start gap-2">
+                  <%= if @test_result.success do %>
+                    <svg class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                      <p class="font-medium text-green-900"><%= @test_result.message %></p>
+                      <%= if @test_result[:response_code] do %>
+                        <p class="text-green-700 text-sm">Response code: <%= @test_result.response_code %></p>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                      <p class="font-medium text-red-900"><%= @test_result.message %></p>
+                      <%= if @test_result[:response_code] do %>
+                        <p class="text-red-700 text-sm">Response code: <%= @test_result.response_code %></p>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Payload Example -->
+          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Webhook Payload Format</h2>
+            <p class="text-gray-600 mb-4">
+              When a button is clicked, your webhook will receive a POST request with this JSON payload:
+            </p>
+            <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm"><code>{
+  "event": "button_click",
+  "timestamp": "2026-01-22T15:30:00Z",
+  "button": {
+    "id": "uuid",
+    "name": "Coffee Break",
+    "type": "instant",
+    "current_state": "idle"
+  },
+  "click": {
+    "id": "uuid",
+    "action": "click",
+    "clicked_at": "2026-01-22T15:30:00Z",
+    "platform": "ios"
+  },
+  "user": {
+    "id": "uuid",
+    "display_name": "John Doe"
+  }
+}</code></pre>
+
+            <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <div>
+                  <h4 class="font-medium text-yellow-900">Signature Verification</h4>
+                  <p class="text-yellow-800 text-sm mt-1">
+                    If you've configured a webhook secret, each request includes an <code class="bg-yellow-100 px-1 rounded">X-ButtonLog-Signature</code> header.
+                    Verify this HMAC-SHA256 signature to ensure the request is authentic.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery History -->
+          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Deliveries</h2>
+
+            <%= if Enum.empty?(@deliveries) do %>
+              <div class="text-center py-8">
+                <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                </svg>
+                <p class="text-gray-500">No webhook deliveries yet</p>
+                <p class="text-gray-400 text-sm mt-1">Deliveries will appear here when buttons are clicked</p>
+              </div>
+            <% else %>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Time</th>
+                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Event</th>
+                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
+                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Response</th>
+                      <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100">
+                    <%= for delivery <- @deliveries do %>
+                      <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4 text-sm text-gray-600">
+                          <%= Calendar.strftime(delivery.inserted_at, "%b %d, %H:%M") %>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-gray-900">
+                          <%= if delivery.payload["event"], do: delivery.payload["event"], else: "webhook" %>
+                        </td>
+                        <td class="py-3 px-4">
+                          <span class={"inline-flex items-center px-2 py-1 rounded-full text-xs font-medium #{status_class(delivery.status)}"}>
+                            <%= delivery.status %>
+                          </span>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-gray-600">
+                          <%= if delivery.response_code do %>
+                            <span class={"font-mono #{if delivery.response_code in 200..299, do: "text-green-600", else: "text-red-600"}"}>
+                              <%= delivery.response_code %>
+                            </span>
+                          <% else %>
+                            <span class="text-gray-400">-</span>
+                          <% end %>
+                        </td>
+                        <td class="py-3 px-4">
+                          <%= if delivery.status == "failed" do %>
+                            <button
+                              phx-click="retry_delivery"
+                              phx-value-id={delivery.id}
+                              class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              Retry
+                            </button>
+                          <% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Back Link -->
+          <div class="text-center">
+            <a href={~p"/account"} class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+              Back to Account
+            </a>
+          </div>
+        </div>
+      <% else %>
+        <div class="text-center py-12">
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p class="text-gray-500 mb-4">Please log in to access webhook settings</p>
+          <a href={~p"/auth/login"} class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Log In
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
