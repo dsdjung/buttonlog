@@ -493,7 +493,7 @@ defmodule ButtonLogWeb.API.TeamController do
     format_team(team)
     |> Map.merge(%{
       my_role: role,
-      can_manage: TeamMember.is_admin?(role),
+      can_manage: ButtonLog.Teams.TeamMember.is_admin?(role),
       members: Enum.map(team.members || [], &format_member/1),
       buttons: Enum.map(team.team_buttons || [], &format_team_button/1)
     })

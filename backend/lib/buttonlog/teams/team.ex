@@ -15,10 +15,8 @@ defmodule ButtonLog.Teams.Team do
     field :icon, :string, default: "people"
     field :color, :string, default: "#3B82F6"
 
-    # Future-proofing for enterprise
-    field :organization_id, :binary_id
-
     belongs_to :owner, ButtonLog.Accounts.User
+    belongs_to :organization, ButtonLog.Organizations.Organization
     has_many :members, ButtonLog.Teams.TeamMember
     has_many :team_buttons, ButtonLog.Teams.TeamButton
     has_many :invitations, ButtonLog.Teams.TeamInvitation

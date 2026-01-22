@@ -41,6 +41,8 @@ defmodule ButtonLogWeb.Router do
     live "/friends/:id", FriendLive.Show, :show
     live "/teams", TeamsLive, :index
     live "/teams/:id", TeamLive.Show, :show
+    live "/organizations", OrganizationsLive, :index
+    live "/organizations/:id", OrganizationLive.Show, :show
     live "/account", AccountLive, :index
     live "/account/webhooks", WebhookSettingsLive, :index
     live "/diary", DiaryLive, :index
@@ -177,6 +179,39 @@ defmodule ButtonLogWeb.Router do
     delete "/teams/:team_id/invitations/:id", API.TeamController, :cancel_invitation
     post "/teams/invitations/:id/accept", API.TeamController, :accept_invitation
     post "/teams/invitations/:id/decline", API.TeamController, :decline_invitation
+
+    # Organization endpoints
+    get "/organizations", API.OrganizationController, :index
+    post "/organizations", API.OrganizationController, :create
+    get "/organizations/invitations", API.OrganizationController, :my_invitations
+    get "/organizations/:id", API.OrganizationController, :show
+    put "/organizations/:id", API.OrganizationController, :update
+    delete "/organizations/:id", API.OrganizationController, :delete
+
+    # Organization member endpoints
+    get "/organizations/:org_id/members", API.OrganizationController, :list_members
+    put "/organizations/:org_id/members/:user_id/role", API.OrganizationController, :update_member_role
+    delete "/organizations/:org_id/members/:user_id", API.OrganizationController, :remove_member
+    post "/organizations/:org_id/leave", API.OrganizationController, :leave
+    post "/organizations/:org_id/transfer-ownership", API.OrganizationController, :transfer_ownership
+
+    # Organization team endpoints
+    get "/organizations/:org_id/teams", API.OrganizationController, :list_teams
+    post "/organizations/:org_id/teams/:team_id", API.OrganizationController, :add_team
+    delete "/organizations/:org_id/teams/:team_id", API.OrganizationController, :remove_team
+
+    # Organization invitation endpoints
+    get "/organizations/:org_id/invitations", API.OrganizationController, :list_invitations
+    post "/organizations/:org_id/invitations", API.OrganizationController, :create_invitation
+    delete "/organizations/:org_id/invitations/:id", API.OrganizationController, :cancel_invitation
+    post "/organizations/invitations/:id/accept", API.OrganizationController, :accept_invitation
+    post "/organizations/invitations/:id/decline", API.OrganizationController, :decline_invitation
+
+    # Organization subscription endpoints
+    get "/organizations/:org_id/subscription", API.OrganizationController, :show_subscription
+
+    # Organization audit log endpoints
+    get "/organizations/:org_id/audit-logs", API.OrganizationController, :audit_logs
   end
 
   # Admin API routes
