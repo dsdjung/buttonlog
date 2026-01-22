@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -197,13 +198,26 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 
     // Edit Button Screen
     buttonToEdit?.let { button ->
+        val uiState by buttonsViewModel.uiState.collectAsState()
+
+        // Load sharing settings when editing a button
+        LaunchedEffect(button.id) {
+            buttonsViewModel.loadButtonSharing(button.id)
+        }
+
         EditButtonScreen(
             button = button,
-            onSave = { updatedButton ->
-                buttonsViewModel.updateButton(updatedButton)
+            sharingSettings = uiState.buttonSharingSettings,
+            isLoadingSharing = uiState.isLoadingSharing,
+            onSave = { updatedButton, sharingSettings ->
+                buttonsViewModel.updateButtonWithSharing(updatedButton, sharingSettings)
+                buttonsViewModel.clearButtonSharing()
                 buttonToEdit = null
             },
-            onNavigateBack = { buttonToEdit = null }
+            onNavigateBack = {
+                buttonsViewModel.clearButtonSharing()
+                buttonToEdit = null
+            }
         )
     }
 
