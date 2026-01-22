@@ -8,7 +8,7 @@ struct ButtonsView: View {
     @State private var historyButton: Button?
     @State private var sharingButton: Button?
     @State private var alertSettingsButton: Button?
-    
+
     var filteredButtons: [Button] {
         if searchText.isEmpty {
             return appState.buttons
@@ -19,35 +19,35 @@ struct ButtonsView: View {
             }
         }
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Search Bar
             SearchBar(text: $searchText)
-                .padding(.horizontal)
-                .padding(.top, 8)
-            
+                .padding(.horizontal, BLSpacing.lg)
+                .padding(.top, BLSpacing.sm)
+
             if appState.isLoadingButtons && appState.buttons.isEmpty {
                 // Loading state
-                VStack {
+                VStack(spacing: BLSpacing.md) {
                     ProgressView()
+                        .tint(.blPrimary)
                     Text("Loading buttons...")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 8)
+                        .font(BLTypography.bodyMedium)
+                        .foregroundColor(.blTextSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
+
             } else if filteredButtons.isEmpty {
                 // Empty state
                 EmptyStateView {
                     showingCreateButton = true
                 }
-                
+
             } else {
                 // Buttons list
                 ScrollView {
-                    LazyVStack(spacing: 16) {
+                    LazyVStack(spacing: BLSpacing.lg) {
                         ForEach(filteredButtons) { button in
                             ButtonCard(
                                 button: button,
@@ -71,7 +71,7 @@ struct ButtonsView: View {
                             )
                         }
                     }
-                    .padding()
+                    .padding(BLSpacing.lg)
                     .padding(.bottom, 80) // Space for floating button
                 }
                 .refreshable {
@@ -79,6 +79,7 @@ struct ButtonsView: View {
                 }
             }
         }
+        .background(Color.blBackground)
         .navigationTitle("ButtonLog")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
@@ -86,6 +87,7 @@ struct ButtonsView: View {
                 SwiftUI.Button("Add") {
                     showingCreateButton = true
                 }
+                .foregroundColor(.blPrimary)
             }
         }
         .sheet(isPresented: $showingCreateButton) {
@@ -117,7 +119,7 @@ struct ButtonCard: View {
     @State private var isPressed = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: BLSpacing.md) {
             // Header
             HStack {
                 // Icon and color
@@ -131,19 +133,19 @@ struct ButtonCard: View {
                         .font(.title3)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: BLSpacing.xs) {
                     Text(button.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                        .font(BLTypography.titleMedium)
+                        .foregroundColor(.blTextPrimary)
 
                     if let description = button.description, !description.isEmpty {
                         Text(description)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .font(BLTypography.bodyMedium)
+                            .foregroundColor(.blTextSecondary)
                             .lineLimit(2)
                     }
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: BLSpacing.sm) {
                         ButtonTypeTag(type: button.type)
 
                         if button.currentState == .active {
@@ -197,49 +199,48 @@ struct ButtonCard: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.blTextSecondary)
                         .font(.title3)
                 }
             }
-            
+
             // Click Button
             SwiftUI.Button(action: {
-                withAnimation(.easeInOut(duration: 0.1)) {
+                withAnimation(BLAnimation.fast) {
                     isPressed = true
                 }
-                
+
                 onTap()
-                
+
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     isPressed = false
                 }
             }) {
                 HStack {
-                    Image(systemName: "hand.tap")
-                        .font(.headline)
-                    
+                    Image(systemName: buttonActionIcon(for: button))
+                        .font(BLTypography.titleMedium)
+
                     Text(buttonActionText(for: button))
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
+                        .font(BLTypography.titleMedium)
+
                     Spacer()
                 }
                 .foregroundColor(.white)
-                .padding()
+                .padding(BLSpacing.lg)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: BLRadius.lg)
                         .fill(button.uiColor)
                         .scaleEffect(isPressed ? 0.96 : 1.0)
                 )
             }
             .buttonStyle(PlainButtonStyle())
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .padding(BLSpacing.lg)
+        .background(Color.blSurface)
+        .cornerRadius(BLRadius.xl)
+        .blShadow(BLShadow.small)
     }
-    
+
     private func iconForButton(_ icon: String) -> String {
         let iconMap: [String: String] = [
             "star": "star.fill",
@@ -262,10 +263,23 @@ struct ButtonCard: View {
             "hammer": "hammer.fill",
             "gear": "gear"
         ]
-        
+
         return iconMap[icon] ?? "star.fill"
     }
-    
+
+    private func buttonActionIcon(for button: Button) -> String {
+        switch button.type {
+        case .instant:
+            return "hand.tap"
+        case .toggle:
+            return button.currentState == .idle ? "play.fill" : "stop.fill"
+        case .oneTime:
+            return "checkmark.circle"
+        case .workflow:
+            return "arrow.right"
+        }
+    }
+
     private func buttonActionText(for button: Button) -> String {
         switch button.type {
         case .instant:
@@ -282,14 +296,15 @@ struct ButtonCard: View {
 
 struct ButtonTypeTag: View {
     let type: ButtonType
-    
+
     var body: some View {
         Text(type.displayName)
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color(.systemGray5))
-            .cornerRadius(8)
+            .font(BLTypography.labelSmall)
+            .padding(.horizontal, BLSpacing.sm)
+            .padding(.vertical, BLSpacing.xs)
+            .background(Color.blSurfaceElevated)
+            .foregroundColor(.blTextSecondary)
+            .cornerRadius(BLRadius.sm)
     }
 }
 
@@ -298,12 +313,12 @@ struct ButtonStateTag: View {
 
     var body: some View {
         Text(state.displayName)
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .font(BLTypography.labelSmall)
+            .padding(.horizontal, BLSpacing.sm)
+            .padding(.vertical, BLSpacing.xs)
             .background(state.color.opacity(0.2))
             .foregroundColor(state.color)
-            .cornerRadius(8)
+            .cornerRadius(BLRadius.sm)
     }
 }
 
@@ -311,17 +326,17 @@ struct GiftBadge: View {
     let fromName: String
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: BLSpacing.xs) {
             Image(systemName: "gift.fill")
                 .font(.caption2)
             Text("From \(fromName)")
-                .font(.caption)
+                .font(BLTypography.labelSmall)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.purple.opacity(0.2))
-        .foregroundColor(.purple)
-        .cornerRadius(8)
+        .padding(.horizontal, BLSpacing.sm)
+        .padding(.vertical, BLSpacing.xs)
+        .background(Color.blButtonPurple.opacity(0.2))
+        .foregroundColor(.blButtonPurple)
+        .cornerRadius(BLRadius.sm)
     }
 }
 
@@ -329,71 +344,71 @@ struct SharedWithMeBadge: View {
     let ownerName: String
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: BLSpacing.xs) {
             Image(systemName: "person.2.fill")
                 .font(.caption2)
             Text("Shared by \(ownerName)")
-                .font(.caption)
+                .font(BLTypography.labelSmall)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.blue.opacity(0.2))
-        .foregroundColor(.blue)
-        .cornerRadius(8)
+        .padding(.horizontal, BLSpacing.sm)
+        .padding(.vertical, BLSpacing.xs)
+        .background(Color.blButtonBlue.opacity(0.2))
+        .foregroundColor(.blButtonBlue)
+        .cornerRadius(BLRadius.sm)
     }
 }
 
 struct EmptyStateView: View {
     let onCreateButton: () -> Void
-    
+
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: BLSpacing.xl) {
             Image(systemName: "plus.circle")
-                .font(.system(size: 60))
-                .foregroundColor(.blue)
-            
+                .font(.system(size: 64))
+                .foregroundColor(.blPrimary)
+
             Text("No buttons yet")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
+                .font(BLTypography.headlineSmall)
+                .foregroundColor(.blTextPrimary)
+
             Text("Create your first button to start tracking activities")
-                .font(.body)
-                .foregroundColor(.secondary)
+                .font(BLTypography.bodyLarge)
+                .foregroundColor(.blTextSecondary)
                 .multilineTextAlignment(.center)
-            
+
             SwiftUI.Button("Create Button") {
                 onCreateButton()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.blPrimary)
         }
-        .padding()
+        .padding(BLSpacing.xxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
 struct SearchBar: View {
     @Binding var text: String
-    
+
     var body: some View {
-        HStack {
+        HStack(spacing: BLSpacing.sm) {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
-            
+                .foregroundColor(.blTextTertiary)
+
             TextField("Search buttons...", text: $text)
+                .font(BLTypography.bodyMedium)
                 .textFieldStyle(PlainTextFieldStyle())
-            
+
             if !text.isEmpty {
-                SwiftUI.Button("Clear") {
-                    text = ""
+                SwiftUI.Button(action: { text = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.blTextTertiary)
                 }
-                .foregroundColor(.blue)
-                .font(.caption)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color(.systemGray6))
-        .cornerRadius(10)
+        .padding(.horizontal, BLSpacing.md)
+        .padding(.vertical, BLSpacing.md)
+        .background(Color.blSurfaceElevated)
+        .cornerRadius(BLRadius.md)
     }
 }
 

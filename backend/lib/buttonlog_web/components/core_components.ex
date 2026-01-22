@@ -115,9 +115,9 @@ defmodule ButtonLogWeb.CoreComponents do
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
-        "fixed top-2 right-2 mr-2 w-80 sm:w-96 z-50 rounded-lg p-3 ring-1",
-        @kind == :info && "bg-emerald-50 text-emerald-800 ring-emerald-500 fill-cyan-900",
-        @kind == :error && "bg-rose-50 text-rose-900 shadow-md ring-rose-500 fill-rose-900"
+        "fixed top-2 right-2 mr-2 w-80 sm:w-96 z-50 rounded-lg p-4 ring-1 shadow-md animate-slide-down",
+        @kind == :info && "bg-success-light text-success-dark ring-success fill-success-dark",
+        @kind == :error && "bg-error-light text-error-dark ring-error fill-error-dark"
       ]}
       {@rest}
     >
@@ -231,8 +231,8 @@ defmodule ButtonLogWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
-        "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "phx-submit-loading:opacity-75 rounded-md bg-primary hover:bg-primary-600 py-3 px-4",
+        "text-label-lg text-white active:scale-[0.98] transition-all duration-fast shadow-button hover:shadow-button-hover",
         @class
       ]}
       {@rest}
@@ -310,7 +310,7 @@ defmodule ButtonLogWeb.CoreComponents do
 
     ~H"""
     <div>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+      <label class="flex items-center gap-4 text-body-md text-neutral-600">
         <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
         <input
           type="checkbox"
@@ -318,7 +318,7 @@ defmodule ButtonLogWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          class="rounded border-neutral-300 text-primary focus:ring-primary-100 focus:ring-2"
           {@rest}
         />
         {@label}
@@ -335,7 +335,7 @@ defmodule ButtonLogWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class="mt-2 block w-full rounded-md border border-neutral-300 bg-white shadow-sm focus:border-primary focus:ring-2 focus:ring-primary-100 text-body-md transition-all duration-fast"
         multiple={@multiple}
         {@rest}
       >
@@ -355,9 +355,9 @@ defmodule ButtonLogWeb.CoreComponents do
         id={@id}
         name={@name}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 min-h-[6rem]",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
+          "mt-2 block w-full rounded-md text-neutral-900 focus:ring-2 focus:ring-primary-100 text-body-md min-h-[6rem] transition-all duration-fast",
+          @errors == [] && "border-neutral-300 focus:border-primary",
+          @errors != [] && "border-error focus:border-error"
         ]}
         {@rest}
       >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
@@ -377,9 +377,9 @@ defmodule ButtonLogWeb.CoreComponents do
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
+          "mt-2 block w-full rounded-md text-neutral-900 focus:ring-2 focus:ring-primary-100 text-body-md transition-all duration-fast",
+          @errors == [] && "border-neutral-300 focus:border-primary",
+          @errors != [] && "border-error focus:border-error"
         ]}
         {@rest}
       />
@@ -396,7 +396,7 @@ defmodule ButtonLogWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label for={@for} class="block text-label-lg text-neutral-800">
       {render_slot(@inner_block)}
     </label>
     """
@@ -409,7 +409,7 @@ defmodule ButtonLogWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600">
+    <p class="mt-3 flex gap-3 text-body-sm text-error">
       <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
       {render_slot(@inner_block)}
     </p>
@@ -429,10 +429,10 @@ defmodule ButtonLogWeb.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-lg font-semibold leading-8 text-zinc-800">
+        <h1 class="text-headline-sm text-neutral-900">
           {render_slot(@inner_block)}
         </h1>
-        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
+        <p :if={@subtitle != []} class="mt-2 text-body-md text-neutral-600">
           {render_slot(@subtitle)}
         </p>
       </div>
