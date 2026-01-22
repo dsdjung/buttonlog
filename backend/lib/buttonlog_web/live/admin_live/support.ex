@@ -152,6 +152,11 @@ defmodule ButtonLogWeb.AdminLive.Support do
   end
 
   @impl true
+  def handle_event("update_reply", %{"reply" => %{"content" => content}}, socket) do
+    {:noreply, assign(socket, :reply_content, content)}
+  end
+
+  @impl true
   def handle_event("update_reply", %{"content" => content}, socket) do
     {:noreply, assign(socket, :reply_content, content)}
   end
@@ -162,13 +167,21 @@ defmodule ButtonLogWeb.AdminLive.Support do
   end
 
   @impl true
+  def handle_event("send_reply", %{"reply" => %{"content" => content}}, socket) do
+    do_send_reply(socket, content)
+  end
+
+  @impl true
   def handle_event("send_reply", _params, socket) do
+    do_send_reply(socket, socket.assigns.reply_content)
+  end
+
+  defp do_send_reply(socket, content) do
     ticket = socket.assigns.selected_ticket
     admin = socket.assigns.current_user
-    content = socket.assigns.reply_content
     is_internal = socket.assigns.reply_internal
 
-    if String.trim(content) == "" do
+    if String.trim(content || "") == "" do
       {:noreply, put_flash(socket, :error, "Reply cannot be empty")}
     else
       case Support.add_message(ticket.id, content, admin.id, is_internal: is_internal) do
@@ -447,32 +460,34 @@ defmodule ButtonLogWeb.AdminLive.Support do
           <!-- Reply Form -->
           <div class="mt-6 border-t pt-4">
             <h4 class="text-sm font-medium text-gray-900 mb-2">Reply</h4>
-            <textarea
-              phx-change="update_reply"
-              name="content"
-              rows="4"
-              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="Type your reply..."
-            ><%= @reply_content %></textarea>
+            <form phx-submit="send_reply" phx-change="update_reply">
+              <textarea
+                name="reply[content]"
+                rows="4"
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Type your reply..."
+                phx-debounce="300"
+              ><%= @reply_content %></textarea>
 
-            <div class="mt-3 flex items-center justify-between">
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={@reply_internal}
-                  phx-click="toggle_internal"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="ml-2 text-sm text-gray-600">Internal note (not visible to user)</span>
-              </label>
+              <div class="mt-3 flex items-center justify-between">
+                <label class="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={@reply_internal}
+                    phx-click="toggle_internal"
+                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="ml-2 text-sm text-gray-600">Internal note (not visible to user)</span>
+                </label>
 
-              <button
-                phx-click="send_reply"
-                class={"px-4 py-2 text-sm font-medium text-white rounded-md #{if @reply_internal, do: "bg-yellow-600 hover:bg-yellow-700", else: "bg-blue-600 hover:bg-blue-700"}"}
-              >
-                <%= if @reply_internal, do: "Add Internal Note", else: "Send Reply" %>
-              </button>
-            </div>
+                <button
+                  type="submit"
+                  class={"px-4 py-2 text-sm font-medium text-white rounded-md #{if @reply_internal, do: "bg-yellow-600 hover:bg-yellow-700", else: "bg-blue-600 hover:bg-blue-700"}"}
+                >
+                  <%= if @reply_internal, do: "Add Internal Note", else: "Send Reply" %>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
