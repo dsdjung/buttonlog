@@ -13,10 +13,10 @@ defmodule ButtonLogWeb.API.NotificationController do
         %{
           id: notification.id,
           title: notification.title,
-          body: notification.body,
-          type: notification.type,
-          is_read: notification.is_read,
-          data: notification.data,
+          body: notification.message,
+          type: notification.notification_type,
+          is_read: notification.read,
+          data: notification.metadata,
           sender: if(notification.sender, do: %{
             id: notification.sender.id,
             username: notification.sender.username,
@@ -38,7 +38,7 @@ defmodule ButtonLogWeb.API.NotificationController do
           success: true,
           data: %{
             id: notification.id,
-            is_read: notification.is_read
+            is_read: notification.read
           }
         })
 
