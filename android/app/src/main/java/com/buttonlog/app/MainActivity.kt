@@ -165,20 +165,22 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 }
             }
             
-            // Floating + Button
-            FloatingActionButton(
-                onClick = { showCreateButton = true },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 80.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Create Button",
-                    modifier = Modifier.size(24.dp)
-                )
+            // Floating + Button - only show on home screen
+            if (currentDestination?.route == "home") {
+                FloatingActionButton(
+                    onClick = { showCreateButton = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 80.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Create Button",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }
