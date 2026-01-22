@@ -146,6 +146,24 @@ defmodule ButtonLogWeb.Router do
     get "/subscriptions/stats", API.SubscriptionController, :stats
     post "/subscriptions/check-permission", API.SubscriptionController, :check_permission
 
+    # Subscription payment endpoints (Stripe)
+    post "/subscriptions/checkout", API.SubscriptionController, :create_checkout_session
+    post "/subscriptions/portal", API.SubscriptionController, :create_portal_session
+    post "/subscriptions/setup-intent", API.SubscriptionController, :create_setup_intent
+
+    # Payment method endpoints
+    get "/payment-methods", API.SubscriptionController, :list_payment_methods
+    post "/payment-methods", API.SubscriptionController, :add_payment_method
+    delete "/payment-methods/:id", API.SubscriptionController, :remove_payment_method
+    put "/payment-methods/:id/default", API.SubscriptionController, :set_default_payment_method
+
+    # Invoice endpoints
+    get "/invoices", API.SubscriptionController, :list_invoices
+    get "/invoices/:id", API.SubscriptionController, :show_invoice
+
+    # Coupon endpoints
+    post "/coupons/apply", API.SubscriptionController, :apply_coupon
+
     # Support ticket endpoints (user)
     get "/support/tickets", API.SupportController, :index
     post "/support/tickets", API.SupportController, :create
@@ -242,6 +260,9 @@ defmodule ButtonLogWeb.Router do
     post "/auth/register", API.AuthController, :register
     post "/auth/login", API.AuthController, :login
     post "/auth/refresh", API.AuthController, :refresh
+
+    # Stripe webhook endpoint (no auth - uses signature verification)
+    post "/webhooks/stripe", API.StripeWebhookController, :handle
   end
 
   # Enable LiveDashboard in development

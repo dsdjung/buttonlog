@@ -1,7 +1,8 @@
 defmodule ButtonLog.Subscriptions do
   @moduledoc """
   The Subscriptions context provides a unified interface for managing
-  user subscriptions, plans, and feature access control.
+  user subscriptions, plans, feature access control, payment methods,
+  invoices, and coupon codes.
   """
 
   import Ecto.Query, warn: false
@@ -10,7 +11,13 @@ defmodule ButtonLog.Subscriptions do
   alias ButtonLog.Subscriptions.{
     SubscriptionPlan,
     UserSubscription,
-    SubscriptionService
+    SubscriptionService,
+    PaymentMethod,
+    Invoice,
+    CouponCode,
+    UserCoupon,
+    SubscriptionEvent,
+    BillingEvent
   }
 
   @doc """
@@ -299,6 +306,359 @@ defmodule ButtonLog.Subscriptions do
     from(bc in ButtonLog.Buttons.ButtonClick,
       where: bc.user_id == ^user_id and bc.clicked_at >= ^start_of_month)
     |> Repo.aggregate(:count, :id)
+  end
+
+  # ============================================================================
+  # Payment Methods
+  # ============================================================================
+
+  @doc """
+  Lists all payment methods for a user.
+  """
+  def list_payment_methods(user_id) do
+    from(pm in PaymentMethod,
+      where: pm.user_id == ^user_id and pm.is_active == true,
+      order_by: [desc: pm.is_default, desc: pm.inserted_at]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets a single payment method by ID.
+  """
+  def get_payment_method(id) do
+    Repo.get(PaymentMethod, id)
+  end
+
+  @doc """
+  Gets the default payment method for a user.
+  """
+  def get_default_payment_method(user_id) do
+    from(pm in PaymentMethod,
+      where: pm.user_id == ^user_id and pm.is_default == true and pm.is_active == true,
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Creates a payment method.
+  """
+  def create_payment_method(attrs \\ %{}) do
+    %PaymentMethod{}
+    |> PaymentMethod.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Sets a payment method as the default for a user.
+  """
+  def set_default_payment_method(user_id, payment_method_id) do
+    Repo.transaction(fn ->
+      # Clear existing default
+      from(pm in PaymentMethod,
+        where: pm.user_id == ^user_id and pm.is_default == true
+      )
+      |> Repo.update_all(set: [is_default: false])
+
+      # Set new default
+      case Repo.get(PaymentMethod, payment_method_id) do
+        nil ->
+          Repo.rollback(:not_found)
+
+        payment_method when payment_method.user_id == user_id ->
+          payment_method
+          |> PaymentMethod.changeset(%{is_default: true})
+          |> Repo.update()
+
+        _ ->
+          Repo.rollback(:unauthorized)
+      end
+    end)
+  end
+
+  @doc """
+  Deletes (deactivates) a payment method.
+  """
+  def delete_payment_method(user_id, payment_method_id) do
+    case get_payment_method(payment_method_id) do
+      nil ->
+        {:error, :not_found}
+
+      payment_method when payment_method.user_id == user_id ->
+        payment_method
+        |> PaymentMethod.changeset(%{is_active: false})
+        |> Repo.update()
+
+      _ ->
+        {:error, :unauthorized}
+    end
+  end
+
+  # ============================================================================
+  # Invoices
+  # ============================================================================
+
+  @doc """
+  Lists all invoices for a user.
+  """
+  def list_invoices(user_id, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 20)
+    offset = Keyword.get(opts, :offset, 0)
+
+    from(i in Invoice,
+      where: i.user_id == ^user_id,
+      order_by: [desc: i.invoice_date],
+      limit: ^limit,
+      offset: ^offset
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets a single invoice by ID.
+  """
+  def get_invoice(id) do
+    Repo.get(Invoice, id)
+  end
+
+  @doc """
+  Gets an invoice by invoice number.
+  """
+  def get_invoice_by_number(invoice_number) do
+    Repo.get_by(Invoice, invoice_number: invoice_number)
+  end
+
+  @doc """
+  Gets an invoice by Stripe invoice ID.
+  """
+  def get_invoice_by_stripe_id(stripe_invoice_id) do
+    Repo.get_by(Invoice, payment_provider_invoice_id: stripe_invoice_id)
+  end
+
+  @doc """
+  Creates an invoice.
+  """
+  def create_invoice(attrs \\ %{}) do
+    attrs = Map.put_new(attrs, :invoice_number, Invoice.generate_invoice_number())
+
+    %Invoice{}
+    |> Invoice.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates an invoice.
+  """
+  def update_invoice(%Invoice{} = invoice, attrs) do
+    invoice
+    |> Invoice.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Marks an invoice as paid.
+  """
+  def mark_invoice_paid(invoice_id, payment_details \\ %{}) do
+    case get_invoice(invoice_id) do
+      nil ->
+        {:error, :not_found}
+
+      invoice ->
+        update_invoice(invoice, %{
+          status: :paid,
+          amount_paid: invoice.amount_due,
+          paid_at: DateTime.utc_now(),
+          payment_provider_charge_id: Map.get(payment_details, :charge_id)
+        })
+    end
+  end
+
+  # ============================================================================
+  # Coupon Codes
+  # ============================================================================
+
+  @doc """
+  Lists all coupon codes.
+  """
+  def list_coupon_codes(opts \\ []) do
+    active_only = Keyword.get(opts, :active_only, true)
+
+    query = from(c in CouponCode, order_by: [desc: c.inserted_at])
+
+    query =
+      if active_only do
+        from(c in query, where: c.is_active == true)
+      else
+        query
+      end
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Gets a coupon code by code string.
+  """
+  def get_coupon_code(code) when is_binary(code) do
+    Repo.get_by(CouponCode, code: String.upcase(code))
+  end
+
+  @doc """
+  Gets a coupon code by ID.
+  """
+  def get_coupon_code_by_id(id) do
+    Repo.get(CouponCode, id)
+  end
+
+  @doc """
+  Creates a coupon code.
+  """
+  def create_coupon_code(attrs \\ %{}) do
+    %CouponCode{}
+    |> CouponCode.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a coupon code.
+  """
+  def update_coupon_code(%CouponCode{} = coupon, attrs) do
+    coupon
+    |> CouponCode.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Validates and applies a coupon code for a user.
+  """
+  def apply_coupon_code(user_id, code, subscription_id \\ nil) do
+    Repo.transaction(fn ->
+      case get_coupon_code(code) do
+        nil ->
+          Repo.rollback(:invalid_code)
+
+        coupon ->
+          cond do
+            not CouponCode.valid?(coupon) ->
+              Repo.rollback(:coupon_expired)
+
+            already_used_coupon?(user_id, coupon.id) ->
+              Repo.rollback(:already_used)
+
+            true ->
+              # Create user coupon record
+              user_coupon_attrs = %{
+                user_id: user_id,
+                coupon_code_id: coupon.id,
+                user_subscription_id: subscription_id,
+                applied_at: DateTime.utc_now(),
+                expires_at: calculate_coupon_expiration(coupon),
+                remaining_months: coupon.duration_months
+              }
+
+              case create_user_coupon(user_coupon_attrs) do
+                {:ok, user_coupon} ->
+                  # Increment redemption count
+                  update_coupon_code(coupon, %{
+                    redemptions_count: coupon.redemptions_count + 1
+                  })
+
+                  {coupon, user_coupon}
+
+                {:error, _} ->
+                  Repo.rollback(:failed_to_apply)
+              end
+          end
+      end
+    end)
+  end
+
+  @doc """
+  Creates a user coupon record.
+  """
+  def create_user_coupon(attrs) do
+    %UserCoupon{}
+    |> UserCoupon.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  defp already_used_coupon?(user_id, coupon_id) do
+    from(uc in UserCoupon,
+      where: uc.user_id == ^user_id and uc.coupon_code_id == ^coupon_id
+    )
+    |> Repo.exists?()
+  end
+
+  defp calculate_coupon_expiration(%CouponCode{duration: :once}), do: nil
+  defp calculate_coupon_expiration(%CouponCode{duration: :forever}), do: nil
+
+  defp calculate_coupon_expiration(%CouponCode{duration: :repeating, duration_months: months}) do
+    DateTime.utc_now()
+    |> DateTime.add(months * 30, :day)
+  end
+
+  # ============================================================================
+  # Subscription Events
+  # ============================================================================
+
+  @doc """
+  Records a subscription event.
+  """
+  def record_subscription_event(subscription_id, event_type, event_data \\ %{}) do
+    %SubscriptionEvent{}
+    |> SubscriptionEvent.changeset(%{
+      user_subscription_id: subscription_id,
+      event_type: event_type,
+      event_data: event_data,
+      occurred_at: DateTime.utc_now()
+    })
+    |> Repo.insert()
+  end
+
+  @doc """
+  Lists subscription events for a subscription.
+  """
+  def list_subscription_events(subscription_id, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 50)
+
+    from(se in SubscriptionEvent,
+      where: se.user_subscription_id == ^subscription_id,
+      order_by: [desc: se.occurred_at],
+      limit: ^limit
+    )
+    |> Repo.all()
+  end
+
+  # ============================================================================
+  # Billing Events
+  # ============================================================================
+
+  @doc """
+  Records a billing event.
+  """
+  def record_billing_event(subscription_id, event_type, status, attrs \\ %{}) do
+    %BillingEvent{}
+    |> BillingEvent.changeset(Map.merge(attrs, %{
+      user_subscription_id: subscription_id,
+      event_type: event_type,
+      status: status,
+      occurred_at: DateTime.utc_now()
+    }))
+    |> Repo.insert()
+  end
+
+  @doc """
+  Lists billing events for a subscription.
+  """
+  def list_billing_events(subscription_id, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 50)
+
+    from(be in BillingEvent,
+      where: be.user_subscription_id == ^subscription_id,
+      order_by: [desc: be.occurred_at],
+      limit: ^limit
+    )
+    |> Repo.all()
   end
 end
 

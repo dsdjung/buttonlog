@@ -1,10 +1,17 @@
 defmodule ButtonLogWeb.API.SubscriptionController do
   use ButtonLogWeb, :controller
 
-  alias ButtonLog.Subscriptions.SubscriptionService
+  alias ButtonLog.Subscriptions
+  alias ButtonLog.Subscriptions.{SubscriptionService, StripeService}
 
   # Plug to ensure user is authenticated
-  plug :authenticate_user when action in [:index, :show, :create, :cancel, :pause, :resume, :stats]
+  plug :authenticate_user when action in [
+    :index, :show, :create, :cancel, :pause, :resume, :stats,
+    :create_checkout_session, :create_portal_session,
+    :list_payment_methods, :add_payment_method, :remove_payment_method, :set_default_payment_method,
+    :list_invoices, :show_invoice,
+    :apply_coupon
+  ]
 
   @doc """
   Get all available subscription plans.
@@ -222,6 +229,343 @@ defmodule ButtonLogWeb.API.SubscriptionController do
         days: plan.trial_days,
         requires_credit_card: plan.trial_requires_credit_card
       }
+    }
+  end
+
+  # ============================================================================
+  # Stripe Checkout & Portal
+  # ============================================================================
+
+  @doc """
+  Create a Stripe Checkout session for subscribing to a plan.
+  """
+  def create_checkout_session(conn, %{"plan_id" => plan_id, "billing_cycle" => billing_cycle} = params) do
+    user = conn.assigns.current_user
+    billing_cycle = String.to_atom(billing_cycle)
+
+    with plan when not is_nil(plan) <- Subscriptions.get_subscription_plan!(plan_id),
+         opts <- build_checkout_opts(params),
+         {:ok, session} <- StripeService.create_checkout_session(user, plan, billing_cycle, opts) do
+      conn
+      |> put_status(:ok)
+      |> json(%{
+        checkout_url: session.url,
+        session_id: session.id
+      })
+    else
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Plan not found"})
+
+      {:error, message} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: message})
+    end
+  end
+
+  @doc """
+  Create a Stripe Customer Portal session for managing subscription.
+  """
+  def create_portal_session(conn, params) do
+    user = conn.assigns.current_user
+    return_url = Map.get(params, "return_url")
+
+    case StripeService.create_portal_session(user, return_url) do
+      {:ok, session} ->
+        conn
+        |> put_status(:ok)
+        |> json(%{
+          portal_url: session.url
+        })
+
+      {:error, message} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: message})
+    end
+  end
+
+  # ============================================================================
+  # Payment Methods
+  # ============================================================================
+
+  @doc """
+  List all payment methods for the current user.
+  """
+  def list_payment_methods(conn, _params) do
+    user = conn.assigns.current_user
+    payment_methods = Subscriptions.list_payment_methods(user.id)
+
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      payment_methods: Enum.map(payment_methods, &format_payment_method/1)
+    })
+  end
+
+  @doc """
+  Add a new payment method.
+  """
+  def add_payment_method(conn, %{"payment_method_id" => payment_method_id}) do
+    user = conn.assigns.current_user
+
+    case StripeService.attach_payment_method(user, payment_method_id) do
+      {:ok, _pm} ->
+        payment_methods = Subscriptions.list_payment_methods(user.id)
+        conn
+        |> put_status(:created)
+        |> json(%{
+          message: "Payment method added successfully",
+          payment_methods: Enum.map(payment_methods, &format_payment_method/1)
+        })
+
+      {:error, message} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: message})
+    end
+  end
+
+  @doc """
+  Remove a payment method.
+  """
+  def remove_payment_method(conn, %{"id" => payment_method_id}) do
+    user = conn.assigns.current_user
+
+    with {:ok, pm} <- get_user_payment_method(user.id, payment_method_id),
+         :ok <- StripeService.detach_payment_method(pm.payment_provider_method_id),
+         {:ok, _} <- Subscriptions.delete_payment_method(user.id, payment_method_id) do
+      conn
+      |> put_status(:ok)
+      |> json(%{message: "Payment method removed successfully"})
+    else
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Payment method not found"})
+
+      {:error, message} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: message})
+    end
+  end
+
+  @doc """
+  Set a payment method as default.
+  """
+  def set_default_payment_method(conn, %{"id" => payment_method_id}) do
+    user = conn.assigns.current_user
+
+    case Subscriptions.set_default_payment_method(user.id, payment_method_id) do
+      {:ok, _} ->
+        payment_methods = Subscriptions.list_payment_methods(user.id)
+        conn
+        |> put_status(:ok)
+        |> json(%{
+          message: "Default payment method updated",
+          payment_methods: Enum.map(payment_methods, &format_payment_method/1)
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Payment method not found"})
+
+      {:error, message} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: message})
+    end
+  end
+
+  @doc """
+  Create a Setup Intent for adding a payment method.
+  """
+  def create_setup_intent(conn, _params) do
+    user = conn.assigns.current_user
+
+    case StripeService.create_setup_intent(user) do
+      {:ok, intent} ->
+        conn
+        |> put_status(:ok)
+        |> json(%{
+          client_secret: intent.client_secret
+        })
+
+      {:error, message} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: message})
+    end
+  end
+
+  # ============================================================================
+  # Invoices
+  # ============================================================================
+
+  @doc """
+  List all invoices for the current user.
+  """
+  def list_invoices(conn, params) do
+    user = conn.assigns.current_user
+    limit = Map.get(params, "limit", "20") |> String.to_integer()
+    offset = Map.get(params, "offset", "0") |> String.to_integer()
+
+    invoices = Subscriptions.list_invoices(user.id, limit: limit, offset: offset)
+
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      invoices: Enum.map(invoices, &format_invoice/1)
+    })
+  end
+
+  @doc """
+  Show a single invoice.
+  """
+  def show_invoice(conn, %{"id" => invoice_id}) do
+    user = conn.assigns.current_user
+
+    case Subscriptions.get_invoice(invoice_id) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Invoice not found"})
+
+      invoice when invoice.user_id == user.id ->
+        conn
+        |> put_status(:ok)
+        |> json(%{invoice: format_invoice(invoice)})
+
+      _ ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Access denied"})
+    end
+  end
+
+  # ============================================================================
+  # Coupon Codes
+  # ============================================================================
+
+  @doc """
+  Apply a coupon code.
+  """
+  def apply_coupon(conn, %{"code" => code}) do
+    user = conn.assigns.current_user
+    subscription = get_user_subscription_id(user.id)
+
+    case Subscriptions.apply_coupon_code(user.id, code, subscription) do
+      {:ok, {coupon, _user_coupon}} ->
+        conn
+        |> put_status(:ok)
+        |> json(%{
+          message: "Coupon applied successfully",
+          coupon: %{
+            code: coupon.code,
+            discount: ButtonLog.Subscriptions.CouponCode.discount_display(coupon),
+            duration: coupon.duration
+          }
+        })
+
+      {:error, :invalid_code} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Invalid coupon code"})
+
+      {:error, :coupon_expired} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "This coupon has expired"})
+
+      {:error, :already_used} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "You have already used this coupon"})
+
+      {:error, _} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "Failed to apply coupon"})
+    end
+  end
+
+  # ============================================================================
+  # Private Helpers
+  # ============================================================================
+
+  defp build_checkout_opts(params) do
+    opts = []
+
+    opts =
+      if success_url = Map.get(params, "success_url") do
+        Keyword.put(opts, :success_url, success_url)
+      else
+        opts
+      end
+
+    opts =
+      if cancel_url = Map.get(params, "cancel_url") do
+        Keyword.put(opts, :cancel_url, cancel_url)
+      else
+        opts
+      end
+
+    opts =
+      if coupon_code = Map.get(params, "coupon_code") do
+        Keyword.put(opts, :coupon_code, coupon_code)
+      else
+        opts
+      end
+
+    opts
+  end
+
+  defp get_user_payment_method(user_id, payment_method_id) do
+    case Subscriptions.get_payment_method(payment_method_id) do
+      nil -> {:error, :not_found}
+      pm when pm.user_id == user_id -> {:ok, pm}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp get_user_subscription_id(user_id) do
+    case SubscriptionService.get_user_subscription(user_id) do
+      %{subscription: %{id: id}} -> id
+      _ -> nil
+    end
+  end
+
+  defp format_payment_method(pm) do
+    %{
+      id: pm.id,
+      card_brand: pm.card_brand,
+      card_last_four: pm.card_last_four,
+      card_exp_month: pm.card_exp_month,
+      card_exp_year: pm.card_exp_year,
+      is_default: pm.is_default,
+      display: ButtonLog.Subscriptions.PaymentMethod.display_string(pm),
+      expiration: ButtonLog.Subscriptions.PaymentMethod.expiration_string(pm)
+    }
+  end
+
+  defp format_invoice(invoice) do
+    %{
+      id: invoice.id,
+      invoice_number: invoice.invoice_number,
+      status: invoice.status,
+      amount_due: invoice.amount_due,
+      amount_paid: invoice.amount_paid,
+      currency: invoice.currency,
+      invoice_date: invoice.invoice_date,
+      due_date: invoice.due_date,
+      paid_at: invoice.paid_at,
+      hosted_invoice_url: invoice.hosted_invoice_url,
+      pdf_url: invoice.pdf_url,
+      line_items: invoice.line_items
     }
   end
 

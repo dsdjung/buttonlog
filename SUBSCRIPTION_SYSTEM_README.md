@@ -12,6 +12,11 @@ The ButtonLog subscription system provides a flexible, feature-based pricing mod
 2. **UserSubscription** - Tracks individual user subscriptions and usage
 3. **SubscriptionService** - Business logic for subscription management
 4. **SubscriptionController** - API endpoints for subscription operations
+5. **StripeService** - Stripe API integration for payments
+6. **StripeWebhookHandler** - Processes Stripe webhook events
+7. **PaymentMethod** - Stores user payment methods
+8. **Invoice** - Billing history and receipts
+9. **CouponCode** - Promotional codes and discounts
 
 ### Database Schema
 
@@ -34,6 +39,29 @@ user_subscriptions
 
 subscription_events (audit trail)
 billing_events (payment tracking)
+
+payment_methods
+├── id (UUID)
+├── user_id
+├── payment_provider, payment_method_id
+├── card_brand, card_last_four, expiration
+└── is_default, is_active
+
+invoices
+├── id (UUID)
+├── user_id, user_subscription_id
+├── invoice_number, status
+├── amount_due, amount_paid
+├── stripe_invoice_id, hosted_url
+└── line_items, pdf_url
+
+coupon_codes
+├── id (UUID)
+├── code, name, description
+├── discount_type (percentage/fixed)
+├── duration (once/repeating/forever)
+├── max_redemptions, valid_dates
+└── stripe_coupon_id
 ```
 
 ## Subscription Tiers
@@ -117,6 +145,27 @@ can_create = SubscriptionService.can_perform_action(
 - `POST /api/subscriptions/resume` - Resume subscription
 - `GET /api/subscriptions/stats` - Get subscription statistics
 - `POST /api/subscriptions/check-permission` - Check feature access
+
+### Stripe Integration Endpoints
+- `POST /api/subscriptions/checkout` - Create Stripe Checkout session
+- `POST /api/subscriptions/portal` - Create Stripe Customer Portal session
+- `POST /api/subscriptions/setup-intent` - Create Setup Intent for adding card
+
+### Payment Method Endpoints
+- `GET /api/payment-methods` - List user's payment methods
+- `POST /api/payment-methods` - Add new payment method
+- `DELETE /api/payment-methods/:id` - Remove payment method
+- `PUT /api/payment-methods/:id/default` - Set as default
+
+### Invoice Endpoints
+- `GET /api/invoices` - List user's invoices
+- `GET /api/invoices/:id` - Get invoice details
+
+### Coupon Endpoints
+- `POST /api/coupons/apply` - Apply coupon code
+
+### Webhook Endpoint
+- `POST /api/webhooks/stripe` - Stripe webhook handler (signature verified)
 
 ## Implementation Examples
 
@@ -203,23 +252,37 @@ end
 - Enforce history limits
 - Show feature upgrade prompts
 
-### Payment Integration
-The system is designed to work with any payment provider:
+### Payment Integration (Stripe)
+
+The system uses Stripe for payment processing. Webhook events are automatically handled:
 
 ```elixir
-# Example Stripe integration
-def handle_stripe_webhook(event) do
-  case event.type do
-    "customer.subscription.created" ->
-      create_subscription_from_stripe(event.data)
-    
-    "customer.subscription.updated" ->
-      update_subscription_from_stripe(event.data)
-    
-    "customer.subscription.deleted" ->
-      cancel_subscription_from_stripe(event.data)
-  end
-end
+# Handled webhook events:
+# - checkout.session.completed
+# - customer.subscription.created
+# - customer.subscription.updated
+# - customer.subscription.deleted
+# - customer.subscription.trial_will_end
+# - invoice.payment_succeeded
+# - invoice.payment_failed
+# - invoice.created
+# - invoice.finalized
+# - invoice.paid
+# - payment_method.attached
+# - payment_method.detached
+```
+
+#### Checkout Flow
+1. Frontend calls `POST /api/subscriptions/checkout` with plan and billing cycle
+2. Backend creates Stripe Checkout Session with `StripeService.create_checkout_session/4`
+3. Frontend redirects to `checkout_url`
+4. User completes payment on Stripe
+5. Stripe sends webhooks → backend creates UserSubscription
+
+#### Customer Portal
+```elixir
+# Allow users to manage their subscription
+StripeService.create_portal_session(user, return_url)
 ```
 
 ## Security & Privacy
@@ -298,13 +361,36 @@ end
 
 ### Environment Variables
 ```bash
-# Payment provider configuration
+# Payment provider configuration (required)
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
 # Subscription settings
 SUBSCRIPTION_TRIAL_DAYS=14
 SUBSCRIPTION_GRACE_PERIOD_DAYS=7
+```
+
+### Stripe Setup
+
+1. Create Stripe account at https://dashboard.stripe.com
+2. Get API keys from Developers > API keys
+3. Create webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
+4. Select events to receive:
+   - `checkout.session.completed`
+   - `customer.subscription.*`
+   - `invoice.*`
+   - `payment_method.*`
+5. Copy webhook signing secret
+
+### Creating Products in Stripe
+
+After creating products/prices in Stripe, update the database:
+```sql
+UPDATE subscription_plans
+SET stripe_product_id = 'prod_xxx',
+    stripe_price_id_monthly = 'price_xxx_monthly',
+    stripe_price_id_yearly = 'price_xxx_yearly'
+WHERE slug = 'premium';
 ```
 
 ### Database Migration

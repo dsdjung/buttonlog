@@ -67,6 +67,9 @@ defmodule ButtonLog.MixProject do
       {:finch, "~> 0.13"},
       {:httpoison, "~> 2.0"},
 
+      # Payment processing
+      {:stripity_stripe, "~> 3.2"},
+
       # Utilities
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},

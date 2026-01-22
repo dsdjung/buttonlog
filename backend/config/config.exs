@@ -48,6 +48,18 @@ config :buttonlog, :apns,
 
 config :buttonlog, :fcm, []
 
+# Stripe Configuration
+# API keys are loaded from environment variables in runtime.exs
+config :stripity_stripe,
+  api_key: System.get_env("STRIPE_SECRET_KEY"),
+  webhook_secret: System.get_env("STRIPE_WEBHOOK_SECRET")
+
+# Stripe URLs (can be overridden in environment-specific configs)
+config :buttonlog,
+  stripe_success_url: "http://localhost:4000/account?payment=success",
+  stripe_cancel_url: "http://localhost:4000/account?payment=cancelled",
+  stripe_return_url: "http://localhost:4000/account"
+
 # OAuth Configuration
   config :ueberauth, Ueberauth,
     providers: [
