@@ -5,7 +5,7 @@ defmodule ButtonLog.Buttons do
 
   import Ecto.Query, warn: false
   alias ButtonLog.Repo
-  alias ButtonLog.Buttons.{Button, ButtonClick}
+  alias ButtonLog.Buttons.{Button, ButtonClick, ButtonSharing}
 
   @doc """
   Returns the list of buttons for a user with latest click time.
@@ -350,5 +350,136 @@ defmodule ButtonLog.Buttons do
       end
 
     {activities, next_cursor, has_more}
+  end
+
+  # =============================================================================
+  # Button Sharing Functions
+  # =============================================================================
+
+  @doc """
+  Gets the sharing settings for a button with all friends.
+  Returns a list of sharing records for each friend the user has.
+  If no explicit sharing record exists, the button is shared by default.
+  """
+  def get_button_sharing(button_id, user_id) do
+    case get_button(button_id, user_id) do
+      {:ok, _button} ->
+        sharing = Repo.all(
+          from bs in ButtonSharing,
+            where: bs.button_id == ^button_id and bs.user_id == ^user_id
+        )
+        {:ok, sharing}
+
+      error -> error
+    end
+  end
+
+  @doc """
+  Gets the sharing setting for a specific button and friend.
+  Returns nil if no explicit setting exists (defaults to shared).
+  """
+  def get_button_sharing_for_friend(button_id, friend_id) do
+    Repo.one(
+      from bs in ButtonSharing,
+        where: bs.button_id == ^button_id and bs.friend_id == ^friend_id
+    )
+  end
+
+  @doc """
+  Checks if a button is shared with a specific friend.
+  Returns true if shared (default), false if explicitly not shared.
+  """
+  def is_button_shared_with_friend?(button_id, friend_id) do
+    case get_button_sharing_for_friend(button_id, friend_id) do
+      nil -> true  # Default: shared if no explicit setting
+      sharing -> sharing.is_shared
+    end
+  end
+
+  @doc """
+  Sets the sharing status for a button with a specific friend.
+  Creates a new record or updates existing one.
+  """
+  def set_button_sharing(button_id, user_id, friend_id, is_shared) do
+    case get_button_sharing_for_friend(button_id, friend_id) do
+      nil ->
+        # Create new sharing record
+        %ButtonSharing{}
+        |> ButtonSharing.changeset(%{
+          button_id: button_id,
+          user_id: user_id,
+          friend_id: friend_id,
+          is_shared: is_shared
+        })
+        |> Repo.insert()
+
+      existing ->
+        # Update existing record
+        existing
+        |> ButtonSharing.changeset(%{is_shared: is_shared})
+        |> Repo.update()
+    end
+  end
+
+  @doc """
+  Updates sharing settings for a button with multiple friends at once.
+  Takes a list of %{friend_id: String, is_shared: boolean} maps.
+  """
+  def update_button_sharing_bulk(button_id, user_id, friend_settings) do
+    case get_button(button_id, user_id) do
+      {:ok, _button} ->
+        Repo.transaction(fn ->
+          Enum.map(friend_settings, fn %{friend_id: friend_id, is_shared: is_shared} ->
+            case set_button_sharing(button_id, user_id, friend_id, is_shared) do
+              {:ok, sharing} -> sharing
+              {:error, changeset} -> Repo.rollback(changeset)
+            end
+          end)
+        end)
+
+      error -> error
+    end
+  end
+
+  @doc """
+  Gets all unshared friend IDs for a specific button.
+  Returns a list of friend_ids where the button is explicitly not shared.
+  """
+  def get_unshared_friend_ids(button_id) do
+    Repo.all(
+      from bs in ButtonSharing,
+        where: bs.button_id == ^button_id and bs.is_shared == false,
+        select: bs.friend_id
+    )
+  end
+
+  @doc """
+  Gets all shared friend IDs for a specific button.
+  Returns a list of friend_ids where the button is explicitly shared.
+  Used to determine exclusions from the default "share with all" behavior.
+  """
+  def get_sharing_exclusions(button_id) do
+    get_unshared_friend_ids(button_id)
+  end
+
+  @doc """
+  Lists buttons for a friend that are shared with the viewer.
+  Filters out buttons where is_shared is explicitly false.
+  """
+  def list_shared_buttons_for_friend(friend_id, viewer_id) do
+    # Get all buttons for the friend
+    buttons = list_user_buttons_with_latest_click(friend_id)
+
+    # Get button IDs that are explicitly NOT shared with the viewer
+    unshared_button_ids = Repo.all(
+      from bs in ButtonSharing,
+        where: bs.user_id == ^friend_id and bs.friend_id == ^viewer_id and bs.is_shared == false,
+        select: bs.button_id
+    )
+
+    # Filter out unshared buttons
+    Enum.reject(buttons, fn button ->
+      button.id in unshared_button_ids
+    end)
   end
 end

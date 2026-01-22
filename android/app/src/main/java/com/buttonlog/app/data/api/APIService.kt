@@ -37,6 +37,12 @@ interface APIService {
     @GET("buttons/{id}/history")
     suspend fun getButtonHistory(@Path("id") id: String, @Query("limit") limit: Int = 50): ButtonHistoryResponse
 
+    @GET("buttons/{id}/sharing")
+    suspend fun getButtonSharing(@Path("id") id: String): ButtonSharingResponse
+
+    @PUT("buttons/{id}/sharing")
+    suspend fun updateButtonSharing(@Path("id") id: String, @Body request: ButtonSharingUpdateRequest): ButtonSharingResponse
+
     // MARK: - User Endpoints
     
     @GET("users/profile")

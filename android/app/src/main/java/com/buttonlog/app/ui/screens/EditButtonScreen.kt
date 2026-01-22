@@ -21,12 +21,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.buttonlog.app.data.model.Button
+import com.buttonlog.app.data.model.ButtonSharingSetting
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditButtonScreen(
     button: Button,
-    onSave: (Button) -> Unit,
+    sharingSettings: List<ButtonSharingSetting>,
+    isLoadingSharing: Boolean,
+    onSave: (Button, List<ButtonSharingSetting>) -> Unit,
     onNavigateBack: () -> Unit
 ) {
     var name by remember { mutableStateOf(button.name) }
@@ -34,6 +37,7 @@ fun EditButtonScreen(
     var selectedIcon by remember { mutableStateOf(button.icon) }
     var selectedColor by remember { mutableStateOf(button.color) }
     var notificationsEnabled by remember { mutableStateOf(button.notificationsEnabled) }
+    var localSharingSettings by remember(sharingSettings) { mutableStateOf(sharingSettings) }
 
     val scrollState = rememberScrollState()
 
@@ -56,7 +60,7 @@ fun EditButtonScreen(
                                 color = selectedColor,
                                 notificationsEnabled = notificationsEnabled
                             )
-                            onSave(updatedButton)
+                            onSave(updatedButton, localSharingSettings)
                         },
                         enabled = name.isNotBlank()
                     ) {
@@ -138,6 +142,72 @@ fun EditButtonScreen(
                         checked = notificationsEnabled,
                         onCheckedChange = { notificationsEnabled = it }
                     )
+                }
+            }
+
+            // Friend Sharing Section
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Share with Friends",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    if (isLoadingSharing) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        }
+                    } else if (localSharingSettings.isEmpty()) {
+                        Text(
+                            text = "No friends to share with",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        localSharingSettings.forEachIndexed { index, setting ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = setting.friendDisplayName ?: setting.friendUsername,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            text = "@${setting.friendUsername}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Switch(
+                                    checked = setting.isShared,
+                                    onCheckedChange = { isShared ->
+                                        localSharingSettings = localSharingSettings.toMutableList().apply {
+                                            this[index] = setting.copy(isShared = isShared)
+                                        }
+                                    }
+                                )
+                            }
+                            if (index < localSharingSettings.lastIndex) {
+                                HorizontalDivider()
+                            }
+                        }
+                    }
                 }
             }
         }

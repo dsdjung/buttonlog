@@ -155,6 +155,35 @@ data class FriendButtonsResponse(
     val error: ApiError?
 )
 
+// Button sharing setting for a specific friend
+data class ButtonSharingSetting(
+    @SerializedName("friend_id")
+    val friendId: String,
+    @SerializedName("friend_username")
+    val friendUsername: String,
+    @SerializedName("friend_display_name")
+    val friendDisplayName: String?,
+    @SerializedName("is_shared")
+    var isShared: Boolean
+)
+
+data class ButtonSharingResponse(
+    val success: Boolean,
+    val data: List<ButtonSharingSetting> = emptyList(),
+    val error: ApiError?
+)
+
+data class ButtonSharingUpdateRequest(
+    val sharing: List<ButtonSharingUpdate>
+)
+
+data class ButtonSharingUpdate(
+    @SerializedName("friend_id")
+    val friendId: String,
+    @SerializedName("is_shared")
+    val isShared: Boolean
+)
+
 // API response wrappers for buttons
 data class ButtonsResponse(
     val success: Boolean,

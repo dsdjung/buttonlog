@@ -7,6 +7,9 @@ import com.buttonlog.app.data.api.UpdateButtonRequest
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonClick
+import com.buttonlog.app.data.model.ButtonSharingSetting
+import com.buttonlog.app.data.model.ButtonSharingUpdateRequest
+import com.buttonlog.app.data.model.ButtonSharingUpdate
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -187,6 +190,37 @@ class ButtonRepository @Inject constructor(
     
     fun clearError() {
         _error.value = null
+    }
+
+    suspend fun getButtonSharing(buttonId: String): Result<List<ButtonSharingSetting>> {
+        return try {
+            val response = apiService.getButtonSharing(buttonId)
+            if (response.success) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to fetch sharing settings"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateButtonSharing(buttonId: String, settings: List<ButtonSharingSetting>): Result<List<ButtonSharingSetting>> {
+        return try {
+            val request = ButtonSharingUpdateRequest(
+                sharing = settings.map { ButtonSharingUpdate(it.friendId, it.isShared) }
+            )
+            val response = apiService.updateButtonSharing(buttonId, request)
+            if (response.success) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to update sharing settings"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
 

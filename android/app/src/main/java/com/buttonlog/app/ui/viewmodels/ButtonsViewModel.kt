@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
+import com.buttonlog.app.data.model.ButtonSharingSetting
 import com.buttonlog.app.data.repository.ButtonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -90,6 +91,47 @@ class ButtonsViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
+
+    fun loadButtonSharing(buttonId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingSharing = true) }
+            val result = buttonRepository.getButtonSharing(buttonId)
+            result.fold(
+                onSuccess = { settings ->
+                    _uiState.update {
+                        it.copy(
+                            buttonSharingSettings = settings,
+                            isLoadingSharing = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            error = error.message,
+                            isLoadingSharing = false
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun updateButtonWithSharing(button: Button, sharingSettings: List<ButtonSharingSetting>) {
+        viewModelScope.launch {
+            // Update button
+            buttonRepository.updateButton(button)
+
+            // Update sharing settings
+            if (sharingSettings.isNotEmpty()) {
+                buttonRepository.updateButtonSharing(button.id, sharingSettings)
+            }
+        }
+    }
+
+    fun clearButtonSharing() {
+        _uiState.update { it.copy(buttonSharingSettings = emptyList()) }
+    }
 }
 
 data class ButtonsUiState(
@@ -97,6 +139,8 @@ data class ButtonsUiState(
     val filteredButtons: List<Button> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
+    val isLoadingSharing: Boolean = false,
+    val buttonSharingSettings: List<ButtonSharingSetting> = emptyList(),
     val error: String? = null
 )
 

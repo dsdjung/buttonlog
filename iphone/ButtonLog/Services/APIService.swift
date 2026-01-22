@@ -308,6 +308,28 @@ class APIService {
         return try await makeRequest(endpoint: "/buttons/\(id)/history?limit=\(limit)")
     }
 
+    // MARK: - Button Sharing
+
+    func getButtonSharing(buttonId: String) async throws -> [ButtonSharingSetting] {
+        return try await makeRequest(endpoint: "/buttons/\(buttonId)/sharing")
+    }
+
+    func updateButtonSharing(buttonId: String, settings: [ButtonSharingSetting]) async throws -> [ButtonSharingSetting] {
+        let body: [String: Any] = [
+            "sharing": settings.map { setting in
+                [
+                    "friend_id": setting.friendId,
+                    "is_shared": setting.isShared
+                ]
+            }
+        ]
+        return try await makeRequest(
+            endpoint: "/buttons/\(buttonId)/sharing",
+            method: .PUT,
+            body: body
+        )
+    }
+
     // MARK: - Friends & Social
     
     func getFriends() async throws -> [Friend] {

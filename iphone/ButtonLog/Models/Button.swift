@@ -179,6 +179,23 @@ struct ClickLocation: Codable, Equatable {
     let lng: Double
 }
 
+// Button sharing setting for a specific friend
+struct ButtonSharingSetting: Identifiable, Codable, Equatable {
+    let friendId: String
+    let friendUsername: String
+    let friendDisplayName: String?
+    var isShared: Bool
+
+    var id: String { friendId }
+
+    enum CodingKeys: String, CodingKey {
+        case friendId = "friend_id"
+        case friendUsername = "friend_username"
+        case friendDisplayName = "friend_display_name"
+        case isShared = "is_shared"
+    }
+}
+
 // Button click data
 struct ButtonClick: Identifiable, Codable {
     let id: String

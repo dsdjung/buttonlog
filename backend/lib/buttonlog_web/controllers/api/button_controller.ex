@@ -1,6 +1,7 @@
 defmodule ButtonLogWeb.API.ButtonController do
   use ButtonLogWeb, :controller
   alias ButtonLog.Buttons
+  alias ButtonLog.Social
 
   def index(conn, _params) do
     user = conn.assigns.current_user
@@ -306,6 +307,111 @@ defmodule ButtonLogWeb.API.ButtonController do
       action: click.action,
       created_at: format_datetime(click.inserted_at)
     }
+  end
+
+  @doc """
+  Gets the sharing settings for a button.
+  Returns a list of friends and whether the button is shared with each.
+  """
+  def sharing(conn, %{"id" => id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.get_button(id, user.id) do
+      {:ok, _button} ->
+        # Get all accepted friends (bidirectional)
+        friends = Social.get_user_friends(user.id)
+
+        # Get sharing settings for this button
+        sharing_settings = Enum.map(friends, fn friend ->
+          is_shared = Buttons.is_button_shared_with_friend?(id, friend.id)
+          %{
+            friend_id: friend.id,
+            friend_username: friend.username,
+            friend_display_name: friend.display_name,
+            is_shared: is_shared
+          }
+        end)
+
+        json(conn, %{
+          success: true,
+          data: sharing_settings,
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FOUND",
+            message: "Button not found"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+    end
+  end
+
+  @doc """
+  Updates the sharing settings for a button.
+  Expects a list of {friend_id, is_shared} pairs.
+  """
+  def update_sharing(conn, %{"id" => id, "sharing" => sharing_params}) do
+    user = conn.assigns.current_user
+
+    case Buttons.get_button(id, user.id) do
+      {:ok, _button} ->
+        # Convert params to the expected format
+        friend_settings = Enum.map(sharing_params, fn setting ->
+          %{
+            friend_id: setting["friend_id"],
+            is_shared: setting["is_shared"]
+          }
+        end)
+
+        case Buttons.update_button_sharing_bulk(id, user.id, friend_settings) do
+          {:ok, _sharing} ->
+            # Return updated sharing settings
+            sharing(conn, %{"id" => id})
+
+          {:error, changeset} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              success: false,
+              error: %{
+                code: "VALIDATION_ERROR",
+                message: "Failed to update sharing settings",
+                details: format_changeset_errors(changeset)
+              },
+              meta: %{
+                timestamp: DateTime.utc_now(),
+                request_id: generate_request_id()
+              }
+            })
+        end
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FOUND",
+            message: "Button not found"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+    end
   end
 
   defp format_datetime(nil), do: nil

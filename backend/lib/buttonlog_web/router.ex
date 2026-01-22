@@ -65,6 +65,8 @@ defmodule ButtonLogWeb.Router do
     delete "/buttons/:id", API.ButtonController, :delete
     post "/buttons/:id/click", API.ButtonController, :click
     get "/buttons/:id/history", API.ButtonController, :history
+    get "/buttons/:id/sharing", API.ButtonController, :sharing
+    put "/buttons/:id/sharing", API.ButtonController, :update_sharing
 
     # User endpoints
     get "/users/profile", API.UserController, :profile
