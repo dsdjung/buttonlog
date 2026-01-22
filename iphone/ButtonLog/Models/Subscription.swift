@@ -91,10 +91,14 @@ struct UserSubscription: Identifiable, Codable {
     var isActive: Bool {
         return status == .active
     }
-    
+
     var isInTrial: Bool {
         guard let trialEnd = trialEnd else { return false }
         return Date() <= trialEnd
+    }
+
+    var formattedAmount: String {
+        return String(format: "$%.2f", amount)
     }
     
     enum CodingKeys: String, CodingKey {

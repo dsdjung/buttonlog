@@ -421,21 +421,708 @@ struct EditProfileView: View {
     }
 }
 
+// MARK: - Subscription View
+
 struct SubscriptionView: View {
-    @Environment(\.presentationMode) var presentationMode
-    
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var appState: AppState
+
+    @State private var selectedBillingCycle: BillingCycle = .monthly
+    @State private var isLoading = false
+    @State private var showingManageSubscription = false
+    @State private var errorMessage: String?
+    @State private var couponCode = ""
+    @State private var showingCouponField = false
+
+    private let apiService = APIService.shared
+
     var body: some View {
         NavigationView {
-            Text("Subscription Management - Coming Soon")
-                .navigationTitle("Subscription")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        SwiftUI.Button("Done") {
-                            presentationMode.wrappedValue.dismiss()
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Current Subscription Status
+                    if let subscription = appState.currentSubscription {
+                        CurrentSubscriptionCard(
+                            subscription: subscription,
+                            onManage: { showingManageSubscription = true }
+                        )
+                    }
+
+                    // Billing Cycle Toggle
+                    BillingCycleSelector(selectedCycle: $selectedBillingCycle)
+
+                    // Plans Comparison
+                    PlansSection(
+                        plans: appState.subscriptionPlans,
+                        currentSubscription: appState.currentSubscription,
+                        selectedCycle: selectedBillingCycle,
+                        isLoading: isLoading,
+                        onSelectPlan: { plan in
+                            Task {
+                                await subscribeToPlan(plan)
+                            }
+                        }
+                    )
+
+                    // Coupon Code Section
+                    CouponSection(
+                        couponCode: $couponCode,
+                        showingField: $showingCouponField
+                    )
+
+                    // Feature Comparison Table
+                    FeatureComparisonSection(plans: appState.subscriptionPlans)
+
+                    // FAQ Section
+                    FAQSection()
+                }
+                .padding()
+            }
+            .navigationTitle("Subscription")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    SwiftUI.Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+            .refreshable {
+                await appState.loadSubscriptionData()
+            }
+            .alert("Error", isPresented: .constant(errorMessage != nil)) {
+                SwiftUI.Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                Text(errorMessage ?? "")
+            }
+            .sheet(isPresented: $showingManageSubscription) {
+                ManageSubscriptionView()
+            }
+        }
+        .task {
+            if appState.subscriptionPlans.isEmpty {
+                await appState.loadSubscriptionData()
+            }
+        }
+    }
+
+    private func subscribeToPlan(_ plan: SubscriptionPlan) async {
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let session = try await apiService.createCheckoutSession(
+                planId: plan.id,
+                billingCycle: selectedBillingCycle,
+                couponCode: couponCode.isEmpty ? nil : couponCode
+            )
+
+            // Open Stripe Checkout in Safari
+            if let url = URL(string: session.checkoutUrl) {
+                await MainActor.run {
+                    openURL(url)
+                }
+            }
+        } catch {
+            errorMessage = "Failed to start checkout: \(error.localizedDescription)"
+        }
+    }
+}
+
+// MARK: - Current Subscription Card
+
+struct CurrentSubscriptionCard: View {
+    let subscription: UserSubscription
+    let onManage: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Current Plan")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Text(subscription.billingCycle.displayName + " Plan")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                }
+
+                Spacer()
+
+                SubscriptionStatusBadge(status: subscription.status)
+            }
+
+            Divider()
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Next billing")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text(subscription.periodEnd, style: .date)
+                        .font(.subheadline)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Amount")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text(subscription.formattedAmount)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+            }
+
+            if subscription.isInTrial, let trialEnd = subscription.trialEnd {
+                HStack {
+                    Image(systemName: "clock")
+                        .foregroundColor(.orange)
+                    Text("Trial ends \(trialEnd, style: .relative)")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+            }
+
+            SwiftUI.Button("Manage Subscription") {
+                onManage()
+            }
+            .buttonStyle(.bordered)
+            .frame(maxWidth: .infinity)
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+    }
+}
+
+struct SubscriptionStatusBadge: View {
+    let status: SubscriptionStatus
+
+    var body: some View {
+        Text(status.displayName)
+            .font(.caption)
+            .fontWeight(.medium)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(backgroundColor.opacity(0.2))
+            .foregroundColor(backgroundColor)
+            .cornerRadius(6)
+    }
+
+    private var backgroundColor: Color {
+        switch status {
+        case .active: return .green
+        case .pastDue: return .orange
+        case .cancelled: return .red
+        case .paused: return .yellow
+        case .trialing: return .blue
+        case .incomplete: return .gray
+        }
+    }
+}
+
+// MARK: - Billing Cycle Selector
+
+struct BillingCycleSelector: View {
+    @Binding var selectedCycle: BillingCycle
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Picker("Billing Cycle", selection: $selectedCycle) {
+                Text("Monthly").tag(BillingCycle.monthly)
+                Text("Yearly (Save 17%)").tag(BillingCycle.yearly)
+            }
+            .pickerStyle(.segmented)
+
+            if selectedCycle == .yearly {
+                Text("Get 2 months free with annual billing")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            }
+        }
+    }
+}
+
+// MARK: - Plans Section
+
+struct PlansSection: View {
+    let plans: [SubscriptionPlan]
+    let currentSubscription: UserSubscription?
+    let selectedCycle: BillingCycle
+    let isLoading: Bool
+    let onSelectPlan: (SubscriptionPlan) -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            ForEach(sortedPlans, id: \.id) { plan in
+                PlanCard(
+                    plan: plan,
+                    selectedCycle: selectedCycle,
+                    isCurrentPlan: isCurrentPlan(plan),
+                    isLoading: isLoading,
+                    onSelect: { onSelectPlan(plan) }
+                )
+            }
+        }
+    }
+
+    private var sortedPlans: [SubscriptionPlan] {
+        plans.sorted { $0.monthlyPrice < $1.monthlyPrice }
+    }
+
+    private func isCurrentPlan(_ plan: SubscriptionPlan) -> Bool {
+        currentSubscription?.subscriptionPlanId == plan.id
+    }
+}
+
+struct PlanCard: View {
+    let plan: SubscriptionPlan
+    let selectedCycle: BillingCycle
+    let isCurrentPlan: Bool
+    let isLoading: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(plan.name)
+                            .font(.title3)
+                            .fontWeight(.bold)
+
+                        if plan.slug == "premium" {
+                            Text("POPULAR")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(4)
+                        }
+                    }
+
+                    if let description = plan.description {
+                        Text(description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing) {
+                    Text(priceForCycle)
+                        .font(.title2)
+                        .fontWeight(.bold)
+
+                    Text(billingLabel)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Divider()
+
+            // Key Features
+            VStack(alignment: .leading, spacing: 6) {
+                PlanFeatureRow(text: "Up to \(plan.limits.maxButtons ?? 999) buttons", included: true)
+                PlanFeatureRow(text: "Up to \(plan.limits.maxFriends ?? 999) friends", included: true)
+                PlanFeatureRow(text: "\(plan.limits.analyticsHistoryDays ?? 7) days analytics history", included: true)
+                PlanFeatureRow(text: "Calendar sync", included: plan.features.calendarSync)
+                PlanFeatureRow(text: "API access", included: plan.features.apiAccess)
+                PlanFeatureRow(text: "Priority support", included: plan.features.prioritySupport)
+            }
+
+            // Action Button
+            if isCurrentPlan {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("Current Plan")
+                        .fontWeight(.medium)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.green.opacity(0.1))
+                .cornerRadius(8)
+            } else if plan.monthlyPrice == 0 {
+                // Free plan - no action needed
+                Text("Free Forever")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            } else {
+                SwiftUI.Button {
+                    onSelect()
+                } label: {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Subscribe")
+                            .fontWeight(.semibold)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(plan.slug == "premium" ? Color.blue : Color.purple)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+                .disabled(isLoading)
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    plan.slug == "premium" ? Color.blue : Color.gray.opacity(0.3),
+                    lineWidth: plan.slug == "premium" ? 2 : 1
+                )
+        )
+    }
+
+    private var priceForCycle: String {
+        let price = selectedCycle == .monthly ? plan.monthlyPrice : plan.yearlyPrice
+        if price == 0 {
+            return "Free"
+        }
+        return String(format: "$%.2f", price)
+    }
+
+    private var billingLabel: String {
+        if plan.monthlyPrice == 0 {
+            return "forever"
+        }
+        return selectedCycle == .monthly ? "/month" : "/year"
+    }
+}
+
+struct PlanFeatureRow: View {
+    let text: String
+    let included: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: included ? "checkmark.circle.fill" : "xmark.circle")
+                .foregroundColor(included ? .green : .gray)
+                .font(.caption)
+
+            Text(text)
+                .font(.subheadline)
+                .foregroundColor(included ? .primary : .secondary)
+        }
+    }
+}
+
+// MARK: - Coupon Section
+
+struct CouponSection: View {
+    @Binding var couponCode: String
+    @Binding var showingField: Bool
+
+    var body: some View {
+        VStack(spacing: 8) {
+            if showingField {
+                HStack {
+                    TextField("Enter coupon code", text: $couponCode)
+                        .textFieldStyle(.roundedBorder)
+                        .textInputAutocapitalization(.characters)
+
+                    SwiftUI.Button("Apply") {
+                        // Coupon will be applied during checkout
+                    }
+                    .buttonStyle(.bordered)
+                }
+            } else {
+                SwiftUI.Button("Have a coupon code?") {
+                    showingField = true
+                }
+                .font(.subheadline)
+            }
+        }
+    }
+}
+
+// MARK: - Feature Comparison Section
+
+struct FeatureComparisonSection: View {
+    let plans: [SubscriptionPlan]
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SwiftUI.Button {
+                withAnimation {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Text("Compare All Features")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            if isExpanded {
+                VStack(spacing: 0) {
+                    FeatureComparisonRow(feature: "Buttons", values: plans.map { "\($0.limits.maxButtons ?? 999)" })
+                    FeatureComparisonRow(feature: "Friends", values: plans.map { "\($0.limits.maxFriends ?? 999)" })
+                    FeatureComparisonRow(feature: "Clicks/month", values: plans.map { formatLimit($0.limits.maxClicksPerMonth) })
+                    FeatureComparisonRow(feature: "Analytics history", values: plans.map { "\($0.limits.analyticsHistoryDays ?? 7) days" })
+                    FeatureComparisonRow(feature: "Calendar sync", values: plans.map { $0.features.calendarSync ? "Yes" : "No" })
+                    FeatureComparisonRow(feature: "API access", values: plans.map { $0.features.apiAccess ? "Yes" : "No" })
+                    FeatureComparisonRow(feature: "Custom themes", values: plans.map { $0.features.customThemes ? "Yes" : "No" })
+                    FeatureComparisonRow(feature: "Team features", values: plans.map { $0.features.teamFeatures ? "Yes" : "No" })
+                    FeatureComparisonRow(feature: "Priority support", values: plans.map { $0.features.prioritySupport ? "Yes" : "No" })
+                }
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+    }
+
+    private func formatLimit(_ limit: Int?) -> String {
+        guard let limit = limit else { return "Unlimited" }
+        if limit >= 999999 { return "Unlimited" }
+        return "\(limit)"
+    }
+}
+
+struct FeatureComparisonRow: View {
+    let feature: String
+    let values: [String]
+
+    var body: some View {
+        HStack {
+            Text(feature)
+                .font(.caption)
+                .frame(width: 100, alignment: .leading)
+
+            ForEach(Array(values.enumerated()), id: \.offset) { _, value in
+                Text(value)
+                    .font(.caption)
+                    .frame(maxWidth: .infinity)
+                    .foregroundColor(value == "Yes" ? .green : (value == "No" ? .secondary : .primary))
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - FAQ Section
+
+struct FAQSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Frequently Asked Questions")
+                .font(.headline)
+
+            SubscriptionFAQItem(
+                question: "Can I cancel anytime?",
+                answer: "Yes, you can cancel your subscription at any time. You'll continue to have access until the end of your billing period."
+            )
+
+            SubscriptionFAQItem(
+                question: "How do I manage my subscription?",
+                answer: "Tap 'Manage Subscription' to update your payment method, change plans, or cancel. You'll be directed to our secure payment portal."
+            )
+
+            SubscriptionFAQItem(
+                question: "What happens to my data if I downgrade?",
+                answer: "Your data is always safe. If you exceed the limits of your new plan, you won't be able to create new items until you're within limits, but existing data is preserved."
+            )
+
+            SubscriptionFAQItem(
+                question: "Do you offer refunds?",
+                answer: "We offer a 14-day money-back guarantee for first-time subscribers. Contact support for assistance."
+            )
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+    }
+}
+
+struct SubscriptionFAQItem: View {
+    let question: String
+    let answer: String
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SwiftUI.Button {
+                withAnimation {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Text(question)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.leading)
+
+                    Spacer()
+
+                    Image(systemName: isExpanded ? "minus.circle" : "plus.circle")
+                        .foregroundColor(.blue)
+                }
+            }
+
+            if isExpanded {
+                Text(answer)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - Manage Subscription View
+
+struct ManageSubscriptionView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var appState: AppState
+
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+
+    private let apiService = APIService.shared
+
+    var body: some View {
+        NavigationView {
+            List {
+                // Current Plan Section
+                if let subscription = appState.currentSubscription {
+                    Section("Current Plan") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text(subscription.billingCycle.displayName + " Plan")
+                                    .font(.headline)
+                                Spacer()
+                                SubscriptionStatusBadge(status: subscription.status)
+                            }
+
+                            Text("Next billing: \(subscription.periodEnd, style: .date)")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+
+                            Text(subscription.formattedAmount + " / " + subscription.billingCycle.rawValue)
+                                .font(.subheadline)
                         }
                     }
                 }
+
+                // Payment Management
+                Section("Payment") {
+                    SwiftUI.Button {
+                        Task { await openCustomerPortal() }
+                    } label: {
+                        HStack {
+                            Label("Update Payment Method", systemImage: "creditcard")
+                            Spacer()
+                            if isLoading {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.up.right.square")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .disabled(isLoading)
+
+                    SwiftUI.Button {
+                        Task { await openCustomerPortal() }
+                    } label: {
+                        HStack {
+                            Label("View Billing History", systemImage: "doc.text")
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .disabled(isLoading)
+                }
+
+                // Plan Changes
+                Section("Plan") {
+                    SwiftUI.Button {
+                        Task { await openCustomerPortal() }
+                    } label: {
+                        Label("Change Plan", systemImage: "arrow.up.arrow.down")
+                    }
+                    .disabled(isLoading)
+                }
+
+                // Danger Zone
+                if appState.currentSubscription != nil {
+                    Section {
+                        SwiftUI.Button(role: .destructive) {
+                            Task { await openCustomerPortal() }
+                        } label: {
+                            Label("Cancel Subscription", systemImage: "xmark.circle")
+                        }
+                        .disabled(isLoading)
+                    } footer: {
+                        Text("You'll continue to have access until the end of your current billing period.")
+                    }
+                }
+            }
+            .navigationTitle("Manage Subscription")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    SwiftUI.Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+            .alert("Error", isPresented: .constant(errorMessage != nil)) {
+                SwiftUI.Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                Text(errorMessage ?? "")
+            }
+        }
+    }
+
+    private func openCustomerPortal() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let session = try await apiService.createPortalSession()
+
+            if let url = URL(string: session.portalUrl) {
+                await MainActor.run {
+                    openURL(url)
+                }
+            }
+        } catch {
+            errorMessage = "Failed to open payment portal: \(error.localizedDescription)"
         }
     }
 }
