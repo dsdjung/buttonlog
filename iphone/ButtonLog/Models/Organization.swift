@@ -189,17 +189,7 @@ enum OrganizationSubscriptionStatus: String, Codable {
     }
 }
 
-enum BillingCycle: String, Codable {
-    case monthly = "monthly"
-    case yearly = "yearly"
-
-    var displayName: String {
-        switch self {
-        case .monthly: return "Monthly"
-        case .yearly: return "Yearly"
-        }
-    }
-}
+// Note: BillingCycle is defined in Subscription.swift
 
 // MARK: - Organization Invitation
 
@@ -305,4 +295,12 @@ struct CreateOrganizationRequest {
 
         return body
     }
+}
+
+// MARK: - API Response Types
+
+struct OrganizationsResponse: Codable {
+    let owned: [Organization]
+    let member: [Organization]
+    let invitations: [OrganizationInvitation]
 }

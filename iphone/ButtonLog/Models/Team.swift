@@ -212,3 +212,11 @@ struct CreateTeamRequest {
         return body
     }
 }
+
+// MARK: - API Response Types
+
+struct TeamsResponse: Codable {
+    let owned: [Team]
+    let member: [Team]
+    let invitations: [TeamInvitation]
+}
