@@ -26,7 +26,7 @@ struct NotificationsView: View {
     }
 
     var body: some View {
-        VStack {
+        Group {
             if appState.isLoadingNotifications && appState.notifications.isEmpty {
                 // Loading state
                 VStack {
@@ -39,23 +39,33 @@ struct NotificationsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             } else if filteredNotifications.isEmpty {
-                // Empty state
-                VStack(spacing: 20) {
-                    Image(systemName: "bell.slash")
-                        .font(.system(size: 60))
-                        .foregroundColor(.secondary)
+                // Empty state - wrapped in ScrollView for pull-to-refresh
+                ScrollView {
+                    VStack(spacing: 20) {
+                        Spacer()
+                            .frame(height: 100)
 
-                    Text(showingUnreadOnly ? "No unread notifications" : "No notifications yet")
-                        .font(.title3)
-                        .fontWeight(.semibold)
+                        Image(systemName: "bell.slash")
+                            .font(.system(size: 60))
+                            .foregroundColor(.secondary)
 
-                    Text(showingUnreadOnly ? "All caught up!" : "You'll see notifications here when you have activity from friends or system updates")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        Text(showingUnreadOnly ? "No unread notifications" : "No notifications yet")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+
+                        Text(showingUnreadOnly ? "All caught up!" : "You'll see notifications here when you have activity from friends or system updates")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 400)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .refreshable {
+                    await appState.loadNotifications()
+                }
 
             } else {
                 // Notifications list
@@ -81,6 +91,9 @@ struct NotificationsView: View {
                     .onDelete(perform: deleteNotifications)
                 }
                 .listStyle(PlainListStyle())
+                .refreshable {
+                    await appState.loadNotifications()
+                }
             }
         }
         .navigationTitle("Notifications")
@@ -97,13 +110,20 @@ struct NotificationsView: View {
                         markAllAsRead()
                     }
                     .disabled(appState.notifications.filter { !$0.isRead }.isEmpty)
+
+                    Divider()
+
+                    SwiftUI.Button {
+                        Task {
+                            await appState.loadNotifications()
+                        }
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
             }
-        }
-        .refreshable {
-            await appState.loadNotifications()
         }
         .background(
             Group {
