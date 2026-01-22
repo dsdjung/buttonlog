@@ -11,71 +11,74 @@ struct SupportTicketView: View {
     @FocusState private var isMessageFieldFocused: Bool
 
     var body: some View {
-        Group {
-            if isLoading {
-                ProgressView("Loading ticket...")
-            } else if let error = errorMessage {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle)
-                        .foregroundColor(.orange)
-                    Text(error)
-                        .multilineTextAlignment(.center)
-                    Button("Retry") {
-                        Task { await loadTicket() }
-                    }
-                }
-                .padding()
-            } else if let ticket = ticket {
-                VStack(spacing: 0) {
-                    // Ticket header
-                    TicketHeaderView(ticket: ticket)
+        content
+            .navigationTitle("Ticket")
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await loadTicket()
+            }
+    }
 
-                    Divider()
-
-                    // Messages list
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                ForEach(ticket.messages ?? []) { message in
-                                    MessageBubbleView(message: message)
-                                        .id(message.id)
-                                }
-                            }
-                            .padding()
-                        }
-                        .onChange(of: ticket.messages?.count) { _, _ in
-                            if let lastMessage = ticket.messages?.last {
-                                withAnimation {
-                                    proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                                }
-                            }
-                        }
-                    }
-
-                    Divider()
-
-                    // Message input
-                    if ticket.status.isActive {
-                        MessageInputView(
-                            message: $newMessage,
-                            isSending: isSending,
-                            isFocused: _isMessageFieldFocused,
-                            onSend: sendMessage
-                        )
-                    } else {
-                        Text("This ticket is \(ticket.status.displayName.lowercased())")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding()
-                    }
+    @ViewBuilder
+    private var content: some View {
+        if isLoading {
+            ProgressView("Loading ticket...")
+        } else if let error = errorMessage {
+            VStack(spacing: 16) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.largeTitle)
+                    .foregroundColor(.orange)
+                Text(error)
+                    .multilineTextAlignment(.center)
+                Button("Retry") {
+                    Task { await loadTicket() }
                 }
             }
-        }
-        .navigationTitle("Ticket")
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            await loadTicket()
+            .padding()
+        } else if let ticket = ticket {
+            VStack(spacing: 0) {
+                // Ticket header
+                TicketHeaderView(ticket: ticket)
+
+                Divider()
+
+                // Messages list
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(ticket.messages ?? []) { message in
+                                MessageBubbleView(message: message)
+                                    .id(message.id)
+                            }
+                        }
+                        .padding()
+                    }
+                    .onChange(of: ticket.messages?.count) { _, _ in
+                        if let lastMessage = ticket.messages?.last {
+                            withAnimation {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
+                        }
+                    }
+                }
+
+                Divider()
+
+                // Message input
+                if ticket.status.isActive {
+                    MessageInputView(
+                        message: $newMessage,
+                        isSending: isSending,
+                        isFocused: _isMessageFieldFocused,
+                        onSend: sendMessage
+                    )
+                } else {
+                    Text("This ticket is \(ticket.status.displayName.lowercased())")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding()
+                }
+            }
         }
     }
 
