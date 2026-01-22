@@ -180,6 +180,9 @@ interface APIService {
     @POST("teams/invitations/{id}/decline")
     suspend fun declineTeamInvitation(@Path("id") id: String): ApiResponse<Unit>
 
+    @POST("teams/{teamId}/leave")
+    suspend fun leaveTeam(@Path("teamId") teamId: String): ApiResponse<Unit>
+
     // MARK: - Organization Endpoints
 
     @GET("organizations")
@@ -205,6 +208,9 @@ interface APIService {
 
     @POST("organizations/invitations/{id}/decline")
     suspend fun declineOrganizationInvitation(@Path("id") id: String): ApiResponse<Unit>
+
+    @POST("organizations/{orgId}/leave")
+    suspend fun leaveOrganization(@Path("orgId") orgId: String): ApiResponse<Unit>
 
     // MARK: - Subscription Endpoints
 

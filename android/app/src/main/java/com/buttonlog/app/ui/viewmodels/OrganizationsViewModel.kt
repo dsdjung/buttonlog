@@ -114,12 +114,45 @@ class OrganizationsViewModel @Inject constructor(
     fun hideCreateOrganizationDialog() {
         _uiState.update { it.copy(showCreateOrganizationDialog = false) }
     }
+
+    fun showLeaveOrganizationDialog(organization: Organization) {
+        _uiState.update { it.copy(organizationToLeave = organization) }
+    }
+
+    fun hideLeaveOrganizationDialog() {
+        _uiState.update { it.copy(organizationToLeave = null) }
+    }
+
+    fun leaveOrganization(organizationId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLeaving = true) }
+            try {
+                repository.leaveOrganization(organizationId)
+                _uiState.update {
+                    it.copy(
+                        isLeaving = false,
+                        organizations = it.organizations.filter { org -> org.id != organizationId },
+                        organizationToLeave = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLeaving = false,
+                        error = e.message ?: "Failed to leave organization"
+                    )
+                }
+            }
+        }
+    }
 }
 
 data class OrganizationsUiState(
     val isLoading: Boolean = false,
+    val isLeaving: Boolean = false,
     val error: String? = null,
     val organizations: List<Organization> = emptyList(),
     val pendingInvitations: List<OrganizationInvitation> = emptyList(),
-    val showCreateOrganizationDialog: Boolean = false
+    val showCreateOrganizationDialog: Boolean = false,
+    val organizationToLeave: Organization? = null
 )

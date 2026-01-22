@@ -114,12 +114,45 @@ class TeamsViewModel @Inject constructor(
     fun hideCreateTeamDialog() {
         _uiState.update { it.copy(showCreateTeamDialog = false) }
     }
+
+    fun showLeaveTeamDialog(team: Team) {
+        _uiState.update { it.copy(teamToLeave = team) }
+    }
+
+    fun hideLeaveTeamDialog() {
+        _uiState.update { it.copy(teamToLeave = null) }
+    }
+
+    fun leaveTeam(teamId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLeaving = true) }
+            try {
+                repository.leaveTeam(teamId)
+                _uiState.update {
+                    it.copy(
+                        isLeaving = false,
+                        teams = it.teams.filter { team -> team.id != teamId },
+                        teamToLeave = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLeaving = false,
+                        error = e.message ?: "Failed to leave team"
+                    )
+                }
+            }
+        }
+    }
 }
 
 data class TeamsUiState(
     val isLoading: Boolean = false,
+    val isLeaving: Boolean = false,
     val error: String? = null,
     val teams: List<Team> = emptyList(),
     val pendingInvitations: List<TeamInvitation> = emptyList(),
-    val showCreateTeamDialog: Boolean = false
+    val showCreateTeamDialog: Boolean = false,
+    val teamToLeave: Team? = null
 )

@@ -202,9 +202,7 @@ struct NotificationsView: View {
 
     private func markAllAsRead() {
         Task {
-            for notification in appState.notifications.filter({ !$0.isRead }) {
-                await appState.markNotificationAsRead(id: notification.id)
-            }
+            await appState.markAllNotificationsAsRead()
         }
     }
 }

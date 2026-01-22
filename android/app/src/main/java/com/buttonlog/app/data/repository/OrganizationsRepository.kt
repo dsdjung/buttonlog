@@ -80,4 +80,11 @@ class OrganizationsRepository @Inject constructor(
             throw Exception(response.error?.message ?: "Failed to invite member")
         }
     }
+
+    suspend fun leaveOrganization(organizationId: String) {
+        val response = apiService.leaveOrganization(organizationId)
+        if (!response.success) {
+            throw Exception(response.error?.message ?: "Failed to leave organization")
+        }
+    }
 }

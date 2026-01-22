@@ -207,6 +207,31 @@ class AppState: ObservableObject {
         }
     }
     
+    func markAllNotificationsAsRead() async -> Bool {
+        do {
+            try await apiService.markAllNotificationsAsRead()
+
+            // Update all notifications to read locally
+            notifications = notifications.map { notification in
+                AppNotification(
+                    id: notification.id,
+                    type: notification.type,
+                    title: notification.title,
+                    message: notification.message,
+                    data: notification.data,
+                    isRead: true,
+                    createdAt: notification.createdAt,
+                    sender: notification.sender
+                )
+            }
+
+            return true
+        } catch {
+            errorMessage = "Failed to mark all notifications as read: \(error.localizedDescription)"
+            return false
+        }
+    }
+
     func deleteNotification(id: String) async -> Bool {
         do {
             try await apiService.deleteNotification(id: id)

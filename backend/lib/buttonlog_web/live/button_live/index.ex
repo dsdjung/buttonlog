@@ -18,21 +18,27 @@ defmodule ButtonLogWeb.ButtonLive.Index do
 
       {:ok,
        socket
+       |> assign(:all_buttons, buttons)
        |> assign(:buttons, buttons)
        |> assign(:current_user, user)
        |> assign(:show_create_form, false)
        |> assign(:button_changeset, nil)
        |> assign(:page_title, "ButtonLog")
-       |> assign(:authenticated, true)}
+       |> assign(:authenticated, true)
+       |> assign(:search_query, "")
+       |> assign(:filter_type, "all")}
     else
       {:ok,
        socket
+       |> assign(:all_buttons, [])
        |> assign(:buttons, [])
        |> assign(:current_user, nil)
        |> assign(:show_create_form, false)
        |> assign(:button_changeset, nil)
        |> assign(:page_title, "ButtonLog")
-       |> assign(:authenticated, false)}
+       |> assign(:authenticated, false)
+       |> assign(:search_query, "")
+       |> assign(:filter_type, "all")}
     end
   end
 
@@ -62,6 +68,26 @@ defmodule ButtonLogWeb.ButtonLive.Index do
   end
 
   @impl true
+  def handle_event("search", %{"value" => query}, socket) do
+    filtered_buttons = filter_buttons(socket.assigns.all_buttons, query, socket.assigns.filter_type)
+    {:noreply, socket |> assign(:search_query, query) |> assign(:buttons, filtered_buttons)}
+  end
+
+  @impl true
+  def handle_event("filter_type", %{"filter_type" => type}, socket) do
+    filtered_buttons = filter_buttons(socket.assigns.all_buttons, socket.assigns.search_query, type)
+    {:noreply, socket |> assign(:filter_type, type) |> assign(:buttons, filtered_buttons)}
+  end
+
+  @impl true
+  def handle_event("clear_search", _, socket) do
+    {:noreply, socket
+     |> assign(:search_query, "")
+     |> assign(:filter_type, "all")
+     |> assign(:buttons, socket.assigns.all_buttons)}
+  end
+
+  @impl true
   def handle_event("edit", %{"id" => button_id}, socket) do
     {:noreply, socket |> push_navigate(to: ~p"/buttons/#{button_id}")}
   end
@@ -83,6 +109,7 @@ defmodule ButtonLogWeb.ButtonLive.Index do
       {:ok, button} ->
         # Refresh the buttons list to get proper structure with latest_click_at
         updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
+        filtered_buttons = filter_buttons(updated_buttons, socket.assigns.search_query, socket.assigns.filter_type)
 
         # Broadcast to all connected clients
         Phoenix.PubSub.broadcast!(
@@ -96,7 +123,8 @@ defmodule ButtonLogWeb.ButtonLive.Index do
          |> put_flash(:info, "Button created successfully!")
          |> assign(:show_create_form, false)
          |> assign(:button_changeset, nil)
-         |> assign(:buttons, updated_buttons)}
+         |> assign(:all_buttons, updated_buttons)
+         |> assign(:buttons, filtered_buttons)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, socket |> put_flash(:error, "Failed to create button") |> assign(:button_changeset, changeset)}
@@ -112,6 +140,7 @@ defmodule ButtonLogWeb.ButtonLive.Index do
       {:ok, click} ->
         # Refresh the buttons list to show updated state
         updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
+        filtered_buttons = filter_buttons(updated_buttons, socket.assigns.search_query, socket.assigns.filter_type)
 
         # Send notifications to friends
         Notifications.send_button_click_notifications(button_id, user.id, %{
@@ -129,7 +158,8 @@ defmodule ButtonLogWeb.ButtonLive.Index do
 
         message = generate_click_message(button, click)
         {:noreply, socket
-         |> assign(:buttons, updated_buttons)
+         |> assign(:all_buttons, updated_buttons)
+         |> assign(:buttons, filtered_buttons)
          |> put_flash(:info, message)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -164,15 +194,16 @@ defmodule ButtonLogWeb.ButtonLive.Index do
   @impl true
   def handle_info({:button_created, button}, socket) do
     # Only add the button if it's not already in our list (avoids duplicates for the creator)
-    already_exists = Enum.any?(socket.assigns.buttons, fn b -> b.id == button.id end)
+    already_exists = Enum.any?(socket.assigns.all_buttons, fn b -> b.id == button.id end)
 
     if already_exists do
       {:noreply, socket}
     else
       # For new buttons from other users, add the latest_click_at field (nil for new buttons)
       button_with_latest_click = Map.put(button, :latest_click_at, nil)
-      buttons = [button_with_latest_click | socket.assigns.buttons]
-      {:noreply, socket |> assign(:buttons, buttons)}
+      all_buttons = [button_with_latest_click | socket.assigns.all_buttons]
+      filtered_buttons = filter_buttons(all_buttons, socket.assigns.search_query, socket.assigns.filter_type)
+      {:noreply, socket |> assign(:all_buttons, all_buttons) |> assign(:buttons, filtered_buttons)}
     end
   end
 
@@ -184,11 +215,33 @@ defmodule ButtonLogWeb.ButtonLive.Index do
 
   @impl true
   def handle_info({:button_deleted, button_id}, socket) do
-    buttons = Enum.reject(socket.assigns.buttons, fn button -> button.id == button_id end)
-    {:noreply, socket |> assign(:buttons, buttons)}
+    all_buttons = Enum.reject(socket.assigns.all_buttons, fn button -> button.id == button_id end)
+    filtered_buttons = filter_buttons(all_buttons, socket.assigns.search_query, socket.assigns.filter_type)
+    {:noreply, socket |> assign(:all_buttons, all_buttons) |> assign(:buttons, filtered_buttons)}
   end
 
   # Private helper functions
+  defp filter_buttons(buttons, query, type_filter) do
+    buttons
+    |> filter_by_search(query)
+    |> filter_by_type(type_filter)
+  end
+
+  defp filter_by_search(buttons, nil), do: buttons
+  defp filter_by_search(buttons, ""), do: buttons
+  defp filter_by_search(buttons, query) do
+    query_downcase = String.downcase(query)
+    Enum.filter(buttons, fn button ->
+      String.contains?(String.downcase(button.name), query_downcase) ||
+        (button.description && String.contains?(String.downcase(button.description), query_downcase))
+    end)
+  end
+
+  defp filter_by_type(buttons, "all"), do: buttons
+  defp filter_by_type(buttons, type) do
+    Enum.filter(buttons, fn button -> button.type == type end)
+  end
+
   defp generate_click_message(%{name: name, type: type}, click) do
     case type do
       "timed" ->

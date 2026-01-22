@@ -347,10 +347,17 @@ struct CreateOrganizationView: View {
 struct OrganizationDetailView: View {
     let organization: Organization
 
+    @Environment(\.dismiss) private var dismiss
     @State private var orgDetail: Organization?
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var showingInviteMember = false
+    @State private var showingLeaveConfirmation = false
+    @State private var isLeaving = false
+
+    private var isOwner: Bool {
+        orgDetail?.myRole == .owner
+    }
 
     var body: some View {
         Group {
@@ -368,9 +375,9 @@ struct OrganizationDetailView: View {
         }
         .navigationTitle(organization.name)
         .toolbar {
-            if orgDetail?.canManage == true {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    if orgDetail?.canManage == true {
                         SwiftUI.Button {
                             showingInviteMember = true
                         } label: {
@@ -382,18 +389,49 @@ struct OrganizationDetailView: View {
                         } label: {
                             Label("Create Team", systemImage: "person.3.fill")
                         }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
+
+                        Divider()
                     }
+
+                    if !isOwner {
+                        SwiftUI.Button(role: .destructive) {
+                            showingLeaveConfirmation = true
+                        } label: {
+                            Label("Leave Organization", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
         .sheet(isPresented: $showingInviteMember) {
             InviteOrganizationMemberView(organizationId: organization.id)
         }
+        .alert("Leave Organization?", isPresented: $showingLeaveConfirmation) {
+            SwiftUI.Button("Cancel", role: .cancel) { }
+            SwiftUI.Button("Leave", role: .destructive) {
+                Task {
+                    await leaveOrganization()
+                }
+            }
+        } message: {
+            Text("Are you sure you want to leave \"\(organization.name)\"? You will need to be invited again to rejoin.")
+        }
         .task {
             await loadOrganizationDetail()
         }
+    }
+
+    private func leaveOrganization() async {
+        isLeaving = true
+        do {
+            try await APIService.shared.leaveOrganization(organizationId: organization.id)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLeaving = false
     }
 
     private func organizationDetailContent(_ org: Organization) -> some View {

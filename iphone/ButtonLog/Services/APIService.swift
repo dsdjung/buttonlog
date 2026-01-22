@@ -474,6 +474,10 @@ class APIService {
         try await makeVoidRequest(endpoint: "/notifications/\(id)/read", method: .PUT)
     }
 
+    func markAllNotificationsAsRead() async throws {
+        try await makeVoidRequest(endpoint: "/alerts/read-all", method: .PUT)
+    }
+
     func deleteNotification(id: String) async throws {
         try await makeVoidRequest(endpoint: "/notifications/\(id)", method: .DELETE)
     }
@@ -717,6 +721,10 @@ class APIService {
         try await makeVoidRequest(endpoint: "/teams/\(id)", method: .DELETE)
     }
 
+    func leaveTeam(teamId: String) async throws {
+        try await makeVoidRequest(endpoint: "/teams/\(teamId)/leave", method: .POST)
+    }
+
     func inviteTeamMember(teamId: String, username: String, role: String) async throws {
         let body: [String: Any] = [
             "username": username,
@@ -790,6 +798,10 @@ class APIService {
 
     func deleteOrganization(id: String) async throws {
         try await makeVoidRequest(endpoint: "/organizations/\(id)", method: .DELETE)
+    }
+
+    func leaveOrganization(organizationId: String) async throws {
+        try await makeVoidRequest(endpoint: "/organizations/\(organizationId)/leave", method: .POST)
     }
 
     func inviteOrganizationMember(organizationId: String, username: String?, email: String?, role: String) async throws {

@@ -79,4 +79,11 @@ class TeamsRepository @Inject constructor(
             throw Exception(response.error?.message ?: "Failed to invite member")
         }
     }
+
+    suspend fun leaveTeam(teamId: String) {
+        val response = apiService.leaveTeam(teamId)
+        if (!response.success) {
+            throw Exception(response.error?.message ?: "Failed to leave team")
+        }
+    }
 }

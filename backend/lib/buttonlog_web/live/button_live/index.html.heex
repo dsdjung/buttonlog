@@ -4,10 +4,71 @@
     <div class="py-8">
       <!-- Header with New Button -->
       <%= if @authenticated do %>
-        <div class="text-center">
+        <div class="text-center mb-6">
           <button phx-click="show_create_form" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium">
             New Button
           </button>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div class="flex flex-col sm:flex-row gap-4">
+            <!-- Search Input -->
+            <div class="flex-1 relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+              <input
+                type="text"
+                name="search"
+                value={@search_query}
+                phx-keyup="search"
+                phx-debounce="300"
+                placeholder="Search buttons..."
+                class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              />
+              <%= if @search_query != "" do %>
+                <button
+                  phx-click="clear_search"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              <% end %>
+            </div>
+
+            <!-- Type Filter -->
+            <div class="sm:w-48">
+              <select
+                name="filter_type"
+                phx-change="filter_type"
+                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all" selected={@filter_type == "all"}>All Types</option>
+                <option value="instant" selected={@filter_type == "instant"}>⚡ Instant</option>
+                <option value="toggle" selected={@filter_type == "toggle"}>🔄 Toggle</option>
+                <option value="one-time" selected={@filter_type == "one-time"}>1️⃣ One-Time</option>
+                <option value="workflow" selected={@filter_type == "workflow"}>📋 Workflow</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Results count -->
+          <%= if @search_query != "" || @filter_type != "all" do %>
+            <div class="mt-3 text-sm text-gray-500">
+              Showing <%= length(@buttons) %> of <%= length(@all_buttons) %> buttons
+              <%= if @search_query != "" do %>
+                matching "<%= @search_query %>"
+              <% end %>
+              <%= if @filter_type != "all" do %>
+                (<%= @filter_type %> type)
+              <% end %>
+            </div>
+          <% end %>
         </div>
         
         <!-- Simple form for testing -->
@@ -151,19 +212,38 @@
 
         <!-- Empty State -->
         <%= if Enum.empty?(@buttons) do %>
-          <div class="text-center py-12">
-            <div class="text-gray-400 mb-4">
-              <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-              </svg>
+          <%= if @search_query != "" || @filter_type != "all" do %>
+            <!-- No results from search/filter -->
+            <div class="text-center py-12">
+              <div class="text-gray-400 mb-4">
+                <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-medium text-gray-900 mb-2">No buttons found</h3>
+              <p class="text-gray-500 mb-4">
+                Try adjusting your search or filter criteria
+              </p>
+              <button phx-click="clear_search" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                Clear Search
+              </button>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No buttons yet</h3>
-            <p class="text-gray-500 mb-4">Create your first button to get started</p>
-            <button phx-click="show_create_form" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-              Create Button
-            </button>
-          </div>
+          <% else %>
+            <!-- No buttons at all -->
+            <div class="text-center py-12">
+              <div class="text-gray-400 mb-4">
+                <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-medium text-gray-900 mb-2">No buttons yet</h3>
+              <p class="text-gray-500 mb-4">Create your first button to get started</p>
+              <button phx-click="show_create_form" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                Create Button
+              </button>
+            </div>
+          <% end %>
         <% end %>
         
       <% else %>

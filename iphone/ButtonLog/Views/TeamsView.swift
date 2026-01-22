@@ -336,10 +336,17 @@ struct CreateTeamView: View {
 struct TeamDetailView: View {
     let team: Team
 
+    @Environment(\.dismiss) private var dismiss
     @State private var teamDetail: Team?
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var showingInviteMember = false
+    @State private var showingLeaveConfirmation = false
+    @State private var isLeaving = false
+
+    private var isOwner: Bool {
+        teamDetail?.myRole == .owner
+    }
 
     var body: some View {
         Group {
@@ -357,9 +364,9 @@ struct TeamDetailView: View {
         }
         .navigationTitle(team.name)
         .toolbar {
-            if teamDetail?.canManage == true {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    if teamDetail?.canManage == true {
                         SwiftUI.Button {
                             showingInviteMember = true
                         } label: {
@@ -371,18 +378,49 @@ struct TeamDetailView: View {
                         } label: {
                             Label("Add Button", systemImage: "plus.square")
                         }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
+
+                        Divider()
                     }
+
+                    if !isOwner {
+                        SwiftUI.Button(role: .destructive) {
+                            showingLeaveConfirmation = true
+                        } label: {
+                            Label("Leave Team", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
         .sheet(isPresented: $showingInviteMember) {
             InviteTeamMemberView(teamId: team.id)
         }
+        .alert("Leave Team?", isPresented: $showingLeaveConfirmation) {
+            SwiftUI.Button("Cancel", role: .cancel) { }
+            SwiftUI.Button("Leave", role: .destructive) {
+                Task {
+                    await leaveTeam()
+                }
+            }
+        } message: {
+            Text("Are you sure you want to leave \"\(team.name)\"? You will need to be invited again to rejoin.")
+        }
         .task {
             await loadTeamDetail()
         }
+    }
+
+    private func leaveTeam() async {
+        isLeaving = true
+        do {
+            try await APIService.shared.leaveTeam(teamId: team.id)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLeaving = false
     }
 
     private func teamDetailContent(_ team: Team) -> some View {

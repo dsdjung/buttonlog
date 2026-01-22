@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1A5727A42F22518300C2C16A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5727A32F22518300C2C16A /* OnboardingView.swift */; };
 		CD01234567890ABC /* ButtonLogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD01234567890ABB /* ButtonLogApp.swift */; };
 		CD01234567890ABE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD01234567890ABD /* ContentView.swift */; };
 		CD01234567890AC0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD01234567890ABF /* Assets.xcassets */; };
@@ -44,6 +45,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1A5727A32F22518300C2C16A /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		CD01234567890AB8 /* ButtonLog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ButtonLog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD01234567890ABB /* ButtonLogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonLogApp.swift; sourceTree = "<group>"; };
 		CD01234567890ABD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -168,6 +170,7 @@
 		CD11234567890103 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				1A5727A32F22518300C2C16A /* OnboardingView.swift */,
 				CD11234567890018 /* AuthenticationView.swift */,
 				CD11234567890020 /* MainTabView.swift */,
 				CD11234567890022 /* ButtonsView.swift */,
@@ -280,6 +283,7 @@
 				CD11234567890033 /* AccountView.swift in Sources */,
 				CD11234567890035 /* ButtonHistoryView.swift in Sources */,
 				CD11234567890037 /* FriendButtonsView.swift in Sources */,
+				1A5727A42F22518300C2C16A /* OnboardingView.swift in Sources */,
 				CD11234567890039 /* FriendActivityView.swift in Sources */,
 				CD11234567890041 /* PushNotificationManager.swift in Sources */,
 				CD11234567890043 /* Support.swift in Sources */,

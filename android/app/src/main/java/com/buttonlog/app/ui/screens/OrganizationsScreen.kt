@@ -162,7 +162,8 @@ fun OrganizationsScreen(
                             items(uiState.organizations) { org ->
                                 OrganizationCard(
                                     organization = org,
-                                    onClick = { onOrganizationClick(org) }
+                                    onClick = { onOrganizationClick(org) },
+                                    onLeaveClick = { viewModel.showLeaveOrganizationDialog(org) }
                                 )
                             }
                         }
@@ -181,13 +182,54 @@ fun OrganizationsScreen(
             }
         )
     }
+
+    // Leave Organization Confirmation Dialog
+    uiState.organizationToLeave?.let { org ->
+        AlertDialog(
+            onDismissRequest = { viewModel.hideLeaveOrganizationDialog() },
+            title = { Text("Leave Organization") },
+            text = {
+                Text("Are you sure you want to leave \"${org.name}\"? You will no longer have access to this organization's teams, buttons, and activities.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.leaveOrganization(org.id) },
+                    enabled = !uiState.isLeaving,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    if (uiState.isLeaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Leave")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { viewModel.hideLeaveOrganizationDialog() },
+                    enabled = !uiState.isLeaving
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 private fun OrganizationCard(
     organization: Organization,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLeaveClick: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+    val isOwner = organization.myRole == "owner"
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
@@ -276,11 +318,46 @@ private fun OrganizationCard(
                 }
             }
 
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("View Details") },
+                        onClick = {
+                            showMenu = false
+                            onClick()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Info, contentDescription = null)
+                        }
+                    )
+                    if (!isOwner) {
+                        DropdownMenuItem(
+                            text = { Text("Leave Organization", color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                showMenu = false
+                                onLeaveClick()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.ExitToApp,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }

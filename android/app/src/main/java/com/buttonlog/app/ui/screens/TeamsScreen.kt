@@ -163,7 +163,8 @@ fun TeamsScreen(
                             items(uiState.teams) { team ->
                                 TeamCard(
                                     team = team,
-                                    onClick = { onTeamClick(team) }
+                                    onClick = { onTeamClick(team) },
+                                    onLeaveClick = { viewModel.showLeaveTeamDialog(team) }
                                 )
                             }
                         }
@@ -182,13 +183,54 @@ fun TeamsScreen(
             }
         )
     }
+
+    // Leave Team Confirmation Dialog
+    uiState.teamToLeave?.let { team ->
+        AlertDialog(
+            onDismissRequest = { viewModel.hideLeaveTeamDialog() },
+            title = { Text("Leave Team") },
+            text = {
+                Text("Are you sure you want to leave \"${team.name}\"? You will no longer have access to this team's buttons and activities.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.leaveTeam(team.id) },
+                    enabled = !uiState.isLeaving,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    if (uiState.isLeaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Leave")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { viewModel.hideLeaveTeamDialog() },
+                    enabled = !uiState.isLeaving
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 private fun TeamCard(
     team: Team,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLeaveClick: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+    val isOwner = team.myRole == "owner"
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
@@ -264,11 +306,46 @@ private fun TeamCard(
                 }
             }
 
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("View Details") },
+                        onClick = {
+                            showMenu = false
+                            onClick()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Info, contentDescription = null)
+                        }
+                    )
+                    if (!isOwner) {
+                        DropdownMenuItem(
+                            text = { Text("Leave Team", color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                showMenu = false
+                                onLeaveClick()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.ExitToApp,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }

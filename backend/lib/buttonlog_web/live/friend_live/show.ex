@@ -31,6 +31,13 @@ defmodule ButtonLogWeb.FriendLive.Show do
               {activities, _next_cursor, _has_more} -> {activities, true}
             end
 
+          # Get permissions I've set for this friend (what they can see of my stuff)
+          my_permissions = Social.get_friend_permissions(user_id, friend_id) || %{
+            can_view_history: true,
+            can_receive_alerts: true,
+            can_view_buttons: true
+          }
+
           {:ok,
            socket
            |> assign(:current_user, current_user)
@@ -47,6 +54,8 @@ defmodule ButtonLogWeb.FriendLive.Show do
            |> assign(:gift_button_icon, "star")
            |> assign(:gift_button_color, "#007AFF")
            |> assign(:gift_button_message, "")
+           |> assign(:my_permissions, my_permissions)
+           |> assign(:show_permissions_form, false)
            |> assign(:page_title, "#{friend.display_name}'s Profile")}
 
         false ->
@@ -158,6 +167,66 @@ defmodule ButtonLogWeb.FriendLive.Show do
       {:error, %Ecto.Changeset{} = changeset} ->
         errors = Enum.map(changeset.errors, fn {field, {msg, _opts}} -> "#{field} #{msg}" end)
         {:noreply, socket |> put_flash(:error, "Failed to create button: #{Enum.join(errors, ", ")}")}
+    end
+  end
+
+  @impl true
+  def handle_event("show_permissions_form", _params, socket) do
+    {:noreply, socket |> assign(:show_permissions_form, true)}
+  end
+
+  @impl true
+  def handle_event("hide_permissions_form", _params, socket) do
+    {:noreply, socket |> assign(:show_permissions_form, false)}
+  end
+
+  @impl true
+  def handle_event("toggle_permission", %{"permission" => permission}, socket) do
+    user_id = socket.assigns.current_user.id
+    friend_id = socket.assigns.friend.id
+
+    # Get current permission value
+    current_permissions = socket.assigns.my_permissions
+    current_value = get_permission_value(current_permissions, permission)
+    new_value = !current_value
+
+    # Prepare the attrs map with the toggled permission
+    attrs = %{permission => new_value}
+
+    case Social.update_friend_permissions(user_id, friend_id, attrs) do
+      {:ok, updated_permissions} ->
+        {:noreply,
+         socket
+         |> assign(:my_permissions, updated_permissions)
+         |> put_flash(:info, "Permission updated")}
+
+      {:error, _reason} ->
+        {:noreply, socket |> put_flash(:error, "Failed to update permission")}
+    end
+  end
+
+  # Public helper function for templates
+  def get_permission_value(permissions, "can_view_history") do
+    case permissions do
+      %{can_view_history: value} -> value
+      %ButtonLog.Social.FriendPermission{can_view_history: value} -> value
+      _ -> true
+    end
+  end
+
+  def get_permission_value(permissions, "can_receive_alerts") do
+    case permissions do
+      %{can_receive_alerts: value} -> value
+      %ButtonLog.Social.FriendPermission{can_receive_alerts: value} -> value
+      _ -> true
+    end
+  end
+
+  def get_permission_value(permissions, "can_view_buttons") do
+    case permissions do
+      %{can_view_buttons: value} -> value
+      %ButtonLog.Social.FriendPermission{can_view_buttons: value} -> value
+      _ -> true
     end
   end
 

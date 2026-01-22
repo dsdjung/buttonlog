@@ -1,23 +1,13 @@
 
-What does auto-stop do? Need be clearer.
 
-Add Shared button feature where button can be clicked by multiple people.
 
-Change current "notification" name to "alert", and instead use notification name for setting external notification for the account, or for each button where the notification is sent to external endpoints, starting with http endpoint, to be extended in the future to sms, email, discord, slack, etc.
+Create clear and concise on-boarding for new users
 
-How would you add support for enterprise use of the app?
+Logo design. I like the hand clicking on a button icon used in the ios app button.Not sure if that can be used as the logo
 
-Looking to add Subscription/Membership/Payment. How should the subscription and membership model be designed?
+settings have different options between clients. Review implement for feature completeness, correctness, and feature parity between apps and web ui
 
-On-boarding
-
-Logo design
-
-Consistent design language. Make it more modern and high quality
-
-Create full feature listing csv file
-
-Complete feature App and UI test
+Consistent design language and user experience. Make it more modern, professional and high quality
 
 Google OAuth
 
@@ -25,3 +15,8 @@ App registration
 
 Platform notification
 
+If friend search by email is not registered, send invitation email.
+
+Create full feature listing csv file
+
+Complete feature App and UI test
