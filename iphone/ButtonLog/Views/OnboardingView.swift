@@ -84,7 +84,7 @@ struct WelcomePage: View {
 
             Spacer()
 
-            Button(action: onNext) {
+            SwiftUI.Button(action: onNext) {
                 Text("Get Started")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -135,7 +135,7 @@ struct FeaturesPage: View {
 
             Spacer()
 
-            Button(action: onNext) {
+            SwiftUI.Button(action: onNext) {
                 Text("Next")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -215,7 +215,7 @@ struct ButtonTypesPage: View {
 
             Spacer()
 
-            Button(action: onNext) {
+            SwiftUI.Button(action: onNext) {
                 Text("Next")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -298,7 +298,7 @@ struct GetStartedPage: View {
             Spacer()
 
             VStack(spacing: 16) {
-                Button(action: {
+                SwiftUI.Button(action: {
                     selectedAction = .createButton
                     onComplete()
                 }) {
@@ -314,7 +314,7 @@ struct GetStartedPage: View {
                     .cornerRadius(12)
                 }
 
-                Button(action: {
+                SwiftUI.Button(action: {
                     selectedAction = .explore
                     onComplete()
                 }) {
