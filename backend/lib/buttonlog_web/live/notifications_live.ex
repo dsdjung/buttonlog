@@ -92,8 +92,70 @@ defmodule ButtonLogWeb.NotificationsLive do
   end
 
   @impl true
+  def handle_event("click_notification", %{"id" => notification_id}, socket) do
+    user_id = socket.assigns.current_user.id
+
+    # Find the notification
+    notification = Enum.find(socket.assigns.notifications, fn n -> n.id == notification_id end)
+
+    if notification do
+      # Mark as read if not already
+      unless notification.read do
+        Notifications.mark_notification_read(notification_id, user_id)
+      end
+
+      # Navigate based on notification type
+      path = get_notification_path(notification)
+
+      {:noreply, push_navigate(socket, to: path)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_params(_params, _url, socket) do
     {:noreply, socket}
+  end
+
+  # Helper to determine navigation path based on notification type
+  defp get_notification_path(notification) do
+    case notification.notification_type do
+      "button_click" ->
+        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+
+      "button_created" ->
+        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+
+      "gift_button_received" ->
+        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+
+      "gift_button_clicked" ->
+        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+
+      "gift_button_deleted" ->
+        ~p"/buttons"
+
+      "gift_button_sent" ->
+        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+
+      "one_time_button_completed" ->
+        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+
+      "friend_request" ->
+        ~p"/friends"
+
+      "support_ticket_reply" ->
+        ticket_id = get_in(notification.metadata, ["ticket_id"]) || notification.metadata[:ticket_id]
+        if ticket_id, do: ~p"/support/#{ticket_id}", else: ~p"/support"
+
+      "support_ticket_status_update" ->
+        ticket_id = get_in(notification.metadata, ["ticket_id"]) || notification.metadata[:ticket_id]
+        if ticket_id, do: ~p"/support/#{ticket_id}", else: ~p"/support"
+
+      _ ->
+        ~p"/notifications"
+    end
   end
 
   # Helper function for safe datetime formatting
