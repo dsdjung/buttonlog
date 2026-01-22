@@ -194,28 +194,34 @@ final class ModelTests: XCTestCase {
     // MARK: - Notification Model Tests
 
     func testAppNotificationCreation() {
+        let sender = NotificationSender(
+            id: "user-id",
+            username: "testuser",
+            displayName: "Test User"
+        )
         let notification = AppNotification(
             id: "notification-id",
-            userId: "user-id",
             type: .buttonClick,
             title: "Button Clicked",
             message: "Your friend clicked a button",
-            data: ["button_id": "button-123"],
+            data: nil,
             isRead: false,
             createdAt: Date(),
-            readAt: nil
+            sender: sender
         )
 
         XCTAssertEqual(notification.id, "notification-id")
         XCTAssertEqual(notification.type, .buttonClick)
         XCTAssertFalse(notification.isRead)
-        XCTAssertNil(notification.readAt)
+        XCTAssertEqual(notification.userId, "user-id")
+        XCTAssertEqual(notification.sender?.username, "testuser")
     }
 
     func testNotificationTypes() {
         XCTAssertEqual(NotificationType.buttonClick.rawValue, "button_click")
         XCTAssertEqual(NotificationType.friendRequest.rawValue, "friend_request")
         XCTAssertEqual(NotificationType.friendAccepted.rawValue, "friend_accepted")
+        XCTAssertEqual(NotificationType.general.rawValue, "general")
     }
 
     // MARK: - Subscription Model Tests

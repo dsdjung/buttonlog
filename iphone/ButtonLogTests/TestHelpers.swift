@@ -83,25 +83,37 @@ enum TestHelpers {
         )
     }
 
+    /// Creates a mock NotificationSender
+    static func createMockNotificationSender(
+        id: String = UUID().uuidString,
+        username: String = "testuser",
+        displayName: String? = "Test User"
+    ) -> NotificationSender {
+        return NotificationSender(
+            id: id,
+            username: username,
+            displayName: displayName
+        )
+    }
+
     /// Creates a mock AppNotification
     static func createMockNotification(
         id: String = UUID().uuidString,
-        userId: String = "user-1",
         type: NotificationType = .buttonClick,
         title: String = "Test Notification",
         message: String = "Test message",
-        isRead: Bool = false
+        isRead: Bool = false,
+        sender: NotificationSender? = nil
     ) -> AppNotification {
         return AppNotification(
             id: id,
-            userId: userId,
             type: type,
             title: title,
             message: message,
             data: nil,
             isRead: isRead,
             createdAt: Date(),
-            readAt: isRead ? Date() : nil
+            sender: sender ?? createMockNotificationSender()
         )
     }
 

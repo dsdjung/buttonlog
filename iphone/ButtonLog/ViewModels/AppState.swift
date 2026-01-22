@@ -186,19 +186,18 @@ class AppState: ObservableObject {
             try await apiService.markNotificationAsRead(id: id)
             
             if let index = notifications.firstIndex(where: { $0.id == id }) {
-                var notification = notifications[index]
-                notification = AppNotification(
+                let notification = notifications[index]
+                let updatedNotification = AppNotification(
                     id: notification.id,
-                    userId: notification.userId,
                     type: notification.type,
                     title: notification.title,
                     message: notification.message,
                     data: notification.data,
                     isRead: true,
                     createdAt: notification.createdAt,
-                    readAt: Date()
+                    sender: notification.sender
                 )
-                notifications[index] = notification
+                notifications[index] = updatedNotification
             }
             
             return true

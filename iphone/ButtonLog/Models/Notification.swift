@@ -2,22 +2,37 @@ import Foundation
 
 struct AppNotification: Identifiable, Codable {
     let id: String
-    let userId: String
     let type: NotificationType
     let title: String
     let message: String
     let data: NotificationData?
     let isRead: Bool
     let createdAt: Date
-    let readAt: Date?
-    
+    let sender: NotificationSender?
+
     enum CodingKeys: String, CodingKey {
         case id
-        case userId = "user_id"
-        case type, title, message, data
+        case type, title, data
+        case message = "body"
         case isRead = "is_read"
-        case createdAt = "created_at"
-        case readAt = "read_at"
+        case createdAt = "inserted_at"
+        case sender
+    }
+
+    // Computed property to get userId from sender for backwards compatibility
+    var userId: String? {
+        sender?.id
+    }
+}
+
+struct NotificationSender: Codable {
+    let id: String
+    let username: String
+    let displayName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, username
+        case displayName = "display_name"
     }
 }
 
@@ -29,7 +44,15 @@ enum NotificationType: String, Codable {
     case systemAnnouncement = "system_announcement"
     case subscriptionExpiring = "subscription_expiring"
     case subscriptionRenewed = "subscription_renewed"
-    
+    case general = "general"
+
+    // Handle unknown types gracefully
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        self = NotificationType(rawValue: rawValue) ?? .general
+    }
+
     var displayName: String {
         switch self {
         case .buttonClick: return "Button Activity"
@@ -39,9 +62,10 @@ enum NotificationType: String, Codable {
         case .systemAnnouncement: return "Announcement"
         case .subscriptionExpiring: return "Subscription"
         case .subscriptionRenewed: return "Subscription"
+        case .general: return "Notification"
         }
     }
-    
+
     var systemIcon: String {
         switch self {
         case .buttonClick: return "hand.tap"
@@ -51,6 +75,7 @@ enum NotificationType: String, Codable {
         case .systemAnnouncement: return "megaphone"
         case .subscriptionExpiring: return "exclamationmark.triangle"
         case .subscriptionRenewed: return "checkmark.circle"
+        case .general: return "bell"
         }
     }
 }
@@ -61,13 +86,69 @@ struct NotificationData: Codable {
     let friendId: String?
     let friendName: String?
     let actionUrl: String?
-    
+
+    // Store additional unknown fields
+    private var additionalData: [String: AnyCodableValue]?
+
     enum CodingKeys: String, CodingKey {
         case buttonId = "button_id"
         case buttonName = "button_name"
         case friendId = "friend_id"
         case friendName = "friend_name"
         case actionUrl = "action_url"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        buttonId = try container.decodeIfPresent(String.self, forKey: .buttonId)
+        buttonName = try container.decodeIfPresent(String.self, forKey: .buttonName)
+        friendId = try container.decodeIfPresent(String.self, forKey: .friendId)
+        friendName = try container.decodeIfPresent(String.self, forKey: .friendName)
+        actionUrl = try container.decodeIfPresent(String.self, forKey: .actionUrl)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(buttonId, forKey: .buttonId)
+        try container.encodeIfPresent(buttonName, forKey: .buttonName)
+        try container.encodeIfPresent(friendId, forKey: .friendId)
+        try container.encodeIfPresent(friendName, forKey: .friendName)
+        try container.encodeIfPresent(actionUrl, forKey: .actionUrl)
+    }
+}
+
+/// Helper for handling dynamic JSON values
+enum AnyCodableValue: Codable {
+    case string(String)
+    case int(Int)
+    case double(Double)
+    case bool(Bool)
+    case null
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let value = try? container.decode(String.self) {
+            self = .string(value)
+        } else if let value = try? container.decode(Int.self) {
+            self = .int(value)
+        } else if let value = try? container.decode(Double.self) {
+            self = .double(value)
+        } else if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+        } else {
+            self = .null
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .string(let value): try container.encode(value)
+        case .int(let value): try container.encode(value)
+        case .double(let value): try container.encode(value)
+        case .bool(let value): try container.encode(value)
+        case .null: try container.encodeNil()
+        }
     }
 }
 
