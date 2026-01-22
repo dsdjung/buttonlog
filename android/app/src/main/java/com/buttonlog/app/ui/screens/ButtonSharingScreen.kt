@@ -436,10 +436,10 @@ fun AddCollaboratorDialog(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = friend.friendUser.displayName ?: friend.friendUser.username,
+                                        text = friend.friendUser.displayName ?: friend.friendUser.username ?: "Unknown",
                                         style = MaterialTheme.typography.bodyMedium
                                     )
-                                    if (friend.friendUser.displayName != null) {
+                                    if (friend.friendUser.displayName != null && friend.friendUser.username != null) {
                                         Text(
                                             text = "@${friend.friendUser.username}",
                                             style = MaterialTheme.typography.bodySmall,
