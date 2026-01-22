@@ -268,6 +268,9 @@ defmodule ButtonLog.Social do
         end
     end
   rescue
+    Ecto.NoResultsError ->
+      IO.puts "NoResultsError: friendship not found"
+      {:error, :not_found}
     Ecto.QueryError ->
       IO.puts "Query error: friendship not found"
       {:error, :not_found}
@@ -442,6 +445,9 @@ defmodule ButtonLog.Social do
         end
     end
   rescue
+    Ecto.NoResultsError ->
+      IO.puts "NoResultsError: friendship not found"
+      {:error, :not_found}
     Ecto.QueryError ->
       IO.puts "Query error: friendship not found"
       {:error, :not_found}
@@ -526,6 +532,7 @@ defmodule ButtonLog.Social do
         end
     end
   rescue
+    Ecto.NoResultsError -> {:error, :not_found}
     Ecto.QueryError -> {:error, :not_found}
   end
 
@@ -543,6 +550,7 @@ defmodule ButtonLog.Social do
         end
     end
   rescue
+    Ecto.NoResultsError -> {:error, :not_found}
     Ecto.QueryError -> {:error, :not_found}
   end
 

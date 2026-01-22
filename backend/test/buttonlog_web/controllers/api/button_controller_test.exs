@@ -275,14 +275,15 @@ defmodule ButtonLogWeb.API.ButtonControllerTest do
       assert click["action"] == "end"
     end
 
-    test "returns 404 for non-existent button", %{conn: conn, token: token} do
+    test "returns error for non-existent button", %{conn: conn, token: token} do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{token}")
         |> post("/api/buttons/#{Ecto.UUID.generate()}/click")
 
-      assert %{"success" => false, "error" => error} = json_response(conn, 404)
-      assert error["code"] == "NOT_FOUND"
+      # Returns 403 NOT_AUTHORIZED to not reveal button existence
+      assert %{"success" => false, "error" => error} = json_response(conn, 403)
+      assert error["code"] == "NOT_AUTHORIZED"
     end
   end
 

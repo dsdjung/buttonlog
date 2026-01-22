@@ -26,12 +26,14 @@ defmodule ButtonLog.Social.FriendPermission do
 
   def create_changeset(permission, attrs, user_id, friend_id) do
     permission
-    |> changeset(attrs)
+    |> cast(attrs, [:can_view_history, :can_receive_alerts, :can_view_buttons])
     |> put_change(:user_id, user_id)
     |> put_change(:friend_id, friend_id)
-    |> put_change(:can_view_history, true)
-    |> put_change(:can_receive_alerts, true)
-    |> put_change(:can_view_buttons, true)
+    |> put_change(:can_view_history, Map.get(attrs, :can_view_history, true))
+    |> put_change(:can_receive_alerts, Map.get(attrs, :can_receive_alerts, true))
+    |> put_change(:can_view_buttons, Map.get(attrs, :can_view_buttons, true))
+    |> validate_required([:user_id, :friend_id])
+    |> unique_constraint([:user_id, :friend_id], name: :friend_permissions_user_friend_index)
   end
 end
 

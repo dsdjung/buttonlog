@@ -370,7 +370,7 @@ defmodule ButtonLog.Buttons do
         is_active: button.is_active,
         current_state: button.current_state,
         state_changed_at: button.state_changed_at,
-        alerts_enabled: button.notifications_enabled,
+        alerts_enabled: button.alerts_enabled,
         auto_stop_enabled: button.auto_stop_enabled,
         calendar_sync_enabled: button.calendar_sync_enabled,
         user_id: button.user_id,
