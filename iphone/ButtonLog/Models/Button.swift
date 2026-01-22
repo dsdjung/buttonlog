@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct Button: Identifiable, Codable, Equatable {
+struct ButtonModel: Identifiable, Codable, Equatable {
     let id: String
     let name: String
     let description: String?

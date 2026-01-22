@@ -17,8 +17,8 @@ enum TestHelpers {
         clickCount: Int = 0,
         currentState: ButtonState = .idle,
         alertsEnabled: Bool = true
-    ) -> Button {
-        return Button(
+    ) -> ButtonModel {
+        return ButtonModel(
             id: id,
             name: name,
             description: description,

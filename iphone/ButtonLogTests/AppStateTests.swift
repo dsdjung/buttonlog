@@ -3,14 +3,14 @@ import XCTest
 
 // Mock APIService for testing
 class MockAPIService {
-    var getButtonsResult: Result<[Button], Error> = .success([])
+    var getButtonsResult: Result<[ButtonModel], Error> = .success([])
     var getFriendsResult: Result<[Friend], Error> = .success([])
     var getNotificationsResult: Result<[AppNotification], Error> = .success([])
-    var createButtonResult: Result<Button, Error>?
-    var updateButtonResult: Result<Button, Error>?
+    var createButtonResult: Result<ButtonModel, Error>?
+    var updateButtonResult: Result<ButtonModel, Error>?
     var deleteButtonResult: Result<Void, Error> = .success(())
     var clickButtonResult: Result<ButtonClick, Error>?
-    var getButtonResult: Result<Button, Error>?
+    var getButtonResult: Result<ButtonModel, Error>?
 
     var getButtonsCalled = false
     var getFriendsCalled = false
@@ -20,7 +20,7 @@ class MockAPIService {
     var deleteButtonCalled = false
     var clickButtonCalled = false
 
-    func getButtons() async throws -> [Button] {
+    func getButtons() async throws -> [ButtonModel] {
         getButtonsCalled = true
         switch getButtonsResult {
         case .success(let buttons): return buttons
@@ -44,7 +44,7 @@ class MockAPIService {
         }
     }
 
-    func createButton(_ formData: ButtonFormData) async throws -> Button {
+    func createButton(_ formData: ButtonFormData) async throws -> ButtonModel {
         createButtonCalled = true
         guard let result = createButtonResult else {
             throw APIError.serverError("Not configured")
@@ -55,7 +55,7 @@ class MockAPIService {
         }
     }
 
-    func updateButton(id: String, formData: ButtonFormData) async throws -> Button {
+    func updateButton(id: String, formData: ButtonFormData) async throws -> ButtonModel {
         updateButtonCalled = true
         guard let result = updateButtonResult else {
             throw APIError.serverError("Not configured")
@@ -85,7 +85,7 @@ class MockAPIService {
         }
     }
 
-    func getButton(id: String) async throws -> Button {
+    func getButton(id: String) async throws -> ButtonModel {
         guard let result = getButtonResult else {
             throw APIError.serverError("Not configured")
         }
@@ -105,8 +105,8 @@ final class AppStateTests: XCTestCase {
         name: String = "Test Button",
         type: ButtonType = .instant,
         clickCount: Int = 0
-    ) -> Button {
-        return Button(
+    ) -> ButtonModel {
+        return ButtonModel(
             id: id,
             name: name,
             description: "A test button",

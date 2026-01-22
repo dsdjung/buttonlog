@@ -3,7 +3,7 @@ import Combine
 
 @MainActor
 class AppState: ObservableObject {
-    @Published var buttons: [Button] = []
+    @Published var buttons: [ButtonModel] = []
     @Published var friends: [Friend] = []
     @Published var notifications: [AppNotification] = []
     @Published var subscriptionPlans: [SubscriptionPlan] = []

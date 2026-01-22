@@ -4,12 +4,12 @@ struct ButtonsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var searchText = ""
     @State private var showingCreateButton = false
-    @State private var selectedButton: Button?
-    @State private var historyButton: Button?
-    @State private var sharingButton: Button?
-    @State private var alertSettingsButton: Button?
+    @State private var selectedButton: ButtonModel?
+    @State private var historyButton: ButtonModel?
+    @State private var sharingButton: ButtonModel?
+    @State private var alertSettingsButton: ButtonModel?
 
-    var filteredButtons: [Button] {
+    var filteredButtons: [ButtonModel] {
         if searchText.isEmpty {
             return appState.buttons
         } else {
@@ -109,7 +109,7 @@ struct ButtonsView: View {
 }
 
 struct ButtonCard: View {
-    let button: Button
+    let button: ButtonModel
     let onTap: () -> Void
     let onEdit: () -> Void
     let onHistory: () -> Void
@@ -269,7 +269,7 @@ struct ButtonCard: View {
         return iconMap[icon] ?? "star.fill"
     }
 
-    private func buttonActionIcon(for button: Button) -> String {
+    private func buttonActionIcon(for button: ButtonModel) -> String {
         switch button.type {
         case .instant:
             return "hand.tap"
@@ -282,7 +282,7 @@ struct ButtonCard: View {
         }
     }
 
-    private func buttonActionText(for button: Button) -> String {
+    private func buttonActionText(for button: ButtonModel) -> String {
         switch button.type {
         case .instant:
             return "Click!"

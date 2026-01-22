@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ButtonHistoryView: View {
-    let button: Button
+    let button: ButtonModel
     @Environment(\.dismiss) private var dismiss
     @State private var clicks: [ButtonClick] = []
     @State private var isLoading = true
@@ -210,7 +210,7 @@ struct ClickRow: View {
 }
 
 #Preview {
-    ButtonHistoryView(button: Button(
+    ButtonHistoryView(button: ButtonModel(
         id: "1",
         name: "Test Button",
         description: "A test button",

@@ -208,7 +208,7 @@ struct EditButtonView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject private var appState: AppState
 
-    let button: Button
+    let button: ButtonModel
     @State private var formData = ButtonFormData()
     @State private var isLoading = false
     @State private var sharingSettings: [ButtonSharingSetting] = []

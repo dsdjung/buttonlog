@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ButtonAlertSettingsView: View {
-    let button: Button
+    let button: ButtonModel
     @State private var alertPreferences: [ButtonAlertPreference] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -189,7 +189,7 @@ struct ButtonAlertSettingsView: View {
 }
 
 #Preview {
-    ButtonAlertSettingsView(button: Button(
+    ButtonAlertSettingsView(button: ButtonModel(
         id: "1",
         name: "Test Button",
         description: nil,

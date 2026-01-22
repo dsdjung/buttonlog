@@ -81,7 +81,7 @@ struct DiaryView: View {
         selectedDate = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) ?? selectedDate
     }
     
-    private func getButtonsWithActivity(for date: Date) -> [ButtonLog.Button] {
+    private func getButtonsWithActivity(for date: Date) -> [ButtonModel] {
         // In a real app, this would filter buttons based on actual activity data
         // For now, we'll simulate some activity
         return appState.buttons.prefix(3).map { $0 }
@@ -90,7 +90,7 @@ struct DiaryView: View {
 
 struct DailySummaryCard: View {
     let date: Date
-    let buttons: [ButtonLog.Button]
+    let buttons: [ButtonModel]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -156,7 +156,7 @@ struct SummaryItem: View {
 }
 
 struct ButtonActivityCard: View {
-    let button: ButtonLog.Button
+    let button: ButtonModel
     let date: Date
     
     var body: some View {

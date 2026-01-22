@@ -277,15 +277,15 @@ class APIService {
 
     // MARK: - Buttons
     
-    func getButtons() async throws -> [Button] {
+    func getButtons() async throws -> [ButtonModel] {
         return try await makeRequest(endpoint: "/buttons")
     }
-    
-    func getButton(id: String) async throws -> Button {
+
+    func getButton(id: String) async throws -> ButtonModel {
         return try await makeRequest(endpoint: "/buttons/\(id)")
     }
-    
-    func createButton(_ formData: ButtonFormData) async throws -> Button {
+
+    func createButton(_ formData: ButtonFormData) async throws -> ButtonModel {
         return try await makeRequest(
             endpoint: "/buttons",
             method: .POST,
@@ -294,7 +294,7 @@ class APIService {
     }
 
     /// Create a button for a friend (gift button)
-    func createButtonForFriend(friendId: String, formData: ButtonFormData, message: String? = nil) async throws -> Button {
+    func createButtonForFriend(friendId: String, formData: ButtonFormData, message: String? = nil) async throws -> ButtonModel {
         var body: [String: Any] = [
             "friend_id": friendId,
             "button": formData.toRequestBody()
@@ -310,7 +310,7 @@ class APIService {
         )
     }
 
-    func updateButton(id: String, formData: ButtonFormData) async throws -> Button {
+    func updateButton(id: String, formData: ButtonFormData) async throws -> ButtonModel {
         return try await makeRequest(
             endpoint: "/buttons/\(id)",
             method: .PUT,
@@ -353,7 +353,7 @@ class APIService {
     }
 
     /// Update button sharing mode
-    func updateSharingMode(buttonId: String, mode: SharingMode) async throws -> Button {
+    func updateSharingMode(buttonId: String, mode: SharingMode) async throws -> ButtonModel {
         let body: [String: Any] = [
             "sharing_mode": mode.rawValue
         ]
@@ -373,7 +373,7 @@ class APIService {
     }
 
     /// Revoke the shareable link for a button
-    func revokeShareLink(buttonId: String) async throws -> Button {
+    func revokeShareLink(buttonId: String) async throws -> ButtonModel {
         return try await makeRequest(
             endpoint: "/buttons/\(buttonId)/share-link",
             method: .DELETE
@@ -406,7 +406,7 @@ class APIService {
     }
 
     /// Join a button via share token
-    func joinByShareToken(_ token: String) async throws -> Button {
+    func joinByShareToken(_ token: String) async throws -> ButtonModel {
         return try await makeRequest(
             endpoint: "/buttons/join/\(token)",
             method: .POST

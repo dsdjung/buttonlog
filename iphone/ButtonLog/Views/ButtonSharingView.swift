@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ButtonSharingView: View {
-    let button: Button
+    let button: ButtonModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var sharingMode: SharingMode
@@ -14,7 +14,7 @@ struct ButtonSharingView: View {
     @State private var showAddCollaborator = false
     @State private var showCopiedToast = false
 
-    init(button: Button) {
+    init(button: ButtonModel) {
         self.button = button
         _sharingMode = State(initialValue: button.sharingMode ?? .private)
         _shareToken = State(initialValue: button.shareToken)
@@ -397,7 +397,7 @@ struct AddCollaboratorView: View {
 }
 
 #Preview {
-    ButtonSharingView(button: Button(
+    ButtonSharingView(button: ButtonModel(
         id: "test-id",
         name: "Test Button",
         description: nil,
