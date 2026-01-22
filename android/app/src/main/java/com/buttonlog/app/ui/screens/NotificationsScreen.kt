@@ -381,7 +381,7 @@ fun getNotificationTypeDisplayName(type: String): String {
 
 fun getNavigationDestination(notification: Notification): NotificationNavigation {
     return when (notification.type) {
-        "button_click", "button_shared", "gift_button_received", "gift_button_clicked" -> {
+        "button_click", "button_shared", "gift_button_received" -> {
             // Try to get button_id from the data map
             val buttonId = notification.data?.get("button_id")?.toString()
             if (buttonId != null) {
@@ -390,8 +390,8 @@ fun getNavigationDestination(notification: Notification): NotificationNavigation
                 NotificationNavigation.None
             }
         }
-        "gift_button_sent" -> {
-            // Navigate to friend page when clicking on a "gift sent" notification
+        "gift_button_sent", "gift_button_clicked" -> {
+            // Navigate to friend page when clicking on gift button notifications
             val friendId = notification.data?.get("friend_id")?.toString()
             if (friendId != null) {
                 NotificationNavigation.Friend(friendId)

@@ -625,7 +625,8 @@ defmodule ButtonLog.Buttons do
         metadata: %{
           button_id: button.id,
           button_name: button.name,
-          action: action
+          action: action,
+          friend_id: button.user_id  # The friend who received and clicked the gift button
         }
       }, button.created_by_friend_id, button.user_id, button.id)
     end

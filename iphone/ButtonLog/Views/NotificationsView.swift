@@ -309,13 +309,13 @@ struct NotificationRow: View {
 
     private func getNavigationDestination() -> NotificationDestination {
         switch notification.type {
-        case .buttonClick, .buttonShared, .giftButtonReceived, .giftButtonClicked:
+        case .buttonClick, .buttonShared, .giftButtonReceived:
             if let buttonId = notification.buttonId {
                 return .button(buttonId)
             }
             return .none
-        case .giftButtonSent:
-            // Navigate to friend page when clicking on a "gift sent" notification
+        case .giftButtonSent, .giftButtonClicked:
+            // Navigate to friend page when clicking on gift button notifications
             if let friendId = notification.friendId {
                 return .friend(friendId)
             }
