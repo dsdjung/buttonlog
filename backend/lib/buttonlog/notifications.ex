@@ -300,7 +300,7 @@ defmodule ButtonLog.Notifications do
     {"start", "started"}
   end
 
-  defp get_action_verbs(action) when action in ["stop", :stop] do
+  defp get_action_verbs(action) when action in ["stop", :stop, "end", :end] do
     {"stop", "stopped"}
   end
 

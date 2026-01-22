@@ -55,6 +55,29 @@ defmodule ButtonLog.NotificationsTest do
       refute notification.title =~ "clicked"
     end
 
+    test "notification messages use 'stopped' for end action (timed button stop)" do
+      user = insert_user()
+      friend = insert_user(%{email: "friend2b@test.com", username: "friend2b"})
+      button = insert_button(user, %{name: "Test Timer", button_type: "timed"})
+
+      Notifications.set_button_friend_notification(button.id, user.id, friend.id, true)
+
+      # The buttons context uses "end" action when stopping a timed button
+      {:ok, _results} = Notifications.send_button_click_notifications(
+        button.id,
+        user.id,
+        %{action: "end", clicked_at: DateTime.utc_now()}
+      )
+
+      notifications = Notifications.get_user_notifications(friend.id)
+      assert length(notifications) == 1
+
+      notification = hd(notifications)
+      assert notification.title =~ "stopped"
+      assert notification.message =~ "stopped"
+      refute notification.title =~ "clicked"
+    end
+
     test "notification messages use 'clicked' for click action (instant buttons)" do
       user = insert_user()
       friend = insert_user(%{email: "friend3@test.com", username: "friend3"})
