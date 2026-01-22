@@ -22,7 +22,8 @@ defmodule ButtonLogWeb.API.SubscriptionController do
     conn
     |> put_status(:ok)
     |> json(%{
-      plans: Enum.map(plans, &format_plan/1)
+      success: true,
+      data: Enum.map(plans, &format_plan_for_mobile/1)
     })
   end
 
@@ -33,33 +34,37 @@ defmodule ButtonLogWeb.API.SubscriptionController do
     user_id = conn.assigns.current_user.id
 
     case SubscriptionService.get_user_subscription(user_id) do
-      %{plan: plan, subscription: subscription, usage: usage} when not is_nil(subscription) ->
+      %{plan: _plan, subscription: subscription, usage: usage} when not is_nil(subscription) ->
         conn
         |> put_status(:ok)
         |> json(%{
-          subscription: %{
+          success: true,
+          data: %{
             id: subscription.id,
+            user_id: user_id,
+            subscription_plan_id: subscription.subscription_plan_id,
             status: subscription.status,
-            plan: format_plan(plan),
             billing_cycle: subscription.billing_cycle,
             amount: subscription.amount,
             currency: subscription.currency,
-            current_period_start: subscription.current_period_start,
-            current_period_end: subscription.current_period_end,
+            period_start: subscription.current_period_start,
+            period_end: subscription.current_period_end,
             trial_start: subscription.trial_start,
             trial_end: subscription.trial_end,
-            next_billing_date: subscription.next_billing_date,
-            usage: usage
+            payment_provider: subscription.payment_provider,
+            provider_subscription_id: subscription.payment_provider_subscription_id,
+            usage: format_usage(usage),
+            created_at: subscription.inserted_at,
+            updated_at: subscription.updated_at
           }
         })
 
-      %{plan: plan} ->
+      %{plan: _plan} ->
         conn
         |> put_status(:ok)
         |> json(%{
-          subscription: nil,
-          plan: format_plan(plan),
-          usage: %{}
+          success: true,
+          data: nil
         })
     end
   end
@@ -104,18 +109,21 @@ defmodule ButtonLogWeb.API.SubscriptionController do
         conn
         |> put_status(:ok)
         |> json(%{
-          message: "Subscription canceled successfully",
-          subscription: %{
-            id: subscription.id,
-            status: subscription.status,
-            canceled_at: subscription.canceled_at
+          success: true,
+          data: %{
+            message: "Subscription canceled successfully",
+            subscription: %{
+              id: subscription.id,
+              status: subscription.status,
+              canceled_at: subscription.canceled_at
+            }
           }
         })
 
       {:error, message} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> json(%{error: message})
+        |> json(%{success: false, error: %{message: message}})
     end
   end
 
@@ -130,18 +138,21 @@ defmodule ButtonLogWeb.API.SubscriptionController do
         conn
         |> put_status(:ok)
         |> json(%{
-          message: "Subscription paused successfully",
-          subscription: %{
-            id: subscription.id,
-            status: subscription.status,
-            paused_at: subscription.paused_at
+          success: true,
+          data: %{
+            message: "Subscription paused successfully",
+            subscription: %{
+              id: subscription.id,
+              status: subscription.status,
+              paused_at: subscription.paused_at
+            }
           }
         })
 
       {:error, message} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> json(%{error: message})
+        |> json(%{success: false, error: %{message: message}})
     end
   end
 
@@ -156,17 +167,20 @@ defmodule ButtonLogWeb.API.SubscriptionController do
         conn
         |> put_status(:ok)
         |> json(%{
-          message: "Subscription resumed successfully",
-          subscription: %{
-            id: subscription.id,
-            status: subscription.status
+          success: true,
+          data: %{
+            message: "Subscription resumed successfully",
+            subscription: %{
+              id: subscription.id,
+              status: subscription.status
+            }
           }
         })
 
       {:error, message} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> json(%{error: message})
+        |> json(%{success: false, error: %{message: message}})
     end
   end
 
@@ -179,7 +193,10 @@ defmodule ButtonLogWeb.API.SubscriptionController do
 
     conn
     |> put_status(:ok)
-    |> json(stats)
+    |> json(%{
+      success: true,
+      data: stats
+    })
   end
 
   @doc """
@@ -200,37 +217,47 @@ defmodule ButtonLogWeb.API.SubscriptionController do
 
   # Private functions
 
-  defp format_plan(plan) do
+  # Format plan for mobile clients (Android/iOS)
+  defp format_plan_for_mobile(plan) do
     %{
       id: plan.id,
       name: plan.name,
       slug: plan.slug,
-      description: plan.description,
-      pricing: %{
-        monthly: plan.price_monthly,
-        yearly: plan.price_yearly,
-        currency: plan.currency
-      },
+      description: plan.description || "",
+      monthly_price: plan.price_monthly || 0.0,
+      yearly_price: plan.price_yearly || 0.0,
       features: %{
+        analytics: plan.has_advanced_analytics || false,
+        calendar_sync: plan.has_calendar_sync || false,
+        api_access: plan.has_api_access || false,
+        custom_themes: plan.has_custom_themes || false,
+        priority_support: plan.has_priority_support || false,
+        team_features: plan.has_team_features || false,
+        white_label_options: plan.has_white_label || false
+      },
+      limits: %{
         max_buttons: plan.max_buttons,
         max_friends: plan.max_friends,
-        max_button_clicks_per_month: plan.max_button_clicks_per_month,
-        max_analytics_history_days: plan.max_analytics_history_days,
-        max_export_history_days: plan.max_export_history_days,
-        has_advanced_analytics: plan.has_advanced_analytics,
-        has_calendar_sync: plan.has_calendar_sync,
-        has_api_access: plan.has_api_access,
-        has_priority_support: plan.has_priority_support,
-        has_custom_themes: plan.has_custom_themes,
-        has_team_features: plan.has_team_features,
-        has_white_label: plan.has_white_label
+        max_clicks_per_month: plan.max_button_clicks_per_month,
+        analytics_history_days: plan.max_analytics_history_days,
+        export_history_days: plan.max_export_history_days
       },
-      trial: %{
-        days: plan.trial_days,
-        requires_credit_card: plan.trial_requires_credit_card
-      }
+      trial_days: plan.trial_days,
+      is_active: plan.is_active || true,
+      created_at: plan.inserted_at,
+      updated_at: plan.updated_at
     }
   end
+
+  defp format_usage(usage) when is_map(usage) do
+    %{
+      buttons_used: Map.get(usage, :buttons_used, 0),
+      friends_used: Map.get(usage, :friends_used, 0),
+      clicks_this_month: Map.get(usage, :clicks_this_month, 0),
+      last_reset_at: Map.get(usage, :last_reset_at)
+    }
+  end
+  defp format_usage(_), do: %{buttons_used: 0, friends_used: 0, clicks_this_month: 0, last_reset_at: nil}
 
   # ============================================================================
   # Stripe Checkout & Portal
@@ -249,19 +276,22 @@ defmodule ButtonLogWeb.API.SubscriptionController do
       conn
       |> put_status(:ok)
       |> json(%{
-        checkout_url: session.url,
-        session_id: session.id
+        success: true,
+        data: %{
+          checkout_url: session.url,
+          session_id: session.id
+        }
       })
     else
       nil ->
         conn
         |> put_status(:not_found)
-        |> json(%{error: "Plan not found"})
+        |> json(%{success: false, error: %{message: "Plan not found"}})
 
       {:error, message} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> json(%{error: message})
+        |> json(%{success: false, error: %{message: message}})
     end
   end
 
@@ -277,13 +307,16 @@ defmodule ButtonLogWeb.API.SubscriptionController do
         conn
         |> put_status(:ok)
         |> json(%{
-          portal_url: session.url
+          success: true,
+          data: %{
+            portal_url: session.url
+          }
         })
 
       {:error, message} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> json(%{error: message})
+        |> json(%{success: false, error: %{message: message}})
     end
   end
 
