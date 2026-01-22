@@ -303,6 +303,57 @@ defmodule ButtonLog.GiftButtonsTest do
     end
   end
 
+  describe "list_gift_buttons_for_friend/2" do
+    test "returns buttons created by user for a specific friend" do
+      creator = insert_user(%{email: "list_creator@test.com", username: "list_creator"})
+      friend = insert_user(%{email: "list_friend@test.com", username: "list_friend"})
+      other_friend = insert_user(%{email: "other_friend@test.com", username: "other_friend"})
+      create_friendship(creator.id, friend.id)
+      create_friendship(creator.id, other_friend.id)
+
+      # Create buttons for friend
+      {:ok, button1} = Buttons.create_button_for_friend(%{"name" => "Gift 1", "type" => "instant"}, friend.id, creator.id)
+      {:ok, button2} = Buttons.create_button_for_friend(%{"name" => "Gift 2", "type" => "timed"}, friend.id, creator.id, "A message")
+
+      # Create button for other_friend (should not appear)
+      {:ok, _other_button} = Buttons.create_button_for_friend(%{"name" => "Other Gift", "type" => "instant"}, other_friend.id, creator.id)
+
+      # Get gift buttons for friend
+      gift_buttons = Buttons.list_gift_buttons_for_friend(creator.id, friend.id)
+
+      assert length(gift_buttons) == 2
+      button_ids = Enum.map(gift_buttons, & &1.id)
+      assert button1.id in button_ids
+      assert button2.id in button_ids
+    end
+
+    test "includes archived buttons in the list" do
+      creator = insert_user(%{email: "archive_list_creator@test.com", username: "archive_list_creator"})
+      friend = insert_user(%{email: "archive_list_friend@test.com", username: "archive_list_friend"})
+      create_friendship(creator.id, friend.id)
+
+      # Create a one-time button and click it to archive
+      {:ok, button} = Buttons.create_button_for_friend(%{"name" => "One-Time Gift", "type" => "one-time"}, friend.id, creator.id)
+      {:ok, _click} = Buttons.click_button(button.id, friend.id)
+
+      # Get gift buttons - should include archived
+      gift_buttons = Buttons.list_gift_buttons_for_friend(creator.id, friend.id)
+
+      assert length(gift_buttons) == 1
+      assert hd(gift_buttons).archived == true
+    end
+
+    test "returns empty list when no gift buttons exist" do
+      creator = insert_user(%{email: "empty_creator@test.com", username: "empty_creator"})
+      friend = insert_user(%{email: "empty_friend@test.com", username: "empty_friend"})
+      create_friendship(creator.id, friend.id)
+
+      gift_buttons = Buttons.list_gift_buttons_for_friend(creator.id, friend.id)
+
+      assert gift_buttons == []
+    end
+  end
+
   # Helper functions
   defp insert_user(attrs \\ %{}) do
     default_attrs = %{

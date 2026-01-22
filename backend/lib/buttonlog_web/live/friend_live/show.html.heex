@@ -202,6 +202,62 @@
         <% end %>
       </div>
 
+      <!-- Buttons I Created for This Friend -->
+      <%= if length(@gift_buttons) > 0 do %>
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Buttons You Created for <%= @friend.display_name %></h2>
+          <div class="space-y-3">
+            <%= for button <- @gift_buttons do %>
+              <div class={"p-4 border rounded-lg #{if button.archived, do: "border-gray-300 bg-gray-50", else: "border-purple-200 bg-purple-50"}"}>
+                <div class="flex items-center space-x-4">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
+                       style={"background-color: #{button.color || "#9333EA"}; #{if button.archived, do: "opacity: 0.5;", else: ""}"}>
+                    <%= case button.type do %>
+                      <% "instant" -> %>⚡
+                      <% "timed" -> %>⏱️
+                      <% "state" -> %>🔄
+                      <% "one-time" -> %>1️⃣
+                      <% _ -> %>📱
+                    <% end %>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center space-x-2">
+                      <h3 class={"font-semibold #{if button.archived, do: "text-gray-500", else: "text-gray-900"}"}><%= button.name %></h3>
+                      <%= if button.archived do %>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600">
+                          Archived
+                        </span>
+                      <% end %>
+                    </div>
+                    <p class="text-sm text-gray-500">
+                      <%= case button.type do %>
+                        <% "instant" -> %>Instant
+                        <% "timed" -> %>Timed
+                        <% "state" -> %>State
+                        <% "one-time" -> %>One-Time
+                        <% _ -> %>Button
+                      <% end %>
+                      <span class="mx-1">•</span>
+                      Created <%= Calendar.strftime(button.inserted_at, "%b %d, %Y") %>
+                    </p>
+                    <%= if button.latest_click_at do %>
+                      <p class="text-sm text-green-600 mt-1">
+                        Last used: <%= Calendar.strftime(button.latest_click_at, "%m/%d %I:%M %p") %>
+                      </p>
+                    <% else %>
+                      <p class="text-sm text-gray-400 mt-1">Not used yet</p>
+                    <% end %>
+                    <%= if button.gift_message do %>
+                      <p class="text-sm text-purple-600 mt-2 italic">"<%= button.gift_message %>"</p>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
       <!-- Shared Activity -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Shared Buttons -->

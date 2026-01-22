@@ -48,6 +48,36 @@ defmodule ButtonLog.Buttons do
   end
 
   @doc """
+  Returns the list of buttons created by a user for a specific friend (gift buttons).
+  """
+  def list_gift_buttons_for_friend(creator_id, friend_id) do
+    Repo.all(
+      from b in Button,
+      left_join: bc in ButtonClick, on: b.id == bc.button_id,
+      where: b.user_id == ^friend_id and b.created_by_friend_id == ^creator_id,
+      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.notifications_enabled, b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, b.archived, b.archived_at],
+      order_by: [desc: b.inserted_at],
+      select: %{
+        id: b.id,
+        name: b.name,
+        description: b.description,
+        type: b.type,
+        icon: b.icon,
+        color: b.color,
+        is_active: b.is_active,
+        current_state: b.current_state,
+        notifications_enabled: b.notifications_enabled,
+        user_id: b.user_id,
+        inserted_at: b.inserted_at,
+        latest_click_at: max(bc.clicked_at),
+        gift_message: b.gift_message,
+        archived: b.archived,
+        archived_at: b.archived_at
+      }
+    )
+  end
+
+  @doc """
   Gets a single button.
   """
   def get_button(id, user_id) do

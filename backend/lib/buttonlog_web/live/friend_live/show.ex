@@ -21,6 +21,9 @@ defmodule ButtonLogWeb.FriendLive.Show do
           shared_buttons = Social.get_shared_buttons(user_id, friend_id)
           shared_notifications = Social.get_shared_notifications(user_id, friend_id)
 
+          # Get buttons I created for this friend
+          gift_buttons = Buttons.list_gift_buttons_for_friend(user_id, friend_id)
+
           # Get friend activity (requires can_view_history permission)
           {friend_activity, can_view_history} =
             case Social.get_friend_activity(user_id, friend_id, 20) do
@@ -35,6 +38,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
            |> assign(:friendship, friendship)
            |> assign(:shared_buttons, shared_buttons)
            |> assign(:shared_notifications, shared_notifications)
+           |> assign(:gift_buttons, gift_buttons)
            |> assign(:friend_activity, friend_activity)
            |> assign(:can_view_history, can_view_history)
            |> assign(:show_gift_button_form, false)
@@ -134,9 +138,13 @@ defmodule ButtonLogWeb.FriendLive.Show do
 
     case Buttons.create_button_for_friend(button_attrs, friend_id, user_id, message) do
       {:ok, button} ->
+        # Reload the gift buttons list
+        gift_buttons = Buttons.list_gift_buttons_for_friend(user_id, friend_id)
+
         {:noreply,
          socket
          |> put_flash(:info, "Button '#{button.name}' created for #{socket.assigns.friend.display_name}!")
+         |> assign(:gift_buttons, gift_buttons)
          |> assign(:show_gift_button_form, false)
          |> assign(:gift_button_name, "")
          |> assign(:gift_button_type, "instant")
