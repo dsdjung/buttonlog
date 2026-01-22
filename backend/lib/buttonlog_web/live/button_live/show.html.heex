@@ -12,7 +12,21 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-4">
                 <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold" style={"background-color: #{@button.color}"}>
-                  <%= @button.icon %>
+                  <%= case @button.icon do %>
+                    <% "star" -> %>⭐
+                    <% "heart" -> %>❤️
+                    <% "bolt" -> %>⚡
+                    <% "flame" -> %>🔥
+                    <% "leaf" -> %>🍃
+                    <% "drop" -> %>💧
+                    <% "sun" -> %>☀️
+                    <% "moon" -> %>🌙
+                    <% "car" -> %>🚗
+                    <% "book" -> %>📚
+                    <% "pencil" -> %>✏️
+                    <% "gear" -> %>⚙️
+                    <% _ -> %>📱
+                  <% end %>
                 </div>
                 <div>
                   <h1 class="text-3xl font-bold text-gray-900"><%= @button.name %></h1>
@@ -63,7 +77,23 @@
                   
                   <div>
                     <dt class="text-sm font-medium text-gray-500">Icon</dt>
-                    <dd class="mt-1 text-2xl"><%= @button.icon %></dd>
+                    <dd class="mt-1 text-2xl">
+                      <%= case @button.icon do %>
+                        <% "star" -> %>⭐
+                        <% "heart" -> %>❤️
+                        <% "bolt" -> %>⚡
+                        <% "flame" -> %>🔥
+                        <% "leaf" -> %>🍃
+                        <% "drop" -> %>💧
+                        <% "sun" -> %>☀️
+                        <% "moon" -> %>🌙
+                        <% "car" -> %>🚗
+                        <% "book" -> %>📚
+                        <% "pencil" -> %>✏️
+                        <% "gear" -> %>⚙️
+                        <% _ -> %>📱
+                      <% end %>
+                    </dd>
                   </div>
                   
                   <div>

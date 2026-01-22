@@ -60,7 +60,21 @@
                   <div class="p-6">
                     <div class="flex items-center space-x-4 mb-4">
                       <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold flex-shrink-0" style={"background-color: #{button.color}"}>
-                        <%= button.icon %>
+                        <%= case button.icon do %>
+                          <% "star" -> %>⭐
+                          <% "heart" -> %>❤️
+                          <% "bolt" -> %>⚡
+                          <% "flame" -> %>🔥
+                          <% "leaf" -> %>🍃
+                          <% "drop" -> %>💧
+                          <% "sun" -> %>☀️
+                          <% "moon" -> %>🌙
+                          <% "car" -> %>🚗
+                          <% "book" -> %>📚
+                          <% "pencil" -> %>✏️
+                          <% "gear" -> %>⚙️
+                          <% _ -> %>📱
+                        <% end %>
                       </div>
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center space-x-3 mb-2">
