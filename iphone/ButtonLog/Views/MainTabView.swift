@@ -39,13 +39,13 @@ struct MainTabView: View {
             }
             .tag(2)
             
-            // Notifications Tab
+            // Alerts Tab
             NavigationView {
                 NotificationsView()
             }
             .tabItem {
                 Image(systemName: "bell.fill")
-                Text("Notifications")
+                Text("Alerts")
             }
             .badge(appState.unreadNotificationCount)
             .tag(3)

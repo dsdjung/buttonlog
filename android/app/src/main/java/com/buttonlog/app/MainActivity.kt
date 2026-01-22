@@ -114,7 +114,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     ),
                     NavigationItem(
                         route = "notifications",
-                        title = "Notifications",
+                        title = "Alerts",
                         icon = Icons.Default.Notifications,
                         badgeCount = unreadNotificationsCount
                     ),

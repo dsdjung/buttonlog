@@ -6,7 +6,7 @@
     <string name="nav_buttons">Buttons</string>
     <string name="nav_diary">Diary</string>
     <string name="nav_friends">Friends</string>
-    <string name="nav_notifications">Notifications</string>
+    <string name="nav_notifications">Alerts</string>
     <string name="nav_account">Account</string>
 
     <!-- Authentication -->
@@ -48,6 +48,6 @@
 
     <!-- Empty States -->
     <string name="empty_buttons">No buttons yet. Create your first button!</string>
-    <string name="empty_notifications">No notifications.</string>
+    <string name="empty_notifications">No alerts.</string>
     <string name="empty_friends">No friends yet.</string>
 </resources>

@@ -33,7 +33,7 @@ struct NotificationsView: View {
                 // Loading state
                 VStack {
                     ProgressView()
-                    Text("Loading notifications...")
+                    Text("Loading alerts...")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .padding(.top, 8)
@@ -51,11 +51,11 @@ struct NotificationsView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.secondary)
 
-                        Text(showingUnreadOnly ? "No unread notifications" : "No notifications yet")
+                        Text(showingUnreadOnly ? "No unread alerts" : "No alerts yet")
                             .font(.title3)
                             .fontWeight(.semibold)
 
-                        Text(showingUnreadOnly ? "All caught up!" : "You'll see notifications here when you have activity from friends or system updates")
+                        Text(showingUnreadOnly ? "All caught up!" : "You'll see alerts here when you have activity from friends or system updates")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -98,7 +98,7 @@ struct NotificationsView: View {
                 }
             }
         }
-        .navigationTitle("Notifications")
+        .navigationTitle("Alerts")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
