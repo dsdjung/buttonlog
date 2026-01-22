@@ -96,6 +96,11 @@ defmodule ButtonLogWeb.FriendLive.Show do
   end
 
   @impl true
+  def handle_event("select_button_type", %{"type" => type}, socket) do
+    {:noreply, socket |> assign(:gift_button_type, type)}
+  end
+
+  @impl true
   def handle_event("update_gift_button_field", params, socket) do
     field = params["field"]
     value = params["value"]

@@ -106,33 +106,29 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">Button Type</label>
               <div class="grid grid-cols-4 gap-2">
                 <button type="button"
-                        phx-click="update_gift_button_field"
-                        phx-value-field="type"
-                        phx-value-value="instant"
+                        phx-click="select_button_type"
+                        phx-value-type="instant"
                         class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
                         style={"#{if @gift_button_type == "instant", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
                   ⚡ Instant
                 </button>
                 <button type="button"
-                        phx-click="update_gift_button_field"
-                        phx-value-field="type"
-                        phx-value-value="timed"
+                        phx-click="select_button_type"
+                        phx-value-type="timed"
                         class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
                         style={"#{if @gift_button_type == "timed", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
                   ⏱️ Timed
                 </button>
                 <button type="button"
-                        phx-click="update_gift_button_field"
-                        phx-value-field="type"
-                        phx-value-value="state"
+                        phx-click="select_button_type"
+                        phx-value-type="state"
                         class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
                         style={"#{if @gift_button_type == "state", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
                   🔄 State
                 </button>
                 <button type="button"
-                        phx-click="update_gift_button_field"
-                        phx-value-field="type"
-                        phx-value-value="one-time"
+                        phx-click="select_button_type"
+                        phx-value-type="one-time"
                         class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
                         style={"#{if @gift_button_type == "one-time", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
                   1️⃣ One-Time
