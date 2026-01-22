@@ -60,15 +60,18 @@ data class GiftCreator(
     val displayName: String?
 )
 
-enum class ButtonType(val displayName: String, val icon: String) {
+enum class ButtonType(val displayName: String, val icon: String, val description: String) {
     @SerializedName("instant")
-    INSTANT("Instant", "bolt"),
-    
+    INSTANT("Instant", "bolt", "Single click actions"),
+
     @SerializedName("timed")
-    TIMED("Timed", "timer"),
-    
+    TIMED("Timed", "timer", "Start/stop timing"),
+
     @SerializedName("state")
-    STATE("State", "toggle_on")
+    STATE("State", "toggle_on", "On/off states"),
+
+    @SerializedName("one-time")
+    ONE_TIME("One-Time", "looks_one", "Use once, then archived")
 }
 
 enum class ButtonState(val displayName: String, val color: Color) {

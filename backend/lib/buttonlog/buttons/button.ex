@@ -20,6 +20,10 @@ defmodule ButtonLog.Buttons.Button do
     field :auto_stop_enabled, :boolean
     field :calendar_sync_enabled, :boolean
 
+    # Archival (for one-time buttons)
+    field :archived, :boolean, default: false
+    field :archived_at, :utc_datetime
+
     # Relationships
     belongs_to :user, ButtonLog.Accounts.User
     belongs_to :created_by_friend, ButtonLog.Accounts.User
@@ -34,12 +38,12 @@ defmodule ButtonLog.Buttons.Button do
   def changeset(button, attrs) do
     button
     |> cast(attrs, [:name, :description, :type, :icon, :color, :is_active,
-                    :notifications_enabled, :auto_stop_enabled, :calendar_sync_enabled, 
-                    :current_state, :state_changed_at, :user_id])
+                    :notifications_enabled, :auto_stop_enabled, :calendar_sync_enabled,
+                    :current_state, :state_changed_at, :user_id, :archived, :archived_at])
     |> validate_required([:name, :type])
     |> validate_length(:name, min: 1, max: 100)
     |> validate_length(:description, max: 500)
-    |> validate_inclusion(:type, ["instant", "timed", "state"])
+    |> validate_inclusion(:type, ["instant", "timed", "state", "one-time"])
     |> validate_inclusion(:current_state, ["idle", "active"], allow_blank: true)
     |> validate_format(:color, ~r/^#[0-9A-Fa-f]{6}$/, message: "must be a valid hex color")
   end

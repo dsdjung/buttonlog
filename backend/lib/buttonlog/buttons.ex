@@ -11,12 +11,12 @@ defmodule ButtonLog.Buttons do
   Returns the list of buttons for a user with latest click time.
   """
   def list_user_buttons(user_id) do
-    # Get buttons with their latest click time
+    # Get buttons with their latest click time (excluding archived buttons)
     Repo.all(
       from b in Button,
       left_join: bc in ButtonClick, on: b.id == bc.button_id,
       left_join: gifter in assoc(b, :created_by_friend),
-      where: b.user_id == ^user_id,
+      where: b.user_id == ^user_id and (is_nil(b.archived) or b.archived == false),
       group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.notifications_enabled, b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, gifter.id, gifter.username, gifter.display_name],
       order_by: [asc: b.name],
       select: %{
@@ -119,6 +119,9 @@ defmodule ButtonLog.Buttons do
           "state" ->
             handle_state_button_click(button, user_id)
 
+          "one-time" ->
+            handle_one_time_button_click(button, user_id)
+
           _other_type ->
             # For instant buttons, just record a click
             click_result = %ButtonClick{}
@@ -208,6 +211,35 @@ defmodule ButtonLog.Buttons do
 
     # Notify gift creator if this is a gift button (outside transaction)
     if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, action)
+
+    result
+  end
+
+  defp handle_one_time_button_click(button, user_id) do
+    # One-time buttons: record click then archive the button
+    result = Repo.transaction(fn ->
+      # Create the button click record
+      click_result = %ButtonClick{}
+      |> ButtonClick.create_changeset(%{
+        device: "web",
+        platform: "web",
+        action: "click"
+      }, button.id, user_id)
+      |> Repo.insert!()
+
+      # Archive the button so it no longer appears in the list
+      button
+      |> Button.changeset(%{
+        archived: true,
+        archived_at: DateTime.utc_now() |> DateTime.truncate(:second)
+      })
+      |> Repo.update!()
+
+      click_result
+    end)
+
+    # Notify gift creator if this is a gift button (outside transaction)
+    if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, "click")
 
     result
   end

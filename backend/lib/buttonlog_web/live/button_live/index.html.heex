@@ -30,9 +30,10 @@
                 <label class="block text-sm font-medium text-gray-700">Type</label>
                 <select name="button[type]" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
                   <option value="">Select type</option>
-                  <option value="instant">Instant</option>
-                  <option value="timed">Timed</option>
-                  <option value="state">State</option>
+                  <option value="instant">⚡ Instant - Single click actions</option>
+                  <option value="timed">⏱️ Timed - Start/stop timing</option>
+                  <option value="state">🔄 State - On/off states</option>
+                  <option value="one-time">1️⃣ One-Time - Use once, then archived</option>
                 </select>
               </div>
               <div class="flex space-x-3">
@@ -69,6 +70,7 @@
                               <% "instant" -> %>⚡
                               <% "timed" -> %>⏱️
                               <% "state" -> %>🔄
+                              <% "one-time" -> %>1️⃣
                               <% _ -> %>📱
                             <% end %>
                           </div>

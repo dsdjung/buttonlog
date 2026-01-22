@@ -210,6 +210,99 @@ defmodule ButtonLog.GiftButtonsTest do
     end
   end
 
+  describe "one-time buttons" do
+    test "one-time button is archived after being clicked" do
+      user = insert_user(%{email: "onetime@test.com", username: "onetimeuser"})
+
+      button_attrs = %{
+        "name" => "One-Time Task",
+        "type" => "one-time"
+      }
+
+      {:ok, button} = Buttons.create_button(button_attrs, user.id)
+
+      # Button should initially not be archived
+      assert button.archived == false || is_nil(button.archived)
+
+      # Click the button
+      {:ok, _click} = Buttons.click_button(button.id, user.id)
+
+      # Fetch the button again to check archived status
+      {:ok, updated_button} = Buttons.get_button(button.id, user.id)
+      assert updated_button.archived == true
+      assert updated_button.archived_at != nil
+    end
+
+    test "archived one-time button does not appear in list_user_buttons" do
+      user = insert_user(%{email: "onetime2@test.com", username: "onetimeuser2"})
+
+      # Create a regular button and a one-time button
+      {:ok, regular_button} = Buttons.create_button(%{"name" => "Regular", "type" => "instant"}, user.id)
+      {:ok, one_time_button} = Buttons.create_button(%{"name" => "One-Time", "type" => "one-time"}, user.id)
+
+      # Initially both should appear
+      buttons = Buttons.list_user_buttons(user.id)
+      button_ids = Enum.map(buttons, & &1.id)
+      assert regular_button.id in button_ids
+      assert one_time_button.id in button_ids
+
+      # Click the one-time button to archive it
+      {:ok, _click} = Buttons.click_button(one_time_button.id, user.id)
+
+      # Now only the regular button should appear
+      buttons_after = Buttons.list_user_buttons(user.id)
+      button_ids_after = Enum.map(buttons_after, & &1.id)
+      assert regular_button.id in button_ids_after
+      refute one_time_button.id in button_ids_after
+    end
+
+    test "one-time button click is recorded before archiving" do
+      user = insert_user(%{email: "onetime3@test.com", username: "onetimeuser3"})
+
+      {:ok, button} = Buttons.create_button(%{"name" => "Track Once", "type" => "one-time"}, user.id)
+
+      # Click the button
+      {:ok, click} = Buttons.click_button(button.id, user.id)
+
+      # Verify click was recorded
+      assert click.button_id == button.id
+      assert click.user_id == user.id
+      assert click.action == "click"
+
+      # Verify history still accessible even though button is archived
+      {:ok, clicks} = Buttons.list_button_clicks(button.id, user.id)
+      assert length(clicks) == 1
+    end
+
+    test "gift one-time button notifies creator on click before archiving" do
+      creator = insert_user(%{email: "creator_onetime@test.com", username: "creator_onetime"})
+      friend = insert_user(%{email: "friend_onetime@test.com", username: "friend_onetime", display_name: "One Time Friend"})
+      create_friendship(creator.id, friend.id)
+
+      button_attrs = %{
+        "name" => "One-Time Gift",
+        "type" => "one-time"
+      }
+
+      {:ok, button} = Buttons.create_button_for_friend(button_attrs, friend.id, creator.id)
+
+      # Click the button
+      {:ok, _click} = Buttons.click_button(button.id, friend.id)
+
+      # Check notification was sent to creator
+      notifications = Notifications.get_user_notifications(creator.id)
+      click_notification = Enum.find(notifications, &(&1.notification_type == "gift_button_clicked"))
+
+      assert click_notification != nil
+      assert click_notification.message =~ "One Time Friend"
+      assert click_notification.message =~ "One-Time Gift"
+
+      # Verify button is archived
+      {:ok, updated_button} = Buttons.get_button(button.id, friend.id)
+      assert updated_button.archived == true
+    end
+  end
+
   # Helper functions
   defp insert_user(attrs \\ %{}) do
     default_attrs = %{

@@ -75,28 +75,32 @@ enum ButtonType: String, Codable, CaseIterable {
     case instant = "instant"
     case timed = "timed"
     case state = "state"
-    
+    case oneTime = "one-time"
+
     var displayName: String {
         switch self {
         case .instant: return "Instant"
         case .timed: return "Timed"
         case .state: return "State"
+        case .oneTime: return "One-Time"
         }
     }
-    
+
     var systemIcon: String {
         switch self {
         case .instant: return "bolt.fill"
         case .timed: return "timer"
         case .state: return "power"
+        case .oneTime: return "1.circle.fill"
         }
     }
-    
+
     var description: String {
         switch self {
         case .instant: return "Single click actions"
         case .timed: return "Start/stop timing"
         case .state: return "On/off states"
+        case .oneTime: return "Use once, then archived"
         }
     }
 }
