@@ -1,8 +1,11 @@
 defmodule ButtonLogWeb.ButtonNotificationsLive do
+  @moduledoc """
+  LiveView for configuring which friends receive alerts when a button is clicked.
+  """
   use ButtonLogWeb, :live_view
   alias ButtonLog.Social
   alias ButtonLog.Buttons
-  alias ButtonLog.Notifications
+  alias ButtonLog.Alerts
 
   @impl true
   def mount(%{"button_id" => button_id}, session, socket) do
@@ -19,24 +22,24 @@ defmodule ButtonLogWeb.ButtonNotificationsLive do
             # Get user's friends
             friends = Social.get_user_friends(user_id)
 
-            # Get current notification settings for this button
-            notification_preferences = Notifications.get_button_notification_preferences(button_id, user_id)
+            # Get current alert settings for this button
+            alert_preferences = Alerts.get_button_alert_preferences(button_id, user_id)
 
             # Create a map of friend_id -> preference for easy lookup
-            preferences_map = Map.new(notification_preferences, fn pref -> {pref.friend_id, pref} end)
+            preferences_map = Map.new(alert_preferences, fn pref -> {pref.friend_id, pref} end)
 
             {:ok,
              socket
              |> assign(:current_user, current_user)
              |> assign(:button, button_data)
              |> assign(:friends, friends)
-             |> assign(:notification_preferences, notification_preferences)
+             |> assign(:alert_preferences, alert_preferences)
              |> assign(:preferences_map, preferences_map)
-             |> assign(:page_title, "Notification Settings for #{button_data.name}")}
+             |> assign(:page_title, "Alert Settings for #{button_data.name}")}
           else
             {:ok,
              socket
-             |> put_flash(:error, "You can only configure notifications for your own buttons")
+             |> put_flash(:error, "You can only configure alerts for your own buttons")
              |> redirect(to: ~p"/buttons")}
           end
 
@@ -49,7 +52,7 @@ defmodule ButtonLogWeb.ButtonNotificationsLive do
     else
       {:ok,
        socket
-       |> put_flash(:error, "Please log in to configure button notifications")
+       |> put_flash(:error, "Please log in to configure button alerts")
        |> redirect(to: ~p"/auth/login")}
     end
   end
@@ -59,22 +62,22 @@ defmodule ButtonLogWeb.ButtonNotificationsLive do
     button_id = socket.assigns.button.id
     user_id = socket.assigns.current_user.id
 
-    case Notifications.toggle_button_friend_notification(button_id, user_id, friend_id) do
+    case Alerts.toggle_button_friend_alert(button_id, user_id, friend_id) do
       {:ok, _updated_preference} ->
         # Refresh the preferences
-        notification_preferences = Notifications.get_button_notification_preferences(button_id, user_id)
-        preferences_map = Map.new(notification_preferences, fn pref -> {pref.friend_id, pref} end)
+        alert_preferences = Alerts.get_button_alert_preferences(button_id, user_id)
+        preferences_map = Map.new(alert_preferences, fn pref -> {pref.friend_id, pref} end)
 
         {:noreply,
          socket
-         |> put_flash(:info, "Notification setting updated")
-         |> assign(:notification_preferences, notification_preferences)
+         |> put_flash(:info, "Alert setting updated")
+         |> assign(:alert_preferences, alert_preferences)
          |> assign(:preferences_map, preferences_map)}
 
       {:error, reason} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Failed to update notification setting: #{inspect(reason)}")}
+         |> put_flash(:error, "Failed to update alert setting: #{inspect(reason)}")}
     end
   end
 
@@ -87,7 +90,7 @@ defmodule ButtonLogWeb.ButtonNotificationsLive do
     # This would need to be implemented based on your form structure
     {:noreply,
      socket
-     |> put_flash(:info, "All notification settings saved")
+     |> put_flash(:info, "All alert settings saved")
      |> redirect(to: ~p"/buttons/#{button_id}")}
   end
 
@@ -96,19 +99,19 @@ defmodule ButtonLogWeb.ButtonNotificationsLive do
     button_id = socket.assigns.button.id
     user_id = socket.assigns.current_user.id
 
-    # Enable notifications for all friends
+    # Enable alerts for all friends
     Enum.each(socket.assigns.friends, fn friend ->
-      Notifications.set_button_friend_notification(button_id, user_id, friend.id, true)
+      Alerts.set_button_friend_alert(button_id, user_id, friend.id, true)
     end)
 
     # Refresh the preferences
-    notification_preferences = Notifications.get_button_notification_preferences(button_id, user_id)
-    preferences_map = Map.new(notification_preferences, fn pref -> {pref.friend_id, pref} end)
+    alert_preferences = Alerts.get_button_alert_preferences(button_id, user_id)
+    preferences_map = Map.new(alert_preferences, fn pref -> {pref.friend_id, pref} end)
 
     {:noreply,
      socket
-     |> put_flash(:info, "All friends selected for notifications")
-     |> assign(:notification_preferences, notification_preferences)
+     |> put_flash(:info, "All friends selected for alerts")
+     |> assign(:alert_preferences, alert_preferences)
      |> assign(:preferences_map, preferences_map)}
   end
 
@@ -117,19 +120,19 @@ defmodule ButtonLogWeb.ButtonNotificationsLive do
     button_id = socket.assigns.button.id
     user_id = socket.assigns.current_user.id
 
-    # Disable notifications for all friends
+    # Disable alerts for all friends
     Enum.each(socket.assigns.friends, fn friend ->
-      Notifications.set_button_friend_notification(button_id, user_id, friend.id, false)
+      Alerts.set_button_friend_alert(button_id, user_id, friend.id, false)
     end)
 
     # Refresh the preferences
-    notification_preferences = Notifications.get_button_notification_preferences(button_id, user_id)
-    preferences_map = Map.new(notification_preferences, fn pref -> {pref.friend_id, pref} end)
+    alert_preferences = Alerts.get_button_alert_preferences(button_id, user_id)
+    preferences_map = Map.new(alert_preferences, fn pref -> {pref.friend_id, pref} end)
 
     {:noreply,
      socket
-     |> put_flash(:info, "All friends deselected for notifications")
-     |> assign(:notification_preferences, notification_preferences)
+     |> put_flash(:info, "All friends deselected for alerts")
+     |> assign(:alert_preferences, alert_preferences)
      |> assign(:preferences_map, preferences_map)}
   end
 

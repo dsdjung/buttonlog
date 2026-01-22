@@ -4,8 +4,8 @@
       <!-- Header -->
       <div class="flex justify-between items-center mb-8">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Notification Settings</h1>
-          <p class="text-gray-600">Configure which friends get notified when you click "<%= @button.name %>"</p>
+          <h1 class="text-3xl font-bold text-gray-900">Alert Settings</h1>
+          <p class="text-gray-600">Configure which friends receive alerts when you click "<%= @button.name %>"</p>
         </div>
         <div class="flex space-x-4">
           <a href={~p"/buttons/#{@button.id}"} class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
@@ -30,25 +30,25 @@
         </div>
       <% end %>
 
-      <!-- Notification Summary -->
+      <!-- Alert Summary -->
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
         <div class="flex items-center space-x-3">
           <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M15 17h5l-5 5v-5z"/>
             </svg>
           </div>
           <div>
-            <h3 class="text-lg font-medium text-blue-900">Notification Summary</h3>
+            <h3 class="text-lg font-medium text-blue-900">Alert Summary</h3>
             <p class="text-blue-700">
-              <%= 
-                enabled_count = Enum.count(@friends, fn friend -> 
-                  Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled 
+              <%=
+                enabled_count = Enum.count(@friends, fn friend ->
+                  Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled
                 end)
               %>
-              <span class="font-semibold"><%= enabled_count %></span> of your <span class="font-semibold"><%= length(@friends) %></span> friends 
-              will receive notifications when you click "<%= @button.name %>"
+              <span class="font-semibold"><%= enabled_count %></span> of your <span class="font-semibold"><%= length(@friends) %></span> friends
+              will receive alerts when you click "<%= @button.name %>"
             </p>
             <%= if enabled_count > 0 do %>
               <p class="text-sm text-blue-600 mt-1">
@@ -89,10 +89,10 @@
         </div>
       </div>
 
-      <!-- Notification Settings -->
+      <!-- Alert Settings -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-semibold text-gray-900">Friend Notifications</h2>
+          <h2 class="text-xl font-semibold text-gray-900">Friend Alerts</h2>
           <div class="text-sm text-gray-500">
             <%= 
               enabled_count = Enum.count(@friends, fn friend -> 
@@ -102,7 +102,7 @@
             <span class="font-medium text-blue-600"><%= enabled_count %></span> of <%= length(@friends) %> friends selected
           </div>
         </div>
-        <p class="text-gray-600 mb-6">Select which friends should receive notifications when you click "<%= @button.name %>":</p>
+        <p class="text-gray-600 mb-6">Select which friends should receive alerts when you click "<%= @button.name %>":</p>
         
         <!-- Quick Actions -->
         <div class="flex space-x-3 mb-4">
@@ -150,9 +150,9 @@
                 <div class="flex items-center space-x-3">
                   <button phx-click="toggle_friend_notification" 
                           phx-value-friend_id={friend.id}
-                          title={if Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled, 
-                                  do: "Click to disable notifications", 
-                                  else: "Click to enable notifications"}
+                          title={if Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled,
+                                  do: "Click to disable alerts",
+                                  else: "Click to enable alerts"}
                           class={[
                             "w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-colors cursor-pointer hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
                             if(Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled, 
@@ -184,7 +184,7 @@
               <div>
                 <h3 class="text-sm font-medium text-blue-900">How it works</h3>
                 <p class="text-sm text-blue-700 mt-1">
-                  When you click "<%= @button.name %>", selected friends will receive a notification. 
+                  When you click "<%= @button.name %>", selected friends will receive an alert.
                   You can change these settings at any time.
                 </p>
               </div>
@@ -199,7 +199,7 @@
               </svg>
             </div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">No friends yet</h3>
-            <p class="text-gray-500 mb-4">You need to add friends before you can configure notifications</p>
+            <p class="text-gray-500 mb-4">You need to add friends before you can configure alerts</p>
             <a href={~p"/friends"} class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               Add Friends
             </a>
