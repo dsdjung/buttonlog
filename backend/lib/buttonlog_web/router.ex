@@ -39,6 +39,8 @@ defmodule ButtonLogWeb.Router do
     live "/test", TestLive, :index
     live "/friends", FriendsLive, :index
     live "/friends/:id", FriendLive.Show, :show
+    live "/teams", TeamsLive, :index
+    live "/teams/:id", TeamLive.Show, :show
     live "/account", AccountLive, :index
     live "/account/webhooks", WebhookSettingsLive, :index
     live "/diary", DiaryLive, :index
@@ -147,6 +149,34 @@ defmodule ButtonLogWeb.Router do
     post "/support/tickets", API.SupportController, :create
     get "/support/tickets/:id", API.SupportController, :show
     post "/support/tickets/:id/messages", API.SupportController, :add_message
+
+    # Team endpoints
+    get "/teams", API.TeamController, :index
+    post "/teams", API.TeamController, :create
+    get "/teams/invitations", API.TeamController, :my_invitations
+    get "/teams/:id", API.TeamController, :show
+    put "/teams/:id", API.TeamController, :update
+    delete "/teams/:id", API.TeamController, :delete
+
+    # Team member endpoints
+    get "/teams/:team_id/members", API.TeamController, :list_members
+    put "/teams/:team_id/members/:user_id/role", API.TeamController, :update_member_role
+    delete "/teams/:team_id/members/:user_id", API.TeamController, :remove_member
+    post "/teams/:team_id/leave", API.TeamController, :leave
+    post "/teams/:team_id/transfer-ownership", API.TeamController, :transfer_ownership
+
+    # Team button endpoints
+    get "/teams/:team_id/buttons", API.TeamController, :list_buttons
+    post "/teams/:team_id/buttons", API.TeamController, :add_button
+    put "/teams/:team_id/buttons/:button_id", API.TeamController, :update_button_permission
+    delete "/teams/:team_id/buttons/:button_id", API.TeamController, :remove_button
+
+    # Team invitation endpoints
+    get "/teams/:team_id/invitations", API.TeamController, :list_invitations
+    post "/teams/:team_id/invitations", API.TeamController, :create_invitation
+    delete "/teams/:team_id/invitations/:id", API.TeamController, :cancel_invitation
+    post "/teams/invitations/:id/accept", API.TeamController, :accept_invitation
+    post "/teams/invitations/:id/decline", API.TeamController, :decline_invitation
   end
 
   # Admin API routes

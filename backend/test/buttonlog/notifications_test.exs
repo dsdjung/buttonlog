@@ -158,7 +158,7 @@ defmodule ButtonLog.NotificationsTest do
     |> ButtonLog.Repo.insert!()
   end
 
-  defp insert_button(user, attrs \\ %{}) do
+  defp insert_button(user, attrs) do
     # Convert button_type to type if present
     attrs = if Map.has_key?(attrs, :button_type) do
       attrs

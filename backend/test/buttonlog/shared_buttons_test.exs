@@ -1,7 +1,7 @@
 defmodule ButtonLog.SharedButtonsTest do
   use ButtonLog.DataCase, async: true
 
-  alias ButtonLog.{Buttons, Social}
+  alias ButtonLog.Buttons
 
   describe "shared button access" do
     setup do
@@ -258,7 +258,7 @@ defmodule ButtonLog.SharedButtonsTest do
   end
 
   # Helper functions
-  defp insert_user(attrs \\ %{}) do
+  defp insert_user(attrs) do
     default_attrs = %{
       email: "test#{System.unique_integer()}@test.com",
       username: "testuser#{System.unique_integer()}",

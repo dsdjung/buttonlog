@@ -1,0 +1,252 @@
+<div class="min-h-screen bg-gray-50">
+  <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+    <div class="py-8">
+      <%= if @current_user do %>
+        <div class="max-w-4xl mx-auto">
+          <!-- Page Header -->
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-3xl font-bold text-gray-900">Teams</h1>
+              <p class="text-gray-600 mt-1">Create and manage teams to share buttons with groups</p>
+            </div>
+            <button
+              phx-click="show_create_modal"
+              class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Create Team
+            </button>
+          </div>
+
+          <!-- Pending Invitations -->
+          <%= if length(@invitations) > 0 do %>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <h2 class="text-lg font-semibold text-yellow-900 mb-3">
+                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Pending Invitations (<%= length(@invitations) %>)
+              </h2>
+              <div class="space-y-3">
+                <%= for invitation <- @invitations do %>
+                  <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-yellow-200">
+                    <div>
+                      <p class="font-medium text-gray-900">
+                        <%= invitation.team.name %>
+                      </p>
+                      <p class="text-sm text-gray-600">
+                        Invited by <%= invitation.inviter.display_name || invitation.inviter.username %>
+                        as <%= invitation.role %>
+                      </p>
+                    </div>
+                    <div class="flex gap-2">
+                      <button
+                        phx-click="accept_invitation"
+                        phx-value-id={invitation.id}
+                        class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        phx-click="decline_invitation"
+                        phx-value-id={invitation.id}
+                        class="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition-colors"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <!-- Teams List -->
+          <%= if length(@teams) == 0 do %>
+            <div class="bg-white rounded-lg shadow-md border border-gray-200 p-12 text-center">
+              <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+              <h3 class="text-lg font-medium text-gray-900 mb-2">No teams yet</h3>
+              <p class="text-gray-500 mb-4">Create a team to share buttons with friends and colleagues</p>
+              <button
+                phx-click="show_create_modal"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Create Your First Team
+              </button>
+            </div>
+          <% else %>
+            <div class="grid gap-4">
+              <%= for team <- @teams do %>
+                <% role = get_user_role(team, @current_user.id) %>
+                <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-4">
+                      <!-- Team Color Badge -->
+                      <div
+                        class="w-12 h-12 rounded-lg flex items-center justify-center"
+                        style={"background-color: #{team.color}20; border: 2px solid #{team.color}"}
+                      >
+                        <svg class="w-6 h-6" style={"color: #{team.color}"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                      </div>
+
+                      <div>
+                        <h3 class="text-lg font-semibold text-gray-900"><%= team.name %></h3>
+                        <%= if team.description do %>
+                          <p class="text-gray-600 text-sm"><%= team.description %></p>
+                        <% end %>
+                        <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                          <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                            </svg>
+                            <%= length(team.members) %> members
+                          </span>
+                          <span class={"px-2 py-0.5 rounded-full text-xs font-medium #{role_badge_class(role)}"}>
+                            <%= String.capitalize(role || "member") %>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <a
+                        href={~p"/teams/#{team.id}"}
+                        class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                      >
+                        View
+                      </a>
+                      <%= if role != "owner" do %>
+                        <button
+                          phx-click="leave_team"
+                          phx-value-id={team.id}
+                          data-confirm="Are you sure you want to leave this team?"
+                          class="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition-colors"
+                        >
+                          Leave
+                        </button>
+                      <% else %>
+                        <button
+                          phx-click="delete_team"
+                          phx-value-id={team.id}
+                          data-confirm="Are you sure you want to delete this team? This cannot be undone."
+                          class="px-3 py-1.5 bg-red-100 text-red-700 text-sm rounded hover:bg-red-200 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Create Team Modal -->
+        <%= if @show_create_modal do %>
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-xl font-semibold text-gray-900">Create Team</h2>
+                  <button
+                    phx-click="hide_create_modal"
+                    class="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <.form for={@new_team_form} phx-submit="create_team" phx-change="validate_team" class="space-y-4">
+                  <div>
+                    <label for="team_name" class="block text-sm font-medium text-gray-700 mb-1">
+                      Team Name <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      id="team_name"
+                      value={@new_team_form.params["name"]}
+                      placeholder="My Team"
+                      required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label for="team_description" class="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      id="team_description"
+                      rows="2"
+                      placeholder="What is this team for?"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    ><%= @new_team_form.params["description"] %></textarea>
+                  </div>
+
+                  <div>
+                    <label for="team_color" class="block text-sm font-medium text-gray-700 mb-1">
+                      Team Color
+                    </label>
+                    <div class="flex items-center gap-3">
+                      <input
+                        type="color"
+                        name="color"
+                        id="team_color"
+                        value={@new_team_form.params["color"]}
+                        class="w-12 h-10 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={@new_team_form.params["color"]}
+                        readonly
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex justify-end gap-3 pt-4">
+                    <button
+                      type="button"
+                      phx-click="hide_create_modal"
+                      class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Create Team
+                    </button>
+                  </div>
+                </.form>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="text-center py-12">
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p class="text-gray-500 mb-4">Please log in to access teams</p>
+          <a href={~p"/auth/login"} class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Log In
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -385,7 +385,7 @@ defmodule ButtonLog.GiftButtonsTest do
   end
 
   # Helper functions
-  defp insert_user(attrs \\ %{}) do
+  defp insert_user(attrs) do
     default_attrs = %{
       email: "test#{System.unique_integer()}@test.com",
       username: "testuser#{System.unique_integer()}",
