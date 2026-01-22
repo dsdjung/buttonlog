@@ -316,7 +316,8 @@ struct NotificationRow: View {
             return .none
         case .giftButtonSent, .giftButtonClicked:
             // Navigate to friend page when clicking on gift button notifications
-            if let friendId = notification.friendId {
+            // Use friend_id from data, or fall back to sender.id (the friend who clicked/received)
+            if let friendId = notification.friendId ?? notification.sender?.id {
                 return .friend(friendId)
             }
             return .friends

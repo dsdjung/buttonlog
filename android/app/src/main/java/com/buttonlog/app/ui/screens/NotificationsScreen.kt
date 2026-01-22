@@ -392,7 +392,9 @@ fun getNavigationDestination(notification: Notification): NotificationNavigation
         }
         "gift_button_sent", "gift_button_clicked" -> {
             // Navigate to friend page when clicking on gift button notifications
+            // Use friend_id from data, or fall back to sender.id (the friend who clicked/received)
             val friendId = notification.data?.get("friend_id")?.toString()
+                ?: notification.sender?.id
             if (friendId != null) {
                 NotificationNavigation.Friend(friendId)
             } else {

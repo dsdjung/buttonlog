@@ -132,7 +132,10 @@ defmodule ButtonLogWeb.NotificationsLive do
 
       "gift_button_clicked" ->
         # Navigate to friend page when clicking on a "gift clicked" notification
-        friend_id = get_in(notification.metadata, ["friend_id"]) || notification.metadata[:friend_id]
+        # Use friend_id from metadata, or fall back to sender_id (the friend who clicked)
+        friend_id = get_in(notification.metadata, ["friend_id"]) ||
+                    notification.metadata[:friend_id] ||
+                    notification.sender_id
         if friend_id, do: ~p"/friends/#{friend_id}", else: ~p"/friends"
 
       "gift_button_deleted" ->
