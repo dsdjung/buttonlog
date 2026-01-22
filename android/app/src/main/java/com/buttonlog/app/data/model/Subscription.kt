@@ -93,6 +93,9 @@ data class UserSubscription(
 ) {
     val isActive: Boolean
         get() = status == SubscriptionStatus.ACTIVE
+
+    val formattedAmount: String
+        get() = String.format("$%.2f", amount)
 }
 
 enum class SubscriptionStatus(val displayName: String) {

@@ -16,7 +16,8 @@ fun AccountScreen(
     onLogout: () -> Unit = {},
     onSupportClick: () -> Unit = {},
     onTeamsClick: () -> Unit = {},
-    onOrganizationsClick: () -> Unit = {}
+    onOrganizationsClick: () -> Unit = {},
+    onSubscriptionClick: () -> Unit = {}
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -64,6 +65,24 @@ fun AccountScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Subscription Section
+            Text(
+                text = "Subscription",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SettingsItem(
+                icon = Icons.Default.Star,
+                title = "Manage Subscription",
+                subtitle = "View plans, billing, and upgrade options",
+                onClick = onSubscriptionClick
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

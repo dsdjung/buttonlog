@@ -40,6 +40,7 @@ import com.buttonlog.app.ui.screens.SupportTicketScreen
 import com.buttonlog.app.ui.screens.CreateTicketScreen
 import com.buttonlog.app.ui.screens.TeamsScreen
 import com.buttonlog.app.ui.screens.OrganizationsScreen
+import com.buttonlog.app.ui.screens.SubscriptionScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 import com.buttonlog.app.ui.viewmodels.SupportViewModel
@@ -83,6 +84,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var showCreateTicket by remember { mutableStateOf(false) }
     var showTeamsScreen by remember { mutableStateOf(false) }
     var showOrganizationsScreen by remember { mutableStateOf(false) }
+    var showSubscriptionScreen by remember { mutableStateOf(false) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
     val notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -253,7 +255,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onLogout = onLogout,
                         onSupportClick = { showSupportScreen = true },
                         onTeamsClick = { showTeamsScreen = true },
-                        onOrganizationsClick = { showOrganizationsScreen = true }
+                        onOrganizationsClick = { showOrganizationsScreen = true },
+                        onSubscriptionClick = { showSubscriptionScreen = true }
                     )
                 }
             }
@@ -425,6 +428,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         OrganizationsScreen(
             onOrganizationClick = { /* TODO: Navigate to organization detail */ },
             onBackClick = { showOrganizationsScreen = false }
+        )
+    }
+
+    // Subscription Screen
+    if (showSubscriptionScreen) {
+        SubscriptionScreen(
+            onBackClick = { showSubscriptionScreen = false }
         )
     }
 }
