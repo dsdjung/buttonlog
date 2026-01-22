@@ -5,7 +5,7 @@ struct AppNotification: Identifiable, Codable {
     let type: NotificationType
     let title: String
     let message: String
-    let data: [String: AnyCodableValue]?
+    let data: [String: String]?
     let isRead: Bool
     let createdAt: Date
     let sender: NotificationSender?
@@ -19,6 +19,33 @@ struct AppNotification: Identifiable, Codable {
         case sender
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        type = try container.decode(NotificationType.self, forKey: .type)
+        title = try container.decode(String.self, forKey: .title)
+        message = try container.decode(String.self, forKey: .message)
+        isRead = try container.decode(Bool.self, forKey: .isRead)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        sender = try container.decodeIfPresent(NotificationSender.self, forKey: .sender)
+
+        // Try to decode data as [String: String], fall back to nil if it fails
+        // This handles empty objects {} or objects with non-string values
+        data = try? container.decodeIfPresent([String: String].self, forKey: .data)
+    }
+
+    init(id: String, type: NotificationType, title: String, message: String,
+         data: [String: String]?, isRead: Bool, createdAt: Date, sender: NotificationSender?) {
+        self.id = id
+        self.type = type
+        self.title = title
+        self.message = message
+        self.data = data
+        self.isRead = isRead
+        self.createdAt = createdAt
+        self.sender = sender
+    }
+
     // Computed property to get userId from sender for backwards compatibility
     var userId: String? {
         sender?.id
@@ -26,19 +53,19 @@ struct AppNotification: Identifiable, Codable {
 
     // Helper to extract common notification data fields
     var buttonId: String? {
-        data?["button_id"]?.stringValue
+        data?["button_id"]
     }
 
     var buttonName: String? {
-        data?["button_name"]?.stringValue
+        data?["button_name"]
     }
 
     var friendId: String? {
-        data?["friend_id"]?.stringValue
+        data?["friend_id"]
     }
 
     var friendName: String? {
-        data?["friend_name"]?.stringValue
+        data?["friend_name"]
     }
 }
 
@@ -94,65 +121,6 @@ enum NotificationType: String, Codable {
         case .subscriptionRenewed: return "checkmark.circle"
         case .general: return "bell"
         }
-    }
-}
-
-/// Helper for handling dynamic JSON values
-enum AnyCodableValue: Codable {
-    case string(String)
-    case int(Int)
-    case double(Double)
-    case bool(Bool)
-    case null
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let value = try? container.decode(String.self) {
-            self = .string(value)
-        } else if let value = try? container.decode(Int.self) {
-            self = .int(value)
-        } else if let value = try? container.decode(Double.self) {
-            self = .double(value)
-        } else if let value = try? container.decode(Bool.self) {
-            self = .bool(value)
-        } else {
-            self = .null
-        }
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        switch self {
-        case .string(let value): try container.encode(value)
-        case .int(let value): try container.encode(value)
-        case .double(let value): try container.encode(value)
-        case .bool(let value): try container.encode(value)
-        case .null: try container.encodeNil()
-        }
-    }
-
-    /// Extract string value if this is a string type
-    var stringValue: String? {
-        if case .string(let value) = self {
-            return value
-        }
-        return nil
-    }
-
-    /// Extract int value if this is an int type
-    var intValue: Int? {
-        if case .int(let value) = self {
-            return value
-        }
-        return nil
-    }
-
-    /// Extract bool value if this is a bool type
-    var boolValue: Bool? {
-        if case .bool(let value) = self {
-            return value
-        }
-        return nil
     }
 }
 
