@@ -237,6 +237,8 @@ struct ButtonCard: View {
             return button.currentState == .idle ? "Start" : "Stop"
         case .timed:
             return button.currentState == .idle ? "Start" : "Stop"
+        case .oneTime:
+            return "Use Once"
         }
     }
 }

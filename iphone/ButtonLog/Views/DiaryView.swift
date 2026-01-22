@@ -224,6 +224,8 @@ struct ButtonActivityCard: View {
             return ["Started", "Stopped"].randomElement() ?? "Clicked"
         case .state:
             return ["Activated", "Deactivated"].randomElement() ?? "Toggled"
+        case .oneTime:
+            return "Completed"
         }
     }
     
