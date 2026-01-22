@@ -590,6 +590,154 @@ class APIService {
             body: body
         )
     }
+
+    // MARK: - Teams
+
+    func getTeams() async throws -> TeamsResponse {
+        return try await makeRequest(endpoint: "/teams")
+    }
+
+    func getTeam(id: String) async throws -> Team {
+        return try await makeRequest(endpoint: "/teams/\(id)")
+    }
+
+    func createTeam(_ request: CreateTeamRequest) async throws -> Team {
+        return try await makeRequest(
+            endpoint: "/teams",
+            method: .POST,
+            body: request.toRequestBody()
+        )
+    }
+
+    func updateTeam(id: String, request: CreateTeamRequest) async throws -> Team {
+        return try await makeRequest(
+            endpoint: "/teams/\(id)",
+            method: .PUT,
+            body: request.toRequestBody()
+        )
+    }
+
+    func deleteTeam(id: String) async throws {
+        try await makeVoidRequest(endpoint: "/teams/\(id)", method: .DELETE)
+    }
+
+    func inviteTeamMember(teamId: String, username: String, role: String) async throws {
+        let body: [String: Any] = [
+            "username": username,
+            "role": role
+        ]
+        try await makeVoidRequest(
+            endpoint: "/teams/\(teamId)/invitations",
+            method: .POST,
+            body: body
+        )
+    }
+
+    func acceptTeamInvitation(invitationId: String) async throws -> Team {
+        return try await makeRequest(
+            endpoint: "/teams/invitations/\(invitationId)/accept",
+            method: .POST
+        )
+    }
+
+    func declineTeamInvitation(invitationId: String) async throws {
+        try await makeVoidRequest(
+            endpoint: "/teams/invitations/\(invitationId)/decline",
+            method: .POST
+        )
+    }
+
+    func addButtonToTeam(teamId: String, buttonId: String, permission: String) async throws {
+        let body: [String: Any] = [
+            "button_id": buttonId,
+            "permission": permission
+        ]
+        try await makeVoidRequest(
+            endpoint: "/teams/\(teamId)/buttons",
+            method: .POST,
+            body: body
+        )
+    }
+
+    func removeButtonFromTeam(teamId: String, buttonId: String) async throws {
+        try await makeVoidRequest(
+            endpoint: "/teams/\(teamId)/buttons/\(buttonId)",
+            method: .DELETE
+        )
+    }
+
+    // MARK: - Organizations
+
+    func getOrganizations() async throws -> OrganizationsResponse {
+        return try await makeRequest(endpoint: "/organizations")
+    }
+
+    func getOrganization(id: String) async throws -> Organization {
+        return try await makeRequest(endpoint: "/organizations/\(id)")
+    }
+
+    func createOrganization(_ request: CreateOrganizationRequest) async throws -> Organization {
+        return try await makeRequest(
+            endpoint: "/organizations",
+            method: .POST,
+            body: request.toRequestBody()
+        )
+    }
+
+    func updateOrganization(id: String, request: CreateOrganizationRequest) async throws -> Organization {
+        return try await makeRequest(
+            endpoint: "/organizations/\(id)",
+            method: .PUT,
+            body: request.toRequestBody()
+        )
+    }
+
+    func deleteOrganization(id: String) async throws {
+        try await makeVoidRequest(endpoint: "/organizations/\(id)", method: .DELETE)
+    }
+
+    func inviteOrganizationMember(organizationId: String, username: String?, email: String?, role: String) async throws {
+        var body: [String: Any] = ["role": role]
+        if let username = username {
+            body["username"] = username
+        }
+        if let email = email {
+            body["email"] = email
+        }
+        try await makeVoidRequest(
+            endpoint: "/organizations/\(organizationId)/invitations",
+            method: .POST,
+            body: body
+        )
+    }
+
+    func acceptOrganizationInvitation(invitationId: String) async throws -> Organization {
+        return try await makeRequest(
+            endpoint: "/organizations/invitations/\(invitationId)/accept",
+            method: .POST
+        )
+    }
+
+    func declineOrganizationInvitation(invitationId: String) async throws {
+        try await makeVoidRequest(
+            endpoint: "/organizations/invitations/\(invitationId)/decline",
+            method: .POST
+        )
+    }
+
+    func addTeamToOrganization(organizationId: String, teamId: String) async throws {
+        try await makeVoidRequest(
+            endpoint: "/organizations/\(organizationId)/teams/\(teamId)",
+            method: .POST
+        )
+    }
+
+    func removeTeamFromOrganization(organizationId: String, teamId: String) async throws {
+        try await makeVoidRequest(
+            endpoint: "/organizations/\(organizationId)/teams/\(teamId)",
+            method: .DELETE
+        )
+    }
 }
 
 // MARK: - Supporting Types

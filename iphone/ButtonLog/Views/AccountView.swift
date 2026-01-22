@@ -38,16 +38,27 @@ struct AccountView: View {
                 }
             }
             
+            // Teams & Organizations Section
+            Section("Teams & Organizations") {
+                NavigationLink(destination: TeamsView()) {
+                    Label("Teams", systemImage: "person.3.fill")
+                }
+
+                NavigationLink(destination: OrganizationsView()) {
+                    Label("Organizations", systemImage: "building.2.fill")
+                }
+            }
+
             // Settings Section
             Section("Settings") {
                 NavigationLink(destination: NotificationSettingsView()) {
                     Label("Notifications", systemImage: "bell")
                 }
-                
+
                 NavigationLink(destination: PrivacySettingsView()) {
                     Label("Privacy", systemImage: "lock")
                 }
-                
+
                 NavigationLink(destination: DataExportView()) {
                     Label("Export Data", systemImage: "square.and.arrow.up")
                 }

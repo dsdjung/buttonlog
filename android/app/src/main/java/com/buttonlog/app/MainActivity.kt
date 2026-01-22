@@ -38,6 +38,8 @@ import com.buttonlog.app.ui.screens.NotificationNavigation
 import com.buttonlog.app.ui.screens.SupportScreen
 import com.buttonlog.app.ui.screens.SupportTicketScreen
 import com.buttonlog.app.ui.screens.CreateTicketScreen
+import com.buttonlog.app.ui.screens.TeamsScreen
+import com.buttonlog.app.ui.screens.OrganizationsScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 import com.buttonlog.app.ui.viewmodels.SupportViewModel
@@ -79,6 +81,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var showSupportScreen by remember { mutableStateOf(false) }
     var selectedTicketId by remember { mutableStateOf<String?>(null) }
     var showCreateTicket by remember { mutableStateOf(false) }
+    var showTeamsScreen by remember { mutableStateOf(false) }
+    var showOrganizationsScreen by remember { mutableStateOf(false) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
     val notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -247,7 +251,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 composable("account") {
                     AccountScreen(
                         onLogout = onLogout,
-                        onSupportClick = { showSupportScreen = true }
+                        onSupportClick = { showSupportScreen = true },
+                        onTeamsClick = { showTeamsScreen = true },
+                        onOrganizationsClick = { showOrganizationsScreen = true }
                     )
                 }
             }
@@ -403,6 +409,22 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             onBackClick = {
                 showCreateTicket = false
             }
+        )
+    }
+
+    // Teams Screen
+    if (showTeamsScreen) {
+        TeamsScreen(
+            onTeamClick = { /* TODO: Navigate to team detail */ },
+            onBackClick = { showTeamsScreen = false }
+        )
+    }
+
+    // Organizations Screen
+    if (showOrganizationsScreen) {
+        OrganizationsScreen(
+            onOrganizationClick = { /* TODO: Navigate to organization detail */ },
+            onBackClick = { showOrganizationsScreen = false }
         )
     }
 }

@@ -14,7 +14,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AccountScreen(
     onLogout: () -> Unit = {},
-    onSupportClick: () -> Unit = {}
+    onSupportClick: () -> Unit = {},
+    onTeamsClick: () -> Unit = {},
+    onOrganizationsClick: () -> Unit = {}
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -62,6 +64,31 @@ fun AccountScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Teams & Organizations Section
+            Text(
+                text = "Teams & Organizations",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SettingsItem(
+                icon = Icons.Default.Groups,
+                title = "Teams",
+                subtitle = "Collaborate on buttons with your teams",
+                onClick = onTeamsClick
+            )
+
+            SettingsItem(
+                icon = Icons.Default.Business,
+                title = "Organizations",
+                subtitle = "Manage enterprise workspaces and billing",
+                onClick = onOrganizationsClick
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

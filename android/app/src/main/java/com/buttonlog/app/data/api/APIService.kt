@@ -150,6 +150,58 @@ interface APIService {
         @Path("id") ticketId: String,
         @Body request: SendMessageRequest
     ): TicketMessageResponse
+
+    // MARK: - Team Endpoints
+
+    @GET("teams")
+    suspend fun getTeams(): ApiResponse<TeamsResponse>
+
+    @GET("teams/{id}")
+    suspend fun getTeam(@Path("id") id: String): ApiResponse<Team>
+
+    @POST("teams")
+    suspend fun createTeam(@Body request: CreateTeamRequest): ApiResponse<Team>
+
+    @PUT("teams/{id}")
+    suspend fun updateTeam(@Path("id") id: String, @Body request: CreateTeamRequest): ApiResponse<Team>
+
+    @DELETE("teams/{id}")
+    suspend fun deleteTeam(@Path("id") id: String): ApiResponse<Unit>
+
+    @POST("teams/{teamId}/invitations")
+    suspend fun inviteTeamMember(@Path("teamId") teamId: String, @Body request: Map<String, String>): ApiResponse<Unit>
+
+    @POST("teams/invitations/{id}/accept")
+    suspend fun acceptTeamInvitation(@Path("id") id: String): ApiResponse<Team>
+
+    @POST("teams/invitations/{id}/decline")
+    suspend fun declineTeamInvitation(@Path("id") id: String): ApiResponse<Unit>
+
+    // MARK: - Organization Endpoints
+
+    @GET("organizations")
+    suspend fun getOrganizations(): ApiResponse<OrganizationsResponse>
+
+    @GET("organizations/{id}")
+    suspend fun getOrganization(@Path("id") id: String): ApiResponse<Organization>
+
+    @POST("organizations")
+    suspend fun createOrganization(@Body request: CreateOrganizationRequest): ApiResponse<Organization>
+
+    @PUT("organizations/{id}")
+    suspend fun updateOrganization(@Path("id") id: String, @Body request: CreateOrganizationRequest): ApiResponse<Organization>
+
+    @DELETE("organizations/{id}")
+    suspend fun deleteOrganization(@Path("id") id: String): ApiResponse<Unit>
+
+    @POST("organizations/{orgId}/invitations")
+    suspend fun inviteOrganizationMember(@Path("orgId") orgId: String, @Body request: Map<String, String>): ApiResponse<Unit>
+
+    @POST("organizations/invitations/{id}/accept")
+    suspend fun acceptOrganizationInvitation(@Path("id") id: String): ApiResponse<Organization>
+
+    @POST("organizations/invitations/{id}/decline")
+    suspend fun declineOrganizationInvitation(@Path("id") id: String): ApiResponse<Unit>
 }
 
 // MARK: - Request/Response Models
@@ -280,6 +332,12 @@ data class DevicesResponse(
 )
 
 // MARK: - API Response Wrapper
+
+data class ApiResponse<T>(
+    val success: Boolean,
+    val data: T,
+    val error: ApiError? = null
+)
 
 sealed class ApiResult<out T> {
     data class Success<T>(val data: T) : ApiResult<T>()
