@@ -22,22 +22,24 @@ defmodule ButtonLog.Mobile.Connection do
   def changeset(connection, attrs) do
     connection
     |> cast(attrs, [:device_token, :platform, :app_version, :os_version, :is_active, :last_seen_at])
-    |> validate_required([:device_token, :platform, :user_id])
     |> validate_inclusion(:platform, ["android", "iphone"])
     |> unique_constraint(:device_token)
   end
 
   def create_changeset(connection, attrs, user_id) do
     connection
-    |> changeset(attrs)
+    |> cast(attrs, [:device_token, :platform, :app_version, :os_version, :is_active, :last_seen_at])
     |> put_change(:user_id, user_id)
     |> put_change(:is_active, true)
-    |> put_change(:last_seen_at, DateTime.utc_now())
+    |> put_change(:last_seen_at, DateTime.utc_now() |> DateTime.truncate(:second))
+    |> validate_required([:device_token, :platform, :user_id])
+    |> validate_inclusion(:platform, ["android", "iphone"])
+    |> unique_constraint(:device_token)
   end
 
   def update_last_seen_changeset(connection) do
     connection
-    |> change(%{last_seen_at: DateTime.utc_now()})
+    |> change(%{last_seen_at: DateTime.utc_now() |> DateTime.truncate(:second)})
   end
 end
 

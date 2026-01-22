@@ -90,17 +90,24 @@ defmodule ButtonLog.Mobile do
   Registers a new mobile device.
   """
   def register_device(attrs, user_id) do
-    # Check if device token already exists
-    case get_connection_by_token(attrs.device_token) do
-      nil ->
-        # Create new connection
-        create_connection(attrs, user_id)
+    device_token = attrs[:device_token] || attrs["device_token"]
 
-      existing_connection ->
-        # Update existing connection
-        existing_connection
-        |> Connection.changeset(attrs)
-        |> Repo.update()
+    # If device_token is nil/missing, just try to create (will fail validation)
+    if is_nil(device_token) do
+      create_connection(attrs, user_id)
+    else
+      # Check if device token already exists
+      case get_connection_by_token(device_token) do
+        nil ->
+          # Create new connection
+          create_connection(attrs, user_id)
+
+        existing_connection ->
+          # Update existing connection
+          existing_connection
+          |> Connection.changeset(attrs)
+          |> Repo.update()
+      end
     end
   end
 
