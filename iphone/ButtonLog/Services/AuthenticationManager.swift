@@ -9,13 +9,19 @@ class AuthenticationManager: NSObject, ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var onboardingCompleted = false
+    @Published var isCheckingAuth = true  // True until initial auth check completes
 
     private let apiService = APIService.shared
     private var cancellables = Set<AnyCancellable>()
     private var webAuthSession: ASWebAuthenticationSession?
 
+    // UserDefaults key for persisting onboarding state
+    private let onboardingCompletedKey = "buttonlog_onboarding_completed"
+
     override init() {
         super.init()
+        // Load persisted onboarding state immediately to avoid flash
+        onboardingCompleted = UserDefaults.standard.bool(forKey: onboardingCompletedKey)
         checkAuthenticationStatus()
     }
 
@@ -23,10 +29,13 @@ class AuthenticationManager: NSObject, ObservableObject {
         // Check if we have a stored token
         if KeychainManager.shared.getToken() != nil {
             isAuthenticated = true
-            // Optionally verify token with server
+            // Verify token with server and get latest user data
             Task {
                 await loadCurrentUser()
+                isCheckingAuth = false
             }
+        } else {
+            isCheckingAuth = false
         }
     }
 
@@ -43,7 +52,7 @@ class AuthenticationManager: NSObject, ObservableObject {
             // Update authentication state
             isAuthenticated = true
             currentUser = response.user
-            onboardingCompleted = response.user.onboardingCompleted
+            setOnboardingCompleted(response.user.onboardingCompleted)
 
         } catch {
             errorMessage = error.localizedDescription
@@ -74,7 +83,7 @@ class AuthenticationManager: NSObject, ObservableObject {
             // Update authentication state
             isAuthenticated = true
             currentUser = response.user
-            onboardingCompleted = response.user.onboardingCompleted
+            setOnboardingCompleted(response.user.onboardingCompleted)
 
         } catch {
             errorMessage = error.localizedDescription
@@ -165,7 +174,7 @@ class AuthenticationManager: NSObject, ObservableObject {
                 KeychainManager.shared.saveToken(response.token)
                 isAuthenticated = true
                 currentUser = response.user
-                onboardingCompleted = response.user.onboardingCompleted
+                setOnboardingCompleted(response.user.onboardingCompleted)
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -193,7 +202,7 @@ class AuthenticationManager: NSObject, ObservableObject {
         // Clear user data
         currentUser = nil
         isAuthenticated = false
-        onboardingCompleted = false
+        setOnboardingCompleted(false)
 
         // Optionally notify server of logout
         try? await apiService.logout()
@@ -203,7 +212,7 @@ class AuthenticationManager: NSObject, ObservableObject {
         do {
             let user = try await apiService.getCurrentUser()
             currentUser = user
-            onboardingCompleted = user.onboardingCompleted
+            setOnboardingCompleted(user.onboardingCompleted)
         } catch let error as APIError {
             // Only logout on authentication errors (401), not network issues
             if case .serverError(let message) = error,
@@ -216,6 +225,12 @@ class AuthenticationManager: NSObject, ObservableObject {
         } catch {
             // For unexpected errors, keep user logged in to avoid losing session on network issues
         }
+    }
+
+    /// Sets onboarding completed state and persists to UserDefaults
+    private func setOnboardingCompleted(_ completed: Bool) {
+        onboardingCompleted = completed
+        UserDefaults.standard.set(completed, forKey: onboardingCompletedKey)
     }
 
     func updateProfile(_ update: UserProfileUpdate) async {
@@ -249,11 +264,11 @@ class AuthenticationManager: NSObject, ObservableObject {
     func completeOnboarding() async {
         do {
             try await apiService.completeOnboarding()
-            onboardingCompleted = true
+            setOnboardingCompleted(true)
         } catch {
             print("Failed to complete onboarding: \(error)")
             // Still mark as completed locally to not block the user
-            onboardingCompleted = true
+            setOnboardingCompleted(true)
         }
     }
 }

@@ -9,23 +9,31 @@ struct ButtonLogApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if authManager.isAuthenticated {
-                if authManager.onboardingCompleted {
-                    MainTabView()
-                        .environmentObject(appState)
-                        .environmentObject(authManager)
-                        .onAppear {
-                            // Request push notification permission when user is authenticated
-                            PushNotificationManager.shared.requestAuthorization()
-                        }
+            Group {
+                if authManager.isCheckingAuth {
+                    // Show splash/loading screen while checking authentication
+                    SplashView()
+                } else if authManager.isAuthenticated {
+                    if authManager.onboardingCompleted {
+                        MainTabView()
+                            .environmentObject(appState)
+                            .environmentObject(authManager)
+                            .onAppear {
+                                // Request push notification permission when user is authenticated
+                                PushNotificationManager.shared.requestAuthorization()
+                            }
+                    } else {
+                        OnboardingView()
+                            .environmentObject(authManager)
+                    }
                 } else {
-                    OnboardingView()
+                    AuthenticationView()
                         .environmentObject(authManager)
                 }
-            } else {
-                AuthenticationView()
-                    .environmentObject(authManager)
             }
+            .animation(.easeInOut(duration: 0.3), value: authManager.isCheckingAuth)
+            .animation(.easeInOut(duration: 0.3), value: authManager.isAuthenticated)
+            .animation(.easeInOut(duration: 0.3), value: authManager.onboardingCompleted)
         }
     }
 }

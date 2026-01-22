@@ -44,6 +44,7 @@
 		CD11234567890059 /* OrganizationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890058 /* OrganizationsView.swift */; };
 		CD11234567890061 /* ButtonAlertSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890060 /* ButtonAlertSettingsView.swift */; };
 		CD11234567890063 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890062 /* DesignTokens.swift */; };
+		CD11234567890065 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890064 /* SplashView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -85,6 +86,7 @@
 		CD11234567890058 /* OrganizationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationsView.swift; sourceTree = "<group>"; };
 		CD11234567890060 /* ButtonAlertSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonAlertSettingsView.swift; sourceTree = "<group>"; };
 		CD11234567890062 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
+		CD11234567890064 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -202,6 +204,7 @@
 				CD11234567890056 /* TeamsView.swift */,
 				CD11234567890058 /* OrganizationsView.swift */,
 				CD11234567890060 /* ButtonAlertSettingsView.swift */,
+				CD11234567890064 /* SplashView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -311,6 +314,7 @@
 				CD11234567890059 /* OrganizationsView.swift in Sources */,
 				CD11234567890061 /* ButtonAlertSettingsView.swift in Sources */,
 				CD11234567890063 /* DesignTokens.swift in Sources */,
+				CD11234567890065 /* SplashView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
