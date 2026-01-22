@@ -1,6 +1,7 @@
 defmodule ButtonLogWeb.FriendLive.Show do
   use ButtonLogWeb, :live_view
   alias ButtonLog.Social
+  alias ButtonLog.Buttons
 
   @impl true
   def mount(%{"id" => friend_id}, session, socket) do
@@ -36,6 +37,12 @@ defmodule ButtonLogWeb.FriendLive.Show do
            |> assign(:shared_notifications, shared_notifications)
            |> assign(:friend_activity, friend_activity)
            |> assign(:can_view_history, can_view_history)
+           |> assign(:show_gift_button_form, false)
+           |> assign(:gift_button_name, "")
+           |> assign(:gift_button_type, "instant")
+           |> assign(:gift_button_icon, "star")
+           |> assign(:gift_button_color, "#007AFF")
+           |> assign(:gift_button_message, "")
            |> assign(:page_title, "#{friend.display_name}'s Profile")}
 
         false ->
@@ -68,6 +75,67 @@ defmodule ButtonLogWeb.FriendLive.Show do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to remove friend: #{inspect(reason)}")}
+    end
+  end
+
+  @impl true
+  def handle_event("show_gift_button_form", _params, socket) do
+    {:noreply, socket |> assign(:show_gift_button_form, true)}
+  end
+
+  @impl true
+  def handle_event("hide_gift_button_form", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_gift_button_form, false)
+     |> assign(:gift_button_name, "")
+     |> assign(:gift_button_type, "instant")
+     |> assign(:gift_button_icon, "star")
+     |> assign(:gift_button_color, "#007AFF")
+     |> assign(:gift_button_message, "")}
+  end
+
+  @impl true
+  def handle_event("update_gift_button_field", %{"field" => field, "value" => value}, socket) do
+    field_atom = String.to_existing_atom("gift_button_#{field}")
+    {:noreply, socket |> assign(field_atom, value)}
+  end
+
+  @impl true
+  def handle_event("create_gift_button", _params, socket) do
+    user_id = socket.assigns.current_user.id
+    friend_id = socket.assigns.friend.id
+
+    button_attrs = %{
+      "name" => socket.assigns.gift_button_name,
+      "type" => socket.assigns.gift_button_type,
+      "icon" => socket.assigns.gift_button_icon,
+      "color" => socket.assigns.gift_button_color
+    }
+
+    message = case socket.assigns.gift_button_message do
+      "" -> nil
+      msg -> msg
+    end
+
+    case Buttons.create_button_for_friend(button_attrs, friend_id, user_id, message) do
+      {:ok, button} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Button '#{button.name}' created for #{socket.assigns.friend.display_name}!")
+         |> assign(:show_gift_button_form, false)
+         |> assign(:gift_button_name, "")
+         |> assign(:gift_button_type, "instant")
+         |> assign(:gift_button_icon, "star")
+         |> assign(:gift_button_color, "#007AFF")
+         |> assign(:gift_button_message, "")}
+
+      {:error, :not_friends} ->
+        {:noreply, socket |> put_flash(:error, "You can only create buttons for friends")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        errors = Enum.map(changeset.errors, fn {field, {msg, _opts}} -> "#{field} #{msg}" end)
+        {:noreply, socket |> put_flash(:error, "Failed to create button: #{Enum.join(errors, ", ")}")}
     end
   end
 
