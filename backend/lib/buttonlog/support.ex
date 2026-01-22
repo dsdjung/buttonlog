@@ -297,4 +297,107 @@ defmodule ButtonLog.Support do
 
     Map.put(ticket, :unread_count, unread_count)
   end
+
+  # ============================================================================
+  # Notification Functions
+  # ============================================================================
+
+  @doc """
+  Sends a notification when an admin replies to a ticket.
+  Only sends for non-internal messages.
+  """
+  def notify_ticket_reply(ticket_id, admin_id) do
+    with {:ok, ticket} <- get_ticket_admin(ticket_id),
+         false <- is_nil(ticket.user_id) do
+      admin = ButtonLog.Accounts.get_user!(admin_id)
+
+      notification_attrs = %{
+        notification_type: "support_ticket_reply",
+        title: "New reply on your support ticket",
+        message: "Support team replied to: #{ticket.subject}",
+        metadata: %{
+          ticket_id: ticket_id,
+          ticket_subject: ticket.subject
+        }
+      }
+
+      # Create in-app notification (sender_id is admin, button_id is nil for support)
+      ButtonLog.Notifications.create_notification(
+        notification_attrs,
+        ticket.user_id,
+        admin_id,
+        nil
+      )
+
+      # Broadcast via WebSocket for real-time update
+      ButtonLogWeb.Endpoint.broadcast(
+        "user:#{ticket.user_id}",
+        "notification_received",
+        %{
+          type: "support_ticket_reply",
+          title: notification_attrs.title,
+          message: notification_attrs.message,
+          ticket_id: ticket_id,
+          sender_id: admin_id,
+          sender_name: admin.display_name || admin.username
+        }
+      )
+
+      :ok
+    else
+      _ -> :error
+    end
+  end
+
+  @doc """
+  Sends a notification when ticket status is updated.
+  """
+  def notify_ticket_status_update(ticket_id, new_status) do
+    with {:ok, ticket} <- get_ticket_admin(ticket_id),
+         false <- is_nil(ticket.user_id) do
+      status_display = status_display_name(new_status)
+
+      notification_attrs = %{
+        notification_type: "support_ticket_status_update",
+        title: "Ticket status updated",
+        message: "Your ticket \"#{ticket.subject}\" is now #{status_display}",
+        metadata: %{
+          ticket_id: ticket_id,
+          ticket_subject: ticket.subject,
+          new_status: new_status
+        }
+      }
+
+      # Create in-app notification (no sender for system updates)
+      ButtonLog.Notifications.create_notification(
+        notification_attrs,
+        ticket.user_id,
+        nil,
+        nil
+      )
+
+      # Broadcast via WebSocket for real-time update
+      ButtonLogWeb.Endpoint.broadcast(
+        "user:#{ticket.user_id}",
+        "notification_received",
+        %{
+          type: "support_ticket_status_update",
+          title: notification_attrs.title,
+          message: notification_attrs.message,
+          ticket_id: ticket_id,
+          new_status: new_status
+        }
+      )
+
+      :ok
+    else
+      _ -> :error
+    end
+  end
+
+  defp status_display_name("open"), do: "Open"
+  defp status_display_name("in_progress"), do: "In Progress"
+  defp status_display_name("resolved"), do: "Resolved"
+  defp status_display_name("closed"), do: "Closed"
+  defp status_display_name(status), do: status
 end

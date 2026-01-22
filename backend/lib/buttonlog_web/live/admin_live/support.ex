@@ -84,6 +84,9 @@ defmodule ButtonLogWeb.AdminLive.Support do
 
     case Support.update_ticket_status(ticket.id, status) do
       {:ok, updated_ticket} ->
+        # Notify user of status change
+        Support.notify_ticket_status_update(updated_ticket.id, status)
+
         {:ok, ticket} = Support.get_ticket_admin(updated_ticket.id)
 
         {:noreply,
@@ -186,6 +189,11 @@ defmodule ButtonLogWeb.AdminLive.Support do
     else
       case Support.add_message(ticket.id, content, admin.id, is_internal: is_internal) do
         {:ok, _message} ->
+          # Notify user only for non-internal messages
+          unless is_internal do
+            Support.notify_ticket_reply(ticket.id, admin.id)
+          end
+
           {:ok, updated_ticket} = Support.get_ticket_admin(ticket.id)
 
           {:noreply,
