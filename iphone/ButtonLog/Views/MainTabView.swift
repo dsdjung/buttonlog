@@ -26,7 +26,7 @@ struct MainTabView: View {
                 Image(systemName: "person.2.fill")
                 Text("Friends")
             }
-            .badge(appState.pendingFriendRequests.count > 0 ? appState.pendingFriendRequests.count : nil)
+            .badge(appState.pendingFriendRequests.count)
             .tag(1)
             
             // Diary Tab
@@ -47,7 +47,7 @@ struct MainTabView: View {
                 Image(systemName: "bell.fill")
                 Text("Notifications")
             }
-            .badge(appState.unreadNotificationCount > 0 ? appState.unreadNotificationCount : nil)
+            .badge(appState.unreadNotificationCount)
             .tag(3)
             
             // Account Tab
