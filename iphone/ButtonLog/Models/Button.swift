@@ -23,6 +23,14 @@ struct Button: Identifiable, Codable, Equatable {
     var createdByFriend: GiftCreator? = nil
     var giftMessage: String? = nil
 
+    // Sharing fields
+    var sharingMode: SharingMode? = nil
+    var shareToken: String? = nil
+    var shareTokenExpiresAt: Date? = nil
+    var isSharedWithMe: Bool? = nil  // True if button belongs to someone else
+    var ownerId: String? = nil
+    var ownerName: String? = nil  // Display name of owner for shared buttons
+
     // Computed properties
     var hexColor: String {
         return color.hasPrefix("#") ? color : "#\(color)"
@@ -42,6 +50,16 @@ struct Button: Identifiable, Codable, Equatable {
         return createdByFriend?.displayName ?? createdByFriend?.username
     }
 
+    /// True if this is someone else's button shared with the current user
+    var isShared: Bool {
+        return isSharedWithMe == true
+    }
+
+    /// True if the current user is the owner of this button
+    var isOwner: Bool {
+        return isSharedWithMe != true
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, name, description, type, icon, color
         case isActive = "is_active"
@@ -56,6 +74,83 @@ struct Button: Identifiable, Codable, Equatable {
         case createdByFriendId = "created_by_friend_id"
         case createdByFriend = "created_by_friend"
         case giftMessage = "gift_message"
+        case sharingMode = "sharing_mode"
+        case shareToken = "share_token"
+        case shareTokenExpiresAt = "share_token_expires_at"
+        case isSharedWithMe = "is_shared_with_me"
+        case ownerId = "owner_id"
+        case ownerName = "owner_name"
+    }
+}
+
+// MARK: - Sharing Mode
+enum SharingMode: String, Codable, CaseIterable {
+    case `private` = "private"
+    case friends = "friends"
+    case inviteOnly = "invite_only"
+    case `public` = "public"
+
+    var displayName: String {
+        switch self {
+        case .private: return "Private"
+        case .friends: return "Friends Only"
+        case .inviteOnly: return "Invite Only"
+        case .public: return "Public Link"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .private: return "Only you can click this button"
+        case .friends: return "All your friends can click this button"
+        case .inviteOnly: return "Only invited users can click this button"
+        case .public: return "Anyone with the link can click this button"
+        }
+    }
+
+    var systemIcon: String {
+        switch self {
+        case .private: return "lock.fill"
+        case .friends: return "person.2.fill"
+        case .inviteOnly: return "envelope.fill"
+        case .public: return "link"
+        }
+    }
+}
+
+// MARK: - Button Collaborator
+struct ButtonCollaborator: Identifiable, Codable, Equatable {
+    let id: String
+    let userId: String
+    let userName: String?
+    let userDisplayName: String?
+    let permission: String
+    let acceptedAt: Date?
+    let createdAt: Date
+
+    var displayName: String {
+        userDisplayName ?? userName ?? "Unknown"
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case userName = "user_name"
+        case userDisplayName = "user_display_name"
+        case permission
+        case acceptedAt = "accepted_at"
+        case createdAt = "created_at"
+    }
+}
+
+// MARK: - Share Link Response
+struct ShareLinkResponse: Codable {
+    let shareToken: String
+    let shareUrl: String
+
+    enum CodingKeys: String, CodingKey {
+        case shareToken = "share_token"
+        case shareUrl = "share_url"
     }
 }
 

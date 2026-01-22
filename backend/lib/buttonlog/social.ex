@@ -79,6 +79,29 @@ defmodule ButtonLog.Social do
   end
 
   @doc """
+  Returns the list of friend IDs for a user.
+  This is an optimized version that only returns IDs for querying purposes.
+  """
+  def get_user_friend_ids(user_id) do
+    # Get friend IDs from both directions
+    friend_ids_as_user = Repo.all(
+      from f in Friendship,
+        where: f.user_id == ^user_id and f.status == "accepted",
+        select: f.friend_id
+    )
+
+    friend_ids_as_friend = Repo.all(
+      from f in Friendship,
+        where: f.friend_id == ^user_id and f.status == "accepted",
+        select: f.user_id
+    )
+
+    # Combine and deduplicate
+    (friend_ids_as_user ++ friend_ids_as_friend)
+    |> Enum.uniq()
+  end
+
+  @doc """
   Creates default notification permissions for existing friendships.
   This is a utility function to set up permissions for users who became friends before the notification system was implemented.
   """

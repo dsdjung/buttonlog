@@ -6,7 +6,7 @@ defmodule ButtonLogWeb.API.ButtonController do
 
   def index(conn, _params) do
     user = conn.assigns.current_user
-    buttons = Buttons.list_user_buttons(user.id)
+    buttons = Buttons.list_accessible_buttons(user.id)
 
     json(conn, %{
       success: true,
@@ -177,10 +177,17 @@ defmodule ButtonLogWeb.API.ButtonController do
     end
   end
 
-  def click(conn, %{"id" => id}) do
+  def click(conn, %{"id" => id} = params) do
     user = conn.assigns.current_user
 
-    case Buttons.click_button(id, user.id) do
+    # Build click attributes from params
+    click_attrs = %{
+      device: params["device"] || "web",
+      platform: params["platform"] || "web"
+    }
+
+    # Use access-checked click function to allow collaborators
+    case Buttons.click_button_with_access_check(id, user.id, click_attrs) do
       {:ok, click} ->
         json(conn, %{
           success: true,
@@ -199,6 +206,36 @@ defmodule ButtonLogWeb.API.ButtonController do
           error: %{
             code: "NOT_FOUND",
             message: "Button not found"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
+      {:error, :not_authorized} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_AUTHORIZED",
+            message: "You don't have permission to click this button"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
+      {:error, :owner_only_action} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "OWNER_ONLY",
+            message: "Only the button owner can perform this action"
           },
           meta: %{
             timestamp: DateTime.utc_now(),
@@ -292,7 +329,13 @@ defmodule ButtonLogWeb.API.ButtonController do
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at),
       created_by_friend_id: button.created_by_friend_id,
-      gift_message: button.gift_message
+      gift_message: button.gift_message,
+      # Sharing fields
+      sharing_mode: button.sharing_mode || "private",
+      share_token: button.share_token,
+      is_shared_with_me: false,
+      owner_id: button.user_id,
+      owner_name: nil
     }
 
     # Add created_by_friend info if preloaded and present
@@ -326,7 +369,13 @@ defmodule ButtonLogWeb.API.ButtonController do
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at),
       created_by_friend_id: button[:created_by_friend_id],
-      gift_message: button[:gift_message]
+      gift_message: button[:gift_message],
+      # Sharing fields
+      sharing_mode: button[:sharing_mode] || "private",
+      share_token: button[:share_token],
+      is_shared_with_me: button[:is_shared_with_me] || false,
+      owner_id: button[:owner_id] || button.user_id,
+      owner_name: button[:owner_name]
     }
 
     # Add created_by_friend info if present (from the query join)
@@ -515,6 +564,279 @@ defmodule ButtonLogWeb.API.ButtonController do
           }
         })
     end
+  end
+
+  # =============================================================================
+  # Shared Button Endpoints
+  # =============================================================================
+
+  @doc """
+  Updates the sharing mode for a button.
+  PUT /api/buttons/:id/sharing-mode
+  """
+  def update_sharing_mode(conn, %{"id" => id, "mode" => mode} = params) do
+    user = conn.assigns.current_user
+    collaborator_ids = Map.get(params, "collaborator_ids", [])
+
+    case Buttons.update_sharing_mode(id, user.id, mode) do
+      {:ok, button} ->
+        # If invite_only mode and collaborators provided, add them
+        if mode == "invite_only" and length(collaborator_ids) > 0 do
+          Enum.each(collaborator_ids, fn collab_id ->
+            Buttons.add_collaborator(id, user.id, collab_id)
+          end)
+        end
+
+        json(conn, %{
+          success: true,
+          data: serialize_button(button),
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_FOUND", message: "Button not found"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "VALIDATION_ERROR",
+            message: "Invalid sharing mode",
+            details: format_changeset_errors(changeset)
+          },
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+    end
+  end
+
+  @doc """
+  Generates a share link for public sharing.
+  POST /api/buttons/:id/share-link
+  """
+  def generate_share_link(conn, %{"id" => id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.generate_share_token(id, user.id) do
+      {:ok, button} ->
+        # Build the share URL
+        base_url = ButtonLogWeb.Endpoint.url()
+        share_url = "#{base_url}/join/#{button.share_token}"
+
+        json(conn, %{
+          success: true,
+          data: %{
+            share_token: button.share_token,
+            share_url: share_url,
+            expires_at: format_datetime(button.share_token_expires_at)
+          },
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_FOUND", message: "Button not found"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+    end
+  end
+
+  @doc """
+  Revokes a share link.
+  DELETE /api/buttons/:id/share-link
+  """
+  def revoke_share_link(conn, %{"id" => id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.revoke_share_token(id, user.id) do
+      {:ok, _button} ->
+        json(conn, %{
+          success: true,
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_FOUND", message: "Button not found"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+    end
+  end
+
+  @doc """
+  Lists collaborators for a button.
+  GET /api/buttons/:id/collaborators
+  """
+  def list_collaborators(conn, %{"id" => id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.list_collaborators(id, user.id) do
+      {:ok, collaborators} ->
+        json(conn, %{
+          success: true,
+          data: Enum.map(collaborators, &serialize_collaborator/1),
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_FOUND", message: "Button not found"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_authorized} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_AUTHORIZED", message: "You don't have permission to view collaborators"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+    end
+  end
+
+  @doc """
+  Adds a collaborator to a button.
+  POST /api/buttons/:id/collaborators
+  """
+  def add_collaborator(conn, %{"id" => id, "user_id" => collaborator_id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.add_collaborator(id, user.id, collaborator_id) do
+      {:ok, collaborator} ->
+        conn
+        |> put_status(:created)
+        |> json(%{
+          success: true,
+          data: serialize_collaborator(collaborator),
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_FOUND", message: "Button not found"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_friends} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_FRIENDS", message: "You can only add friends as collaborators"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, %Ecto.Changeset{}} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          error: %{code: "ALREADY_COLLABORATOR", message: "User is already a collaborator"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+    end
+  end
+
+  @doc """
+  Removes a collaborator from a button.
+  DELETE /api/buttons/:id/collaborators/:user_id
+  """
+  def remove_collaborator(conn, %{"id" => id, "user_id" => collaborator_id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.remove_collaborator(id, user.id, collaborator_id) do
+      {:ok, _} ->
+        json(conn, %{
+          success: true,
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_FOUND", message: "Button or collaborator not found"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+    end
+  end
+
+  @doc """
+  Joins a button via share token.
+  POST /api/buttons/join/:token
+  """
+  def join_by_token(conn, %{"token" => token}) do
+    user = conn.assigns.current_user
+
+    case Buttons.join_by_share_token(token, user.id) do
+      {:ok, button} ->
+        json(conn, %{
+          success: true,
+          data: serialize_button(button),
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_FOUND", message: "Invalid or expired share link"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+
+      {:error, :not_public} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{
+          success: false,
+          error: %{code: "NOT_PUBLIC", message: "This button is not publicly shared"},
+          meta: %{timestamp: DateTime.utc_now(), request_id: generate_request_id()}
+        })
+    end
+  end
+
+  defp serialize_collaborator(%{} = collaborator) do
+    %{
+      id: collaborator.id,
+      user_id: collaborator.user_id,
+      user_name: collaborator[:user_name] || collaborator[:username],
+      permission: collaborator.permission,
+      accepted_at: format_datetime(collaborator.accepted_at)
+    }
+  end
+
+  defp serialize_collaborator(collaborator) do
+    %{
+      id: collaborator.id,
+      user_id: collaborator.user_id,
+      permission: collaborator.permission,
+      accepted_at: format_datetime(collaborator.accepted_at)
+    }
   end
 
   defp format_datetime(nil), do: nil

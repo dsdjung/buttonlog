@@ -348,6 +348,67 @@ class APIService {
         )
     }
 
+    /// Update button sharing mode
+    func updateSharingMode(buttonId: String, mode: SharingMode) async throws -> Button {
+        let body: [String: Any] = [
+            "sharing_mode": mode.rawValue
+        ]
+        return try await makeRequest(
+            endpoint: "/buttons/\(buttonId)/sharing-mode",
+            method: .PUT,
+            body: body
+        )
+    }
+
+    /// Generate a shareable link for a button
+    func generateShareLink(buttonId: String) async throws -> ShareLinkResponse {
+        return try await makeRequest(
+            endpoint: "/buttons/\(buttonId)/share-link",
+            method: .POST
+        )
+    }
+
+    /// Revoke the shareable link for a button
+    func revokeShareLink(buttonId: String) async throws -> Button {
+        return try await makeRequest(
+            endpoint: "/buttons/\(buttonId)/share-link",
+            method: .DELETE
+        )
+    }
+
+    /// Get collaborators for a button
+    func getCollaborators(buttonId: String) async throws -> [ButtonCollaborator] {
+        return try await makeRequest(endpoint: "/buttons/\(buttonId)/collaborators")
+    }
+
+    /// Add a collaborator to a button
+    func addCollaborator(buttonId: String, userId: String) async throws -> ButtonCollaborator {
+        let body: [String: Any] = [
+            "user_id": userId
+        ]
+        return try await makeRequest(
+            endpoint: "/buttons/\(buttonId)/collaborators",
+            method: .POST,
+            body: body
+        )
+    }
+
+    /// Remove a collaborator from a button
+    func removeCollaborator(buttonId: String, userId: String) async throws {
+        try await makeVoidRequest(
+            endpoint: "/buttons/\(buttonId)/collaborators/\(userId)",
+            method: .DELETE
+        )
+    }
+
+    /// Join a button via share token
+    func joinByShareToken(_ token: String) async throws -> Button {
+        return try await makeRequest(
+            endpoint: "/buttons/join/\(token)",
+            method: .POST
+        )
+    }
+
     // MARK: - Friends & Social
     
     func getFriends() async throws -> [Friend] {

@@ -53,14 +53,14 @@ struct CreateTicketView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    SwiftUI.Button("Cancel") {
                         dismiss()
                     }
                     .disabled(isSubmitting)
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Submit") {
+                    SwiftUI.Button("Submit") {
                         submitTicket()
                     }
                     .disabled(!formData.isValid || isSubmitting)

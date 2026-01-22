@@ -35,7 +35,20 @@ data class Button(
     @SerializedName("created_by_friend")
     val createdByFriend: GiftCreator? = null,
     @SerializedName("gift_message")
-    val giftMessage: String? = null
+    val giftMessage: String? = null,
+    // Sharing fields
+    @SerializedName("sharing_mode")
+    val sharingMode: SharingMode? = null,
+    @SerializedName("share_token")
+    val shareToken: String? = null,
+    @SerializedName("share_token_expires_at")
+    val shareTokenExpiresAt: Date? = null,
+    @SerializedName("is_shared_with_me")
+    val isSharedWithMe: Boolean? = null,
+    @SerializedName("owner_id")
+    val ownerId: String? = null,
+    @SerializedName("owner_name")
+    val ownerName: String? = null
 ) {
     val hexColor: String
         get() = if (color.startsWith("#")) color else "#$color"
@@ -50,6 +63,14 @@ data class Button(
     /** Display name of the friend who created this button as a gift */
     val giftFromName: String?
         get() = createdByFriend?.displayName ?: createdByFriend?.username
+
+    /** True if this is someone else's button shared with the current user */
+    val isShared: Boolean
+        get() = isSharedWithMe == true
+
+    /** True if the current user is the owner of this button */
+    val isOwner: Boolean
+        get() = isSharedWithMe != true
 }
 
 /** Minimal user info for gift button creator */
@@ -77,10 +98,55 @@ enum class ButtonType(val displayName: String, val icon: String, val description
 enum class ButtonState(val displayName: String, val color: Color) {
     @SerializedName("idle")
     IDLE("Idle", Color.Gray),
-    
+
     @SerializedName("active")
     ACTIVE("Active", Color.Green)
 }
+
+enum class SharingMode(
+    val displayName: String,
+    val description: String,
+    val iconName: String
+) {
+    @SerializedName("private")
+    PRIVATE("Private", "Only you can click this button", "lock"),
+
+    @SerializedName("friends")
+    FRIENDS("Friends Only", "All your friends can click this button", "people"),
+
+    @SerializedName("invite_only")
+    INVITE_ONLY("Invite Only", "Only invited users can click this button", "mail"),
+
+    @SerializedName("public")
+    PUBLIC("Public Link", "Anyone with the link can click this button", "link")
+}
+
+/** Button collaborator - a user who can click a shared button */
+data class ButtonCollaborator(
+    val id: String,
+    @SerializedName("user_id")
+    val userId: String,
+    @SerializedName("user_name")
+    val userName: String?,
+    @SerializedName("user_display_name")
+    val userDisplayName: String?,
+    val permission: String,
+    @SerializedName("accepted_at")
+    val acceptedAt: Date?,
+    @SerializedName("created_at")
+    val createdAt: Date
+) {
+    val displayName: String
+        get() = userDisplayName ?: userName ?: "Unknown"
+}
+
+/** Response when generating a share link */
+data class ShareLinkResponse(
+    @SerializedName("share_token")
+    val shareToken: String,
+    @SerializedName("share_url")
+    val shareUrl: String
+)
 
 // Button creation form data
 data class ButtonFormData(
@@ -244,5 +310,34 @@ data class ApiMeta(
     @SerializedName("request_id")
     val requestId: String?,
     val count: Int?
+)
+
+// Sharing API response wrappers
+data class SharingModeUpdateRequest(
+    @SerializedName("sharing_mode")
+    val sharingMode: String
+)
+
+data class AddCollaboratorRequest(
+    @SerializedName("user_id")
+    val userId: String
+)
+
+data class CollaboratorsResponse(
+    val success: Boolean,
+    val data: List<ButtonCollaborator>?,
+    val error: ApiError?
+)
+
+data class CollaboratorResponse(
+    val success: Boolean,
+    val data: ButtonCollaborator?,
+    val error: ApiError?
+)
+
+data class ShareLinkApiResponse(
+    val success: Boolean,
+    val data: ShareLinkResponse?,
+    val error: ApiError?
 )
 

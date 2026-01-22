@@ -30,6 +30,7 @@ fun ButtonCard(
     onClick: () -> Unit,
     onEditClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
+    onSharingClick: (() -> Unit)? = null,
     onDeleteClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -66,6 +67,7 @@ fun ButtonCard(
                 button = button,
                 onEditClick = onEditClick,
                 onHistoryClick = onHistoryClick,
+                onSharingClick = onSharingClick,
                 onDeleteClick = onDeleteClick
             )
 
@@ -86,6 +88,7 @@ private fun ButtonHeader(
     button: Button,
     onEditClick: () -> Unit,
     onHistoryClick: () -> Unit,
+    onSharingClick: (() -> Unit)?,
     onDeleteClick: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -146,6 +149,9 @@ private fun ButtonHeader(
                 if (button.isGift) {
                     GiftBadge(fromName = button.giftFromName ?: "a friend")
                 }
+                if (button.isShared && button.ownerName != null) {
+                    SharedWithMeBadge(ownerName = button.ownerName!!)
+                }
             }
         }
 
@@ -166,16 +172,6 @@ private fun ButtonHeader(
                 onDismissRequest = { showMenu = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("Edit") },
-                    onClick = {
-                        showMenu = false
-                        onEditClick()
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Default.Edit, contentDescription = null)
-                    }
-                )
-                DropdownMenuItem(
                     text = { Text("History") },
                     onClick = {
                         showMenu = false
@@ -185,21 +181,49 @@ private fun ButtonHeader(
                         Icon(Icons.Default.History, contentDescription = null)
                     }
                 )
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
-                    onClick = {
-                        showMenu = false
-                        onDeleteClick()
-                    },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
+
+                // Only show edit, sharing, and delete for owned buttons
+                if (button.isOwner) {
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        onClick = {
+                            showMenu = false
+                            onEditClick()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                        }
+                    )
+
+                    if (onSharingClick != null) {
+                        DropdownMenuItem(
+                            text = { Text("Sharing") },
+                            onClick = {
+                                showMenu = false
+                                onSharingClick()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.People, contentDescription = null)
+                            }
                         )
                     }
-                )
+
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                        onClick = {
+                            showMenu = false
+                            onDeleteClick()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    )
+                }
             }
         }
     }
@@ -305,6 +329,33 @@ private fun GiftBadge(fromName: String) {
                 text = "From $fromName",
                 style = MaterialTheme.typography.labelSmall,
                 color = purple
+            )
+        }
+    }
+}
+
+@Composable
+private fun SharedWithMeBadge(ownerName: String) {
+    val blue = Color(0xFF2196F3)
+    Surface(
+        color = blue.copy(alpha = 0.2f),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.People,
+                contentDescription = null,
+                tint = blue,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(
+                text = "Shared by $ownerName",
+                style = MaterialTheme.typography.labelSmall,
+                color = blue
             )
         }
     }

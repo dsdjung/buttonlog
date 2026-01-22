@@ -36,6 +36,7 @@
 		CD11234567890045 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890044 /* SupportView.swift */; };
 		CD11234567890047 /* SupportTicketView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890046 /* SupportTicketView.swift */; };
 		CD11234567890049 /* CreateTicketView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890048 /* CreateTicketView.swift */; };
+		CD11234567890051 /* ButtonSharingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890050 /* ButtonSharingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +70,7 @@
 		CD11234567890044 /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		CD11234567890046 /* SupportTicketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportTicketView.swift; sourceTree = "<group>"; };
 		CD11234567890048 /* CreateTicketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTicketView.swift; sourceTree = "<group>"; };
+		CD11234567890050 /* ButtonSharingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonSharingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,6 +172,7 @@
 				CD11234567890044 /* SupportView.swift */,
 				CD11234567890046 /* SupportTicketView.swift */,
 				CD11234567890048 /* CreateTicketView.swift */,
+				CD11234567890050 /* ButtonSharingView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -271,6 +274,7 @@
 				CD11234567890045 /* SupportView.swift in Sources */,
 				CD11234567890047 /* SupportTicketView.swift in Sources */,
 				CD11234567890049 /* CreateTicketView.swift in Sources */,
+				CD11234567890051 /* ButtonSharingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

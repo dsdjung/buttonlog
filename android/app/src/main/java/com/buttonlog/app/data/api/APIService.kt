@@ -43,6 +43,30 @@ interface APIService {
     @PUT("buttons/{id}/sharing")
     suspend fun updateButtonSharing(@Path("id") id: String, @Body request: ButtonSharingUpdateRequest): ButtonSharingResponse
 
+    // Sharing mode management
+    @PUT("buttons/{id}/sharing-mode")
+    suspend fun updateSharingMode(@Path("id") id: String, @Body request: SharingModeUpdateRequest): ButtonResponse
+
+    @POST("buttons/{id}/share-link")
+    suspend fun generateShareLink(@Path("id") id: String): ShareLinkApiResponse
+
+    @DELETE("buttons/{id}/share-link")
+    suspend fun revokeShareLink(@Path("id") id: String): ButtonResponse
+
+    // Collaborator management
+    @GET("buttons/{id}/collaborators")
+    suspend fun getCollaborators(@Path("id") id: String): CollaboratorsResponse
+
+    @POST("buttons/{id}/collaborators")
+    suspend fun addCollaborator(@Path("id") id: String, @Body request: AddCollaboratorRequest): CollaboratorResponse
+
+    @DELETE("buttons/{id}/collaborators/{userId}")
+    suspend fun removeCollaborator(@Path("id") buttonId: String, @Path("userId") userId: String): GenericResponse
+
+    // Join via share token
+    @POST("buttons/join/{token}")
+    suspend fun joinByShareToken(@Path("token") token: String): ButtonResponse
+
     @POST("buttons/gift")
     suspend fun createButtonForFriend(@Body request: CreateGiftButtonRequest): ButtonResponse
 

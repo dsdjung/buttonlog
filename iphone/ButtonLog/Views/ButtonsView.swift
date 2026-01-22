@@ -6,6 +6,7 @@ struct ButtonsView: View {
     @State private var showingCreateButton = false
     @State private var selectedButton: Button?
     @State private var historyButton: Button?
+    @State private var sharingButton: Button?
     
     var filteredButtons: [Button] {
         if searchText.isEmpty {
@@ -59,6 +60,9 @@ struct ButtonsView: View {
                                 },
                                 onHistory: {
                                     historyButton = button
+                                },
+                                onSharing: {
+                                    sharingButton = button
                                 }
                             )
                         }
@@ -89,6 +93,9 @@ struct ButtonsView: View {
         .sheet(item: $historyButton) { button in
             ButtonHistoryView(button: button)
         }
+        .sheet(item: $sharingButton) { button in
+            ButtonSharingView(button: button)
+        }
     }
 }
 
@@ -97,9 +104,10 @@ struct ButtonCard: View {
     let onTap: () -> Void
     let onEdit: () -> Void
     let onHistory: () -> Void
+    var onSharing: (() -> Void)? = nil
 
     @State private var isPressed = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
@@ -109,24 +117,24 @@ struct ButtonCard: View {
                     Circle()
                         .fill(button.uiColor)
                         .frame(width: 44, height: 44)
-                    
+
                     Image(systemName: iconForButton(button.icon))
                         .foregroundColor(.white)
                         .font(.title3)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(button.name)
                         .font(.headline)
                         .foregroundColor(.primary)
-                    
+
                     if let description = button.description, !description.isEmpty {
                         Text(description)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .lineLimit(2)
                     }
-                    
+
                     HStack(spacing: 8) {
                         ButtonTypeTag(type: button.type)
 
@@ -137,26 +145,41 @@ struct ButtonCard: View {
                         if button.isGift, let fromName = button.giftFromName {
                             GiftBadge(fromName: fromName)
                         }
+
+                        if button.isShared, let ownerName = button.ownerName {
+                            SharedWithMeBadge(ownerName: ownerName)
+                        }
                     }
                 }
 
                 Spacer()
 
-                // Settings menu
+                // Settings menu - different options for owned vs shared buttons
                 Menu {
                     SwiftUI.Button(action: onHistory) {
                         Label("History", systemImage: "clock")
                     }
-                    SwiftUI.Button(action: onEdit) {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    Divider()
-                    SwiftUI.Button(role: .destructive) {
-                        Task {
-                            await AppState().deleteButton(id: button.id)
+
+                    if button.isOwner {
+                        SwiftUI.Button(action: onEdit) {
+                            Label("Edit", systemImage: "pencil")
                         }
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+
+                        if let onSharing = onSharing {
+                            SwiftUI.Button(action: onSharing) {
+                                Label("Sharing", systemImage: "person.2")
+                            }
+                        }
+
+                        Divider()
+
+                        SwiftUI.Button(role: .destructive) {
+                            Task {
+                                await AppState().deleteButton(id: button.id)
+                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -284,6 +307,24 @@ struct GiftBadge: View {
         .padding(.vertical, 4)
         .background(Color.purple.opacity(0.2))
         .foregroundColor(.purple)
+        .cornerRadius(8)
+    }
+}
+
+struct SharedWithMeBadge: View {
+    let ownerName: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "person.2.fill")
+                .font(.caption2)
+            Text("Shared by \(ownerName)")
+                .font(.caption)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.blue.opacity(0.2))
+        .foregroundColor(.blue)
         .cornerRadius(8)
     }
 }

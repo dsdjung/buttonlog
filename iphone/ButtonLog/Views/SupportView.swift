@@ -18,7 +18,7 @@ struct SupportView: View {
                             .foregroundColor(.orange)
                         Text(error)
                             .multilineTextAlignment(.center)
-                        Button("Retry") {
+                        SwiftUI.Button("Retry") {
                             Task { await loadTickets() }
                         }
                     }
@@ -34,7 +34,7 @@ struct SupportView: View {
                         Text("Have a question or found a bug?\nCreate a ticket to get help.")
                             .multilineTextAlignment(.center)
                             .foregroundColor(.secondary)
-                        Button(action: { showingCreateTicket = true }) {
+                        SwiftUI.Button(action: { showingCreateTicket = true }) {
                             Label("Create Ticket", systemImage: "plus.circle.fill")
                         }
                         .buttonStyle(.borderedProminent)
@@ -56,7 +56,7 @@ struct SupportView: View {
             .navigationTitle("Help & Support")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingCreateTicket = true }) {
+                    SwiftUI.Button(action: { showingCreateTicket = true }) {
                         Image(systemName: "plus")
                     }
                 }

@@ -79,6 +79,15 @@ defmodule ButtonLogWeb.Router do
     get "/buttons/:id/sharing", API.ButtonController, :sharing
     put "/buttons/:id/sharing", API.ButtonController, :update_sharing
 
+    # Button sharing/collaborator endpoints
+    put "/buttons/:id/sharing-mode", API.ButtonController, :update_sharing_mode
+    post "/buttons/:id/share-link", API.ButtonController, :generate_share_link
+    delete "/buttons/:id/share-link", API.ButtonController, :revoke_share_link
+    get "/buttons/:id/collaborators", API.ButtonController, :list_collaborators
+    post "/buttons/:id/collaborators", API.ButtonController, :add_collaborator
+    delete "/buttons/:id/collaborators/:user_id", API.ButtonController, :remove_collaborator
+    post "/buttons/join/:token", API.ButtonController, :join_by_token
+
     # User endpoints
     get "/users/profile", API.UserController, :profile
     put "/users/profile", API.UserController, :update_profile

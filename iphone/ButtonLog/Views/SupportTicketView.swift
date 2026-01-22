@@ -30,7 +30,7 @@ struct SupportTicketView: View {
                     .foregroundColor(.orange)
                 Text(error)
                     .multilineTextAlignment(.center)
-                Button("Retry") {
+                SwiftUI.Button("Retry") {
                     Task { await loadTicket() }
                 }
             }
@@ -209,7 +209,7 @@ struct MessageInputView: View {
                 .focused($isFocused)
                 .disabled(isSending)
 
-            Button(action: onSend) {
+            SwiftUI.Button(action: onSend) {
                 if isSending {
                     ProgressView()
                         .frame(width: 24, height: 24)

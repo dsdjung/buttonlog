@@ -28,9 +28,15 @@ defmodule ButtonLog.Buttons.Button do
     belongs_to :user, ButtonLog.Accounts.User
     belongs_to :created_by_friend, ButtonLog.Accounts.User
     has_many :button_clicks, ButtonLog.Buttons.ButtonClick
+    has_many :collaborators, ButtonLog.Buttons.ButtonCollaborator
 
     # Gift button fields
     field :gift_message, :string
+
+    # Sharing fields
+    field :sharing_mode, :string, default: "private"
+    field :share_token, :string
+    field :share_token_expires_at, :utc_datetime
 
     timestamps()
   end
@@ -67,5 +73,14 @@ defmodule ButtonLog.Buttons.Button do
     |> create_changeset(attrs, owner_id)
     |> put_change(:created_by_friend_id, gifter_id)
     |> put_change(:gift_message, message)
+  end
+
+  @doc """
+  Creates a changeset for updating button sharing settings.
+  """
+  def sharing_changeset(button, attrs) do
+    button
+    |> cast(attrs, [:sharing_mode, :share_token, :share_token_expires_at])
+    |> validate_inclusion(:sharing_mode, ["private", "friends", "invite_only", "public"])
   end
 end

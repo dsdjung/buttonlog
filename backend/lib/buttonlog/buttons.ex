@@ -699,4 +699,493 @@ defmodule ButtonLog.Buttons do
       }
     }, user_id, user_id, button.id)
   end
+
+  # =============================================================================
+  # Button Collaborator Functions (Shared Buttons)
+  # =============================================================================
+
+  alias ButtonLog.Buttons.ButtonCollaborator
+
+  @doc """
+  Gets a button by ID without ownership check.
+  Used internally for shared button access.
+  """
+  def get_button_by_id(id) do
+    case Repo.get(Button, id) do
+      nil -> {:error, :not_found}
+      button -> {:ok, button}
+    end
+  end
+
+  @doc """
+  Checks if a user can click a button.
+  Returns true if:
+  - User is the button owner
+  - Button is shared with friends and user is a friend
+  - User is an explicit collaborator
+  - Button has public sharing mode
+  """
+  def can_click_button?(button_id, user_id) do
+    case get_button_by_id(button_id) do
+      {:ok, button} ->
+        cond do
+          # Owner can always click
+          button.user_id == user_id -> true
+
+          # Check based on sharing mode
+          button.sharing_mode == "private" -> false
+
+          button.sharing_mode == "friends" ->
+            ButtonLog.Social.are_friends?(button.user_id, user_id)
+
+          button.sharing_mode == "invite_only" ->
+            is_collaborator?(button_id, user_id)
+
+          button.sharing_mode == "public" ->
+            true
+
+          # Default: only owner
+          true -> false
+        end
+
+      {:error, _} -> false
+    end
+  end
+
+  @doc """
+  Checks if a user can view button history.
+  Same rules as can_click_button? for now.
+  """
+  def can_view_button_history?(button_id, user_id) do
+    can_click_button?(button_id, user_id)
+  end
+
+  @doc """
+  Checks if a user is an explicit collaborator on a button.
+  """
+  def is_collaborator?(button_id, user_id) do
+    Repo.exists?(
+      from bc in ButtonCollaborator,
+        where: bc.button_id == ^button_id and bc.user_id == ^user_id and not is_nil(bc.accepted_at)
+    )
+  end
+
+  @doc """
+  Records a button click with access checking.
+  Allows non-owners to click if they have access.
+  """
+  def click_button_with_access_check(button_id, user_id, click_attrs \\ %{}) do
+    if can_click_button?(button_id, user_id) do
+      case get_button_by_id(button_id) do
+        {:ok, button} ->
+          result = case button.type do
+            "toggle" ->
+              handle_toggle_button_click_for_collaborator(button, user_id, click_attrs)
+
+            "one-time" ->
+              # Only owner can complete one-time buttons
+              if button.user_id == user_id do
+                handle_one_time_button_click(button, user_id)
+              else
+                {:error, :owner_only_action}
+              end
+
+            _other_type ->
+              # For instant buttons, just record a click
+              %ButtonClick{}
+              |> ButtonClick.create_changeset(
+                Map.merge(%{
+                  device: click_attrs[:device] || "web",
+                  platform: click_attrs[:platform] || "web",
+                  action: "click"
+                }, click_attrs),
+                button_id,
+                user_id
+              )
+              |> Repo.insert()
+          end
+
+          # Notify owner if clicked by collaborator
+          case result do
+            {:ok, click} ->
+              if button.user_id != user_id do
+                notify_owner_of_collaborator_click(button, user_id, click)
+              end
+              {:ok, click}
+            error -> error
+          end
+
+        error -> error
+      end
+    else
+      {:error, :not_authorized}
+    end
+  end
+
+  defp handle_toggle_button_click_for_collaborator(button, user_id, click_attrs) do
+    # Toggle state: idle -> active, active -> idle
+    {new_state, action} =
+      case button.current_state do
+        "idle" -> {"active", "start"}
+        "active" -> {"idle", "end"}
+        _ -> {"active", "start"}
+      end
+
+    Repo.transaction(fn ->
+      # Update button state
+      button
+      |> Button.changeset(%{
+        current_state: new_state,
+        state_changed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+      })
+      |> Repo.update!()
+
+      # Create the button click record
+      %ButtonClick{}
+      |> ButtonClick.create_changeset(
+        Map.merge(%{
+          device: click_attrs[:device] || "web",
+          platform: click_attrs[:platform] || "web",
+          action: action
+        }, click_attrs),
+        button.id,
+        user_id
+      )
+      |> Repo.insert!()
+    end)
+  end
+
+  defp notify_owner_of_collaborator_click(button, clicker_id, _click) do
+    alias ButtonLog.Notifications
+
+    clicker = ButtonLog.Accounts.get_user!(clicker_id)
+
+    Notifications.create_notification(%{
+      notification_type: "shared_button_clicked",
+      title: "#{button.name} was clicked!",
+      message: "#{clicker.display_name || clicker.username} clicked your shared button '#{button.name}'",
+      metadata: %{
+        button_id: button.id,
+        button_name: button.name,
+        clicker_id: clicker_id
+      }
+    }, button.user_id, clicker_id, button.id)
+  end
+
+  @doc """
+  Updates the sharing mode for a button.
+  Only the owner can update sharing settings.
+  """
+  def update_sharing_mode(button_id, user_id, mode) do
+    case get_button(button_id, user_id) do
+      {:ok, button} ->
+        button
+        |> Button.sharing_changeset(%{sharing_mode: mode})
+        |> Repo.update()
+
+      error -> error
+    end
+  end
+
+  @doc """
+  Generates a share token for public link sharing.
+  Only the owner can generate share links.
+  """
+  def generate_share_token(button_id, user_id, opts \\ []) do
+    case get_button(button_id, user_id) do
+      {:ok, button} ->
+        token = Ecto.UUID.generate()
+        expires_at = Keyword.get(opts, :expires_at)
+
+        button
+        |> Button.sharing_changeset(%{
+          share_token: token,
+          share_token_expires_at: expires_at
+        })
+        |> Repo.update()
+
+      error -> error
+    end
+  end
+
+  @doc """
+  Revokes a share token for a button.
+  Only the owner can revoke share links.
+  """
+  def revoke_share_token(button_id, user_id) do
+    case get_button(button_id, user_id) do
+      {:ok, button} ->
+        button
+        |> Button.sharing_changeset(%{
+          share_token: nil,
+          share_token_expires_at: nil
+        })
+        |> Repo.update()
+
+      error -> error
+    end
+  end
+
+  @doc """
+  Gets a button by its share token.
+  Returns error if token is expired or not found.
+  """
+  def get_button_by_share_token(token) do
+    now = DateTime.utc_now()
+
+    case Repo.one(
+      from b in Button,
+        where: b.share_token == ^token,
+        where: is_nil(b.share_token_expires_at) or b.share_token_expires_at > ^now
+    ) do
+      nil -> {:error, :not_found}
+      button -> {:ok, button}
+    end
+  end
+
+  @doc """
+  Adds a collaborator to a button.
+  Only the owner can add collaborators.
+  The collaborator must be a friend of the owner (unless public mode).
+  """
+  def add_collaborator(button_id, owner_id, collaborator_user_id) do
+    case get_button(button_id, owner_id) do
+      {:ok, button} ->
+        # For invite_only mode, verify the collaborator is a friend
+        if button.sharing_mode == "invite_only" and
+           not ButtonLog.Social.are_friends?(owner_id, collaborator_user_id) do
+          {:error, :not_friends}
+        else
+          %ButtonCollaborator{}
+          |> ButtonCollaborator.changeset(%{
+            button_id: button_id,
+            user_id: collaborator_user_id,
+            invited_by_id: owner_id,
+            permission: "click",
+            accepted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+          })
+          |> Repo.insert()
+          |> case do
+            {:ok, collab} ->
+              # Notify the new collaborator
+              notify_collaborator_added(button, owner_id, collaborator_user_id)
+              {:ok, collab}
+            error -> error
+          end
+        end
+
+      error -> error
+    end
+  end
+
+  @doc """
+  Removes a collaborator from a button.
+  Only the owner can remove collaborators.
+  """
+  def remove_collaborator(button_id, owner_id, collaborator_user_id) do
+    case get_button(button_id, owner_id) do
+      {:ok, _button} ->
+        case Repo.one(
+          from bc in ButtonCollaborator,
+            where: bc.button_id == ^button_id and bc.user_id == ^collaborator_user_id
+        ) do
+          nil -> {:error, :not_found}
+          collaborator -> Repo.delete(collaborator)
+        end
+
+      error -> error
+    end
+  end
+
+  @doc """
+  Lists all collaborators for a button.
+  Only the owner or existing collaborators can see the list.
+  """
+  def list_collaborators(button_id, user_id) do
+    case get_button_by_id(button_id) do
+      {:ok, button} ->
+        if button.user_id == user_id or is_collaborator?(button_id, user_id) do
+          collaborators = Repo.all(
+            from bc in ButtonCollaborator,
+              join: u in assoc(bc, :user),
+              where: bc.button_id == ^button_id,
+              select: %{
+                id: bc.id,
+                user_id: bc.user_id,
+                user_name: u.display_name,
+                username: u.username,
+                permission: bc.permission,
+                accepted_at: bc.accepted_at,
+                inserted_at: bc.inserted_at
+              }
+          )
+          {:ok, collaborators}
+        else
+          {:error, :not_authorized}
+        end
+
+      error -> error
+    end
+  end
+
+  @doc """
+  Gets all user IDs who are collaborators on a button (for broadcasting).
+  """
+  def get_collaborator_user_ids(button_id) do
+    Repo.all(
+      from bc in ButtonCollaborator,
+        where: bc.button_id == ^button_id and not is_nil(bc.accepted_at),
+        select: bc.user_id
+    )
+  end
+
+  @doc """
+  Gets the owner ID for a button.
+  """
+  def get_button_owner_id(button_id) do
+    Repo.one(
+      from b in Button,
+        where: b.id == ^button_id,
+        select: b.user_id
+    )
+  end
+
+  @doc """
+  Joins a button via share token.
+  Adds the user as a collaborator if the token is valid.
+  """
+  def join_by_share_token(token, user_id) do
+    case get_button_by_share_token(token) do
+      {:ok, button} ->
+        if button.sharing_mode == "public" do
+          # Check if already a collaborator
+          if is_collaborator?(button.id, user_id) or button.user_id == user_id do
+            {:ok, button}
+          else
+            # Add as collaborator
+            case add_collaborator_direct(button.id, user_id, button.user_id) do
+              {:ok, _} -> {:ok, button}
+              error -> error
+            end
+          end
+        else
+          {:error, :not_public}
+        end
+
+      error -> error
+    end
+  end
+
+  # Add collaborator directly without owner check (for public link joins)
+  defp add_collaborator_direct(button_id, user_id, invited_by_id) do
+    %ButtonCollaborator{}
+    |> ButtonCollaborator.changeset(%{
+      button_id: button_id,
+      user_id: user_id,
+      invited_by_id: invited_by_id,
+      permission: "click",
+      accepted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+    })
+    |> Repo.insert()
+  end
+
+  defp notify_collaborator_added(button, owner_id, collaborator_id) do
+    alias ButtonLog.Notifications
+
+    owner = ButtonLog.Accounts.get_user!(owner_id)
+
+    Notifications.create_notification(%{
+      notification_type: "button_shared_with_you",
+      title: "Button Shared!",
+      message: "#{owner.display_name || owner.username} shared '#{button.name}' with you",
+      metadata: %{
+        button_id: button.id,
+        button_name: button.name,
+        owner_id: owner_id
+      }
+    }, collaborator_id, owner_id, button.id)
+  end
+
+  @doc """
+  Lists all buttons accessible to a user (own buttons + shared with me).
+  Returns own buttons first, then shared buttons with owner info.
+  """
+  def list_accessible_buttons(user_id) do
+    # Get own buttons
+    own_buttons = list_user_buttons(user_id)
+    |> Enum.map(fn button ->
+      Map.merge(button, %{
+        is_shared_with_me: false,
+        owner_id: user_id,
+        owner_name: nil
+      })
+    end)
+
+    # Get buttons shared with this user
+    shared_buttons = list_buttons_shared_with_user(user_id)
+
+    # Combine and return
+    own_buttons ++ shared_buttons
+  end
+
+  @doc """
+  Lists buttons that have been shared with a user.
+  Includes buttons where:
+  - User is an explicit collaborator
+  - Button is shared with friends and user is a friend
+  """
+  def list_buttons_shared_with_user(user_id) do
+    # Get buttons where user is an explicit collaborator
+    collaborator_button_ids = Repo.all(
+      from bc in ButtonCollaborator,
+        where: bc.user_id == ^user_id and not is_nil(bc.accepted_at),
+        select: bc.button_id
+    )
+
+    # Get friend IDs for checking "friends" sharing mode
+    friend_ids = ButtonLog.Social.get_user_friend_ids(user_id)
+
+    # Query buttons that are shared with this user
+    Repo.all(
+      from b in Button,
+        left_join: bc in ButtonClick, on: b.id == bc.button_id,
+        join: owner in assoc(b, :user),
+        where: b.user_id != ^user_id,  # Not own buttons
+        where: (is_nil(b.archived) or b.archived == false),  # Not archived
+        where: (
+          # Explicit collaborator
+          b.id in ^collaborator_button_ids or
+          # Friends sharing mode and is a friend
+          (b.sharing_mode == "friends" and b.user_id in ^friend_ids)
+        ),
+        group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active,
+                   b.current_state, b.state_changed_at, b.notifications_enabled,
+                   b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id,
+                   b.inserted_at, b.updated_at, b.sharing_mode, owner.id,
+                   owner.display_name, owner.username],
+        order_by: [asc: b.name],
+        select: %{
+          id: b.id,
+          name: b.name,
+          description: b.description,
+          type: b.type,
+          icon: b.icon,
+          color: b.color,
+          is_active: b.is_active,
+          current_state: b.current_state,
+          state_changed_at: b.state_changed_at,
+          notifications_enabled: b.notifications_enabled,
+          auto_stop_enabled: b.auto_stop_enabled,
+          calendar_sync_enabled: b.calendar_sync_enabled,
+          user_id: b.user_id,
+          inserted_at: b.inserted_at,
+          updated_at: b.updated_at,
+          latest_click_at: max(bc.clicked_at),
+          sharing_mode: b.sharing_mode,
+          is_shared_with_me: true,
+          owner_id: owner.id,
+          owner_name: coalesce(owner.display_name, owner.username)
+        }
+    )
+  end
 end
