@@ -323,7 +323,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             onCreateTicket = {
                 showCreateTicket = true
             },
-            onNavigateBack = {
+            onBackClick = {
                 showSupportScreen = false
             }
         )
@@ -336,7 +336,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         SupportTicketScreen(
             ticketId = ticketId,
             viewModel = supportViewModel,
-            onNavigateBack = {
+            onBackClick = {
                 selectedTicketId = null
             }
         )
@@ -348,11 +348,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 
         CreateTicketScreen(
             viewModel = supportViewModel,
-            onTicketCreated = { ticket ->
+            onTicketCreated = {
                 showCreateTicket = false
-                selectedTicketId = ticket.id
             },
-            onNavigateBack = {
+            onBackClick = {
                 showCreateTicket = false
             }
         )
