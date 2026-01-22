@@ -13,6 +13,7 @@ defmodule ButtonLog.Buttons.ButtonClick do
     field :device, :string
     field :platform, :string
     field :action, :string
+    field :selected_choice, :string  # For one-time buttons with multiple choices
 
     # Relationships
     belongs_to :button, ButtonLog.Buttons.Button
@@ -23,7 +24,7 @@ defmodule ButtonLog.Buttons.ButtonClick do
 
   def changeset(button_click, attrs) do
     button_click
-    |> cast(attrs, [:clicked_at, :duration, :location_lat, :location_lng, :device, :platform, :action])
+    |> cast(attrs, [:clicked_at, :duration, :location_lat, :location_lng, :device, :platform, :action, :selected_choice])
     |> validate_required([:device, :platform])
     |> validate_inclusion(:platform, ["web", "android", "iphone"])
     |> validate_inclusion(:action, ["click", "start", "end"], allow_blank: true)

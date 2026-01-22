@@ -65,9 +65,9 @@ class ButtonsViewModel @Inject constructor(
         _uiState.update { it.copy(searchQuery = query) }
     }
     
-    fun clickButton(buttonId: String) {
+    fun clickButton(buttonId: String, choice: String? = null) {
         viewModelScope.launch {
-            buttonRepository.clickButton(buttonId)
+            buttonRepository.clickButton(buttonId, choice)
         }
     }
     

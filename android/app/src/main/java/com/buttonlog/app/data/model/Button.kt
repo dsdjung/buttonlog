@@ -40,6 +40,8 @@ data class Button(
     val createdByFriend: GiftCreator? = null,
     @SerializedName("gift_message")
     val giftMessage: String? = null,
+    // Multiple choice options for one-time buttons
+    val choices: List<String>? = null,
     // Sharing fields
     @SerializedName("sharing_mode")
     val sharingMode: SharingMode? = null,
@@ -75,6 +77,10 @@ data class Button(
     /** True if the current user is the owner of this button */
     val isOwner: Boolean
         get() = isSharedWithMe != true
+
+    /** True if this one-time button has multiple choice options */
+    val hasChoices: Boolean
+        get() = type == ButtonType.ONE_TIME && (choices?.size ?: 0) >= 2
 
     /** Formatted auto-stop duration (e.g., "1 hour", "30 minutes") */
     val autoStopDurationText: String?
@@ -207,10 +213,15 @@ data class ButtonFormData(
     var alertsEnabled: Boolean = true,
     var autoStopEnabled: Boolean = false,
     var autoStopMinutes: Int? = null,  // Duration in minutes (15, 30, 60, 120, 240, 480)
-    var calendarSyncEnabled: Boolean = false
+    var calendarSyncEnabled: Boolean = false,
+    var choices: MutableList<String> = mutableListOf()  // Multiple choice options for one-time buttons
 ) {
     val isValid: Boolean
         get() = name.trim().isNotEmpty()
+
+    /** True if this form has valid choices (for one-time buttons) */
+    val hasValidChoices: Boolean
+        get() = choices.count { it.trim().isNotEmpty() } >= 2
 
     /** Convert to request body map for API call */
     fun toRequestBody(): Map<String, Any?> {
@@ -228,6 +239,14 @@ data class ButtonFormData(
         // Only include auto_stop_minutes if auto-stop is enabled
         if (autoStopEnabled && autoStopMinutes != null) {
             body["auto_stop_minutes"] = autoStopMinutes
+        }
+
+        // Include choices for one-time buttons if valid
+        if (type == ButtonType.ONE_TIME) {
+            val validChoices = choices.map { it.trim() }.filter { it.isNotEmpty() }
+            if (validChoices.size >= 2) {
+                body["choices"] = validChoices
+            }
         }
 
         return body.filterValues { it != null }
@@ -251,6 +270,8 @@ data class ButtonClick(
     val device: String?,
     val platform: String?,
     val action: String?,
+    @SerializedName("selected_choice")
+    val selectedChoice: String?,  // For one-time buttons with multiple choices
     @SerializedName("created_at")
     val createdAt: Date
 )

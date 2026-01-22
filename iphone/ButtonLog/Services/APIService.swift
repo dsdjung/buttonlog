@@ -322,8 +322,12 @@ class APIService {
         try await makeVoidRequest(endpoint: "/buttons/\(id)", method: .DELETE)
     }
     
-    func clickButton(id: String) async throws -> ButtonClick {
-        return try await makeRequest(endpoint: "/buttons/\(id)/click", method: .POST)
+    func clickButton(id: String, choice: String? = nil) async throws -> ButtonClick {
+        var body: [String: Any] = [:]
+        if let choice = choice {
+            body["choice"] = choice
+        }
+        return try await makeRequest(endpoint: "/buttons/\(id)/click", method: .POST, body: body.isEmpty ? nil : body)
     }
 
     func getButtonHistory(id: String, limit: Int = 50) async throws -> [ButtonClick] {

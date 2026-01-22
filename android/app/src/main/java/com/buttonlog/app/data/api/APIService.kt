@@ -32,7 +32,7 @@ interface APIService {
     suspend fun deleteButton(@Path("id") id: String)
 
     @POST("buttons/{id}/click")
-    suspend fun clickButton(@Path("id") id: String): ButtonClickResponse
+    suspend fun clickButton(@Path("id") id: String, @Body request: ClickButtonRequest? = null): ButtonClickResponse
 
     @GET("buttons/{id}/history")
     suspend fun getButtonHistory(@Path("id") id: String, @Query("limit") limit: Int = 50): ButtonHistoryResponse
@@ -349,6 +349,10 @@ data class CreateGiftButtonRequest(
     val friendId: String,
     val button: ButtonFormData,
     val message: String? = null
+)
+
+data class ClickButtonRequest(
+    val choice: String? = null
 )
 
 data class ButtonUpdateData(

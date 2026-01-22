@@ -102,8 +102,33 @@ defmodule ButtonLogWeb.ButtonLive.Index do
   end
 
   @impl true
+  def handle_event("validate_create_button", _params, socket) do
+    # Handle form validation during input
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("create_button", %{"button" => button_params}, socket) do
     user = socket.assigns.current_user
+
+    # Process choices if present - convert indexed map to list and filter empty
+    button_params = case Map.get(button_params, "choices") do
+      nil -> button_params
+      choices when is_map(choices) ->
+        # Convert {"0" => "Yes", "1" => "No"} to ["Yes", "No"]
+        choices_list = choices
+        |> Enum.sort_by(fn {k, _v} -> String.to_integer(k) end)
+        |> Enum.map(fn {_k, v} -> v end)
+        |> Enum.filter(fn c -> c != nil and String.trim(c) != "" end)
+
+        # Only set choices if we have at least 2 valid options
+        if length(choices_list) >= 2 do
+          Map.put(button_params, "choices", choices_list)
+        else
+          Map.delete(button_params, "choices")
+        end
+      _ -> button_params
+    end
 
     case Buttons.create_button(button_params, user.id) do
       {:ok, button} ->
@@ -128,6 +153,53 @@ defmodule ButtonLogWeb.ButtonLive.Index do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, socket |> put_flash(:error, "Failed to create button") |> assign(:button_changeset, changeset)}
+    end
+  end
+
+  @impl true
+  def handle_event("click_with_choice", %{"id" => button_id, "choice" => choice}, socket) do
+    user = socket.assigns.current_user
+    button = Enum.find(socket.assigns.buttons, &(&1.id == button_id))
+
+    case Buttons.click_button(button_id, user.id, selected_choice: choice) do
+      {:ok, click} ->
+        # Refresh the buttons list to show updated state (one-time buttons get archived)
+        updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
+        filtered_buttons = filter_buttons(updated_buttons, socket.assigns.search_query, socket.assigns.filter_type)
+
+        # Send notifications to friends
+        Notifications.send_button_click_notifications(button_id, user.id, %{
+          clicked_at: click.clicked_at,
+          action: click.action,
+          platform: click.platform,
+          selected_choice: choice
+        })
+
+        # Broadcast to all connected clients
+        Phoenix.PubSub.broadcast!(
+          ButtonLog.PubSub,
+          "buttons",
+          {:button_clicked, click}
+        )
+
+        message = "'#{button.name}' completed with choice '#{choice}'"
+        {:noreply, socket
+         |> assign(:all_buttons, updated_buttons)
+         |> assign(:buttons, filtered_buttons)
+         |> put_flash(:info, message)}
+
+      {:error, :choice_required} ->
+        {:noreply, socket |> put_flash(:error, "This button requires selecting a choice")}
+
+      {:error, :invalid_choice} ->
+        {:noreply, socket |> put_flash(:error, "The selected choice is not valid for this button")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        errors = Enum.map(changeset.errors, fn {field, {msg, _opts}} -> "#{field} #{msg}" end)
+        {:noreply, socket |> put_flash(:error, "Failed to click button: #{Enum.join(errors, ", ")}")}
+
+      {:error, reason} ->
+        {:noreply, socket |> put_flash(:error, "Failed to click button: #{reason}")}
     end
   end
 

@@ -28,6 +28,7 @@ import kotlinx.coroutines.delay
 fun ButtonCard(
     button: Button,
     onClick: () -> Unit,
+    onClickWithChoice: ((String) -> Unit)? = null,
     onEditClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onSharingClick: (() -> Unit)? = null,
@@ -73,14 +74,27 @@ fun ButtonCard(
                 onDeleteClick = onDeleteClick
             )
 
-            // Action button
-            ButtonActionButton(
-                button = button,
-                onClick = {
-                    isPressed = true
-                    onClick()
-                }
-            )
+            // Action button(s)
+            val choices = button.choices
+            if (button.hasChoices && choices != null) {
+                // Show choice buttons for one-time buttons with choices
+                ChoiceButtons(
+                    button = button,
+                    choices = choices,
+                    onChoiceClick = { choice ->
+                        isPressed = true
+                        onClickWithChoice?.invoke(choice) ?: onClick()
+                    }
+                )
+            } else {
+                ButtonActionButton(
+                    button = button,
+                    onClick = {
+                        isPressed = true
+                        onClick()
+                    }
+                )
+            }
         }
     }
 }
@@ -152,8 +166,10 @@ private fun ButtonHeader(
                 if (button.isGift) {
                     GiftBadge(fromName = button.giftFromName ?: "a friend")
                 }
-                if (button.isShared && button.ownerName != null) {
-                    SharedWithMeBadge(ownerName = button.ownerName!!)
+                button.ownerName?.let { ownerName ->
+                    if (button.isShared) {
+                        SharedWithMeBadge(ownerName = ownerName)
+                    }
                 }
             }
         }
@@ -239,6 +255,56 @@ private fun ButtonHeader(
                             )
                         }
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChoiceButtons(
+    button: Button,
+    choices: List<String>,
+    onChoiceClick: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Select an option:",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // Display choices in a 2-column grid
+        val chunkedChoices = choices.chunked(2)
+        chunkedChoices.forEach { rowChoices ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowChoices.forEach { choice ->
+                    Button(
+                        onClick = { onChoiceClick(choice) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = button.uiColor,
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = choice,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2
+                        )
+                    }
+                }
+                // Add spacer if odd number of choices in last row
+                if (rowChoices.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }

@@ -28,6 +28,7 @@ import com.buttonlog.app.ui.screens.AccountScreen
 import com.buttonlog.app.ui.screens.ButtonHistoryScreen
 import com.buttonlog.app.ui.screens.ButtonsScreen
 import com.buttonlog.app.ui.screens.DiaryScreen
+import com.buttonlog.app.ui.screens.CreateButtonScreen
 import com.buttonlog.app.ui.screens.CreateGiftButtonScreen
 import com.buttonlog.app.ui.screens.EditButtonScreen
 import com.buttonlog.app.ui.screens.FriendDetailScreen
@@ -289,16 +290,17 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         }
     }
     
-    // Create Button Dialog - TODO: Implement
+    // Create Button Screen
     if (showCreateButton) {
-        AlertDialog(
-            onDismissRequest = { showCreateButton = false },
-            title = { Text("Create Button") },
-            text = { Text("Button creation will be implemented here.") },
-            confirmButton = {
-                TextButton(onClick = { showCreateButton = false }) {
-                    Text("OK")
-                }
+        CreateButtonScreen(
+            isLoading = buttonsUiState.isLoading,
+            error = buttonsUiState.error,
+            onCreateButton = { formData ->
+                buttonsViewModel.createButton(formData)
+                showCreateButton = false
+            },
+            onNavigateBack = {
+                showCreateButton = false
             }
         )
     }

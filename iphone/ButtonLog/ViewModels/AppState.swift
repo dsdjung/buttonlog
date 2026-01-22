@@ -101,14 +101,20 @@ class AppState: ObservableObject {
         }
     }
     
-    func clickButton(id: String) async -> Bool {
+    func clickButton(id: String, choice: String? = nil) async -> Bool {
         do {
-            _ = try await apiService.clickButton(id: id)
+            _ = try await apiService.clickButton(id: id, choice: choice)
 
             // Reload the specific button to get updated state from server
-            let updatedButton = try await apiService.getButton(id: id)
-            if let index = buttons.firstIndex(where: { $0.id == id }) {
-                buttons[index] = updatedButton
+            // For one-time buttons with choices, they may be archived
+            do {
+                let updatedButton = try await apiService.getButton(id: id)
+                if let index = buttons.firstIndex(where: { $0.id == id }) {
+                    buttons[index] = updatedButton
+                }
+            } catch {
+                // Button may have been archived (one-time), remove from list
+                buttons.removeAll { $0.id == id }
             }
 
             return true

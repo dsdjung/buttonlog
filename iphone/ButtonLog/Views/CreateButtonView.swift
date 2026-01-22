@@ -46,8 +46,47 @@ struct CreateButtonView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .onChange(of: formData.type) { newType in
+                        // Initialize choices with 2 empty strings when switching to one-time
+                        if newType == .oneTime && formData.choices.isEmpty {
+                            formData.choices = ["", ""]
+                        }
+                    }
                 }
-                
+
+                // Choices Section (only for one-time buttons)
+                if formData.type == .oneTime {
+                    Section(header: Text("Choices (Optional)"), footer: Text("Add multiple choice options for this button (minimum 2, maximum 10)")) {
+                        ForEach(formData.choices.indices, id: \.self) { index in
+                            HStack {
+                                TextField("Choice \(index + 1)", text: $formData.choices[index])
+
+                                if formData.choices.count > 2 {
+                                    SwiftUI.Button(action: {
+                                        formData.choices.remove(at: index)
+                                    }) {
+                                        Image(systemName: "minus.circle.fill")
+                                            .foregroundColor(.red)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        if formData.choices.count < 10 {
+                            SwiftUI.Button(action: {
+                                formData.choices.append("")
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(.green)
+                                    Text("Add Choice")
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section(header: Text("Appearance")) {
                     // Icon Selection
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 16) {
@@ -183,19 +222,46 @@ struct ButtonPreview: View {
                 Spacer()
             }
             
-            SwiftUI.Button("Click!") {
-                // Preview button - no action
+            // Show choice buttons if valid choices exist, otherwise show single button
+            if formData.type == .oneTime && formData.hasValidChoices {
+                VStack(spacing: 8) {
+                    Text("Select an option:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        ForEach(formData.choices.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, id: \.self) { choice in
+                            SwiftUI.Button(choice) {
+                                // Preview button - no action
+                            }
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(hex: formData.color))
+                            )
+                            .disabled(true)
+                        }
+                    }
+                }
+            } else {
+                SwiftUI.Button("Click!") {
+                    // Preview button - no action
+                }
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(hex: formData.color))
+                )
+                .disabled(true)
             }
-            .font(.headline)
-            .fontWeight(.semibold)
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(hex: formData.color))
-            )
-            .disabled(true)
         }
         .padding()
         .background(Color(.systemBackground))

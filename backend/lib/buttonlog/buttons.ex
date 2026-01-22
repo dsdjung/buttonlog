@@ -17,7 +17,7 @@ defmodule ButtonLog.Buttons do
       left_join: bc in ButtonClick, on: b.id == bc.button_id,
       left_join: gifter in assoc(b, :created_by_friend),
       where: b.user_id == ^user_id and (is_nil(b.archived) or b.archived == false),
-      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.alerts_enabled, b.auto_stop_enabled, b.auto_stop_minutes, b.scheduled_stop_at, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, gifter.id, gifter.username, gifter.display_name],
+      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.alerts_enabled, b.auto_stop_enabled, b.auto_stop_minutes, b.scheduled_stop_at, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, b.choices, gifter.id, gifter.username, gifter.display_name],
       order_by: [asc: b.name],
       select: %{
         id: b.id,
@@ -40,6 +40,7 @@ defmodule ButtonLog.Buttons do
         latest_click_at: max(bc.clicked_at),
         created_by_friend_id: b.created_by_friend_id,
         gift_message: b.gift_message,
+        choices: b.choices,
         created_by_friend: %{
           id: gifter.id,
           username: gifter.username,
@@ -139,8 +140,11 @@ defmodule ButtonLog.Buttons do
 
   @doc """
   Records a button click and handles state changes for timed buttons.
+  Accepts optional `selected_choice` for one-time buttons with multiple choices.
   """
-  def click_button(button_id, user_id) do
+  def click_button(button_id, user_id, opts \\ []) do
+    selected_choice = Keyword.get(opts, :selected_choice)
+
     # First verify the button exists and belongs to the user
     case get_button(button_id, user_id) do
       {:ok, button} ->
@@ -149,7 +153,7 @@ defmodule ButtonLog.Buttons do
             handle_toggle_button_click(button, user_id)
 
           "one-time" ->
-            handle_one_time_button_click(button, user_id)
+            handle_one_time_button_click(button, user_id, selected_choice)
 
           _other_type ->
             # For instant buttons, just record a click
@@ -232,38 +236,61 @@ defmodule ButtonLog.Buttons do
     end
   end
 
-  defp handle_one_time_button_click(button, user_id) do
-    # One-time buttons: record click then archive the button
-    result = Repo.transaction(fn ->
-      # Create the button click record
-      click_result = %ButtonClick{}
-      |> ButtonClick.create_changeset(%{
-        device: "web",
-        platform: "web",
-        action: "click"
-      }, button.id, user_id)
-      |> Repo.insert!()
+  defp handle_one_time_button_click(button, user_id, selected_choice) do
+    # Validate choice if button has choices defined
+    has_choices = is_list(button.choices) and length(button.choices) >= 2
 
-      # Archive the button so it no longer appears in the list
-      button
-      |> Button.changeset(%{
-        archived: true,
-        archived_at: DateTime.utc_now() |> DateTime.truncate(:second)
-      })
-      |> Repo.update!()
+    cond do
+      # Button has choices but no choice was selected
+      has_choices and (is_nil(selected_choice) or selected_choice == "") ->
+        {:error, :choice_required}
 
-      click_result
-    end)
+      # Button has choices but selected choice is not valid
+      has_choices and selected_choice not in button.choices ->
+        {:error, :invalid_choice}
 
-    # Send notifications (outside transaction)
-    if match?({:ok, _}, result) do
-      # Notify gift creator if this is a gift button (use "complete" action for one-time buttons)
-      notify_gift_creator_of_click(button, "complete")
-      # Notify the button owner that their one-time button was completed
-      notify_one_time_button_completed(button, user_id)
+      # Valid: either no choices required or valid choice provided
+      true ->
+        # One-time buttons: record click then archive the button
+        result = Repo.transaction(fn ->
+          # Create the button click record with optional selected_choice
+          click_attrs = %{
+            device: "web",
+            platform: "web",
+            action: "click"
+          }
+
+          click_attrs = if has_choices do
+            Map.put(click_attrs, :selected_choice, selected_choice)
+          else
+            click_attrs
+          end
+
+          click_result = %ButtonClick{}
+          |> ButtonClick.create_changeset(click_attrs, button.id, user_id)
+          |> Repo.insert!()
+
+          # Archive the button so it no longer appears in the list
+          button
+          |> Button.changeset(%{
+            archived: true,
+            archived_at: DateTime.utc_now() |> DateTime.truncate(:second)
+          })
+          |> Repo.update!()
+
+          click_result
+        end)
+
+        # Send notifications (outside transaction)
+        if match?({:ok, _}, result) do
+          # Notify gift creator if this is a gift button (use "complete" action for one-time buttons)
+          notify_gift_creator_of_click(button, "complete")
+          # Notify the button owner that their one-time button was completed
+          notify_one_time_button_completed(button, user_id, selected_choice)
+        end
+
+        result
     end
-
-    result
   end
 
   @doc """
@@ -711,17 +738,33 @@ defmodule ButtonLog.Buttons do
   end
 
   # Sends a notification to the user when they complete a one-time button.
-  defp notify_one_time_button_completed(button, user_id) do
+  defp notify_one_time_button_completed(button, user_id, selected_choice) do
     alias ButtonLog.Alerts
+
+    # Build message based on whether a choice was selected
+    message = if selected_choice do
+      "'#{button.name}' completed with choice '#{selected_choice}'"
+    else
+      "'#{button.name}' has been completed and archived"
+    end
+
+    # Build metadata with optional selected_choice
+    metadata = %{
+      button_id: button.id,
+      button_name: button.name
+    }
+
+    metadata = if selected_choice do
+      Map.put(metadata, :selected_choice, selected_choice)
+    else
+      metadata
+    end
 
     Alerts.create_alert(%{
       alert_type: "one_time_button_completed",
       title: "Task Completed!",
-      message: "'#{button.name}' has been completed and archived",
-      metadata: %{
-        button_id: button.id,
-        button_name: button.name
-      }
+      message: message,
+      metadata: metadata
     }, user_id, user_id, button.id)
   end
 
@@ -798,8 +841,11 @@ defmodule ButtonLog.Buttons do
   @doc """
   Records a button click with access checking.
   Allows non-owners to click if they have access.
+  Accepts optional `selected_choice` for one-time buttons with multiple choices.
   """
-  def click_button_with_access_check(button_id, user_id, click_attrs \\ %{}) do
+  def click_button_with_access_check(button_id, user_id, click_attrs \\ %{}, opts \\ []) do
+    selected_choice = Keyword.get(opts, :selected_choice)
+
     if can_click_button?(button_id, user_id) do
       case get_button_by_id(button_id) do
         {:ok, button} ->
@@ -810,7 +856,7 @@ defmodule ButtonLog.Buttons do
             "one-time" ->
               # Only owner can complete one-time buttons
               if button.user_id == user_id do
-                handle_one_time_button_click(button, user_id)
+                handle_one_time_button_click(button, user_id, selected_choice)
               else
                 {:error, :owner_only_action}
               end

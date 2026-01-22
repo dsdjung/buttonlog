@@ -25,6 +25,9 @@ struct ButtonModel: Identifiable, Codable, Equatable {
     var createdByFriend: GiftCreator? = nil
     var giftMessage: String? = nil
 
+    // Multiple choice options for one-time buttons
+    var choices: [String]? = nil
+
     // Sharing fields
     var sharingMode: SharingMode? = nil
     var shareToken: String? = nil
@@ -60,6 +63,11 @@ struct ButtonModel: Identifiable, Codable, Equatable {
     /// True if the current user is the owner of this button
     var isOwner: Bool {
         return isSharedWithMe != true
+    }
+
+    /// True if this one-time button has multiple choice options
+    var hasChoices: Bool {
+        return type == .oneTime && (choices?.count ?? 0) >= 2
     }
 
     /// Formatted auto-stop duration (e.g., "1 hour", "30 minutes")
@@ -103,7 +111,7 @@ struct ButtonModel: Identifiable, Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, description, type, icon, color
+        case id, name, description, type, icon, color, choices
         case isActive = "is_active"
         case currentState = "current_state"
         case stateChangedAt = "state_changed_at"
@@ -274,9 +282,16 @@ struct ButtonFormData {
     var autoStopEnabled: Bool = false
     var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var calendarSyncEnabled: Bool = false
+    var choices: [String] = []  // Multiple choice options for one-time buttons
 
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// True if this form has valid choices (for one-time buttons)
+    var hasValidChoices: Bool {
+        let validChoices = choices.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        return validChoices.count >= 2
     }
 
     /// Available auto-stop duration options
@@ -304,6 +319,15 @@ struct ButtonFormData {
         // Only include auto_stop_minutes if auto-stop is enabled
         if autoStopEnabled, let minutes = autoStopMinutes {
             body["auto_stop_minutes"] = minutes
+        }
+
+        // Include choices for one-time buttons if valid
+        if type == .oneTime {
+            let validChoices = choices.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                                      .filter { !$0.isEmpty }
+            if validChoices.count >= 2 {
+                body["choices"] = validChoices
+            }
         }
 
         return body
@@ -435,8 +459,9 @@ struct ButtonClick: Identifiable, Codable {
     let device: String?
     let platform: String
     let action: String?
+    let selectedChoice: String?  // For one-time buttons with multiple choices
     let createdAt: Date
-    
+
     enum CodingKeys: String, CodingKey {
         case id, duration, device, platform, action
         case buttonId = "button_id"
@@ -444,6 +469,7 @@ struct ButtonClick: Identifiable, Codable {
         case clickedAt = "clicked_at"
         case locationLat = "location_lat"
         case locationLng = "location_lng"
+        case selectedChoice = "selected_choice"
         case createdAt = "created_at"
     }
 }

@@ -186,8 +186,11 @@ defmodule ButtonLogWeb.API.ButtonController do
       platform: params["platform"] || "web"
     }
 
+    # Get optional choice for one-time buttons with multiple choices
+    selected_choice = params["choice"]
+
     # Use access-checked click function to allow collaborators
-    case Buttons.click_button_with_access_check(id, user.id, click_attrs) do
+    case Buttons.click_button_with_access_check(id, user.id, click_attrs, selected_choice: selected_choice) do
       {:ok, click} ->
         json(conn, %{
           success: true,
@@ -236,6 +239,36 @@ defmodule ButtonLogWeb.API.ButtonController do
           error: %{
             code: "OWNER_ONLY",
             message: "Only the button owner can perform this action"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
+      {:error, :choice_required} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "CHOICE_REQUIRED",
+            message: "This button requires selecting a choice"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
+      {:error, :invalid_choice} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "INVALID_CHOICE",
+            message: "The selected choice is not valid for this button"
           },
           meta: %{
             timestamp: DateTime.utc_now(),
@@ -332,6 +365,8 @@ defmodule ButtonLogWeb.API.ButtonController do
       updated_at: format_datetime(button.updated_at),
       created_by_friend_id: button.created_by_friend_id,
       gift_message: button.gift_message,
+      # Multiple choice options for one-time buttons
+      choices: button.choices,
       # Sharing fields
       sharing_mode: button.sharing_mode || "private",
       share_token: button.share_token,
@@ -374,6 +409,8 @@ defmodule ButtonLogWeb.API.ButtonController do
       updated_at: format_datetime(button.updated_at),
       created_by_friend_id: button[:created_by_friend_id],
       gift_message: button[:gift_message],
+      # Multiple choice options for one-time buttons
+      choices: button[:choices],
       # Sharing fields
       sharing_mode: button[:sharing_mode] || "private",
       share_token: button[:share_token],
@@ -407,6 +444,7 @@ defmodule ButtonLogWeb.API.ButtonController do
       device: click.device,
       platform: click.platform,
       action: click.action,
+      selected_choice: click.selected_choice,
       created_at: format_datetime(click.inserted_at)
     }
   end

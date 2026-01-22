@@ -347,6 +347,336 @@ private fun ColorOption(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun CreateButtonScreen(
+    isLoading: Boolean,
+    error: String?,
+    onCreateButton: (ButtonFormData) -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(ButtonType.INSTANT) }
+    var selectedIcon by remember { mutableStateOf("star") }
+    var selectedColor by remember { mutableStateOf("#007AFF") }
+    var alertsEnabled by remember { mutableStateOf(true) }
+    var autoStopEnabled by remember { mutableStateOf(false) }
+    var autoStopMinutes by remember { mutableStateOf<Int?>(null) }
+    var choices by remember { mutableStateOf(mutableListOf("", "")) }
+
+    val scrollState = rememberScrollState()
+
+    // Reset choices when type changes
+    LaunchedEffect(selectedType) {
+        if (selectedType != ButtonType.ONE_TIME) {
+            choices = mutableListOf("", "")
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Button") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = {
+                            val formData = ButtonFormData(
+                                name = name,
+                                description = description,
+                                type = selectedType,
+                                icon = selectedIcon,
+                                color = selectedColor,
+                                alertsEnabled = alertsEnabled,
+                                autoStopEnabled = autoStopEnabled,
+                                autoStopMinutes = autoStopMinutes,
+                                calendarSyncEnabled = false,
+                                choices = if (selectedType == ButtonType.ONE_TIME) {
+                                    choices.filter { it.trim().isNotEmpty() }.toMutableList()
+                                } else {
+                                    mutableListOf()
+                                }
+                            )
+                            onCreateButton(formData)
+                        },
+                        enabled = name.isNotBlank() && !isLoading
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Create")
+                        }
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Error message
+            error?.let { errorMessage ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = errorMessage,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+
+            // Name field
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Button Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            // Description field
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description (optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4
+            )
+
+            // Button type selector
+            Text(
+                text = "Button Type",
+                style = MaterialTheme.typography.titleMedium
+            )
+            ButtonTypeSelector(
+                selectedType = selectedType,
+                onTypeSelected = { selectedType = it }
+            )
+
+            // Choices section (only for one-time buttons)
+            if (selectedType == ButtonType.ONE_TIME) {
+                ChoicesSection(
+                    choices = choices,
+                    onChoicesChange = { choices = it.toMutableList() }
+                )
+            }
+
+            // Icon selector
+            Text(
+                text = "Icon",
+                style = MaterialTheme.typography.titleMedium
+            )
+            IconSelector(
+                selectedIcon = selectedIcon,
+                onIconSelected = { selectedIcon = it }
+            )
+
+            // Color selector
+            Text(
+                text = "Color",
+                style = MaterialTheme.typography.titleMedium
+            )
+            ColorSelector(
+                selectedColor = selectedColor,
+                onColorSelected = { selectedColor = it }
+            )
+
+            // Settings
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Alerts")
+                            Text(
+                                text = "Send alerts when clicked",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = alertsEnabled,
+                            onCheckedChange = { alertsEnabled = it }
+                        )
+                    }
+
+                    // Auto-stop toggle (only for toggle type)
+                    if (selectedType == ButtonType.TOGGLE) {
+                        HorizontalDivider()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Auto-Stop")
+                                Text(
+                                    text = "Automatically stop after duration",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = autoStopEnabled,
+                                onCheckedChange = { autoStopEnabled = it }
+                            )
+                        }
+
+                        // Auto-stop duration selector
+                        if (autoStopEnabled) {
+                            AutoStopDurationSelector(
+                                selectedMinutes = autoStopMinutes,
+                                onMinutesSelected = { autoStopMinutes = it }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChoicesSection(
+    choices: List<String>,
+    onChoicesChange: (List<String>) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Choices (Optional)",
+                style = MaterialTheme.typography.titleMedium
+            )
+            if (choices.size < 10) {
+                TextButton(onClick = {
+                    onChoicesChange(choices + "")
+                }) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add Choice")
+                }
+            }
+        }
+
+        Text(
+            text = "Add 2 or more choices to create a multiple choice button",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        choices.forEachIndexed { index, choice ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = choice,
+                    onValueChange = { newValue ->
+                        val newChoices = choices.toMutableList()
+                        newChoices[index] = newValue
+                        onChoicesChange(newChoices)
+                    },
+                    label = { Text("Choice ${index + 1}") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                if (choices.size > 2) {
+                    IconButton(onClick = {
+                        val newChoices = choices.toMutableList()
+                        newChoices.removeAt(index)
+                        onChoicesChange(newChoices)
+                    }) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Remove choice",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AutoStopDurationSelector(
+    selectedMinutes: Int?,
+    onMinutesSelected: (Int?) -> Unit
+) {
+    val options = Button.AUTO_STOP_OPTIONS
+
+    Column(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Duration",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            options.take(3).forEach { (minutes, label) ->
+                FilterChip(
+                    selected = selectedMinutes == minutes,
+                    onClick = { onMinutesSelected(minutes) },
+                    label = { Text(label) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            options.drop(3).forEach { (minutes, label) ->
+                FilterChip(
+                    selected = selectedMinutes == minutes,
+                    onClick = { onMinutesSelected(minutes) },
+                    label = { Text(label) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun CreateGiftButtonScreen(
     friend: Friend,
     isLoading: Boolean,

@@ -3,6 +3,7 @@ package com.buttonlog.app.data.repository
 import com.buttonlog.app.data.api.APIService
 import com.buttonlog.app.data.api.ButtonAlertPreference
 import com.buttonlog.app.data.api.ButtonUpdateData
+import com.buttonlog.app.data.api.ClickButtonRequest
 import com.buttonlog.app.data.api.CreateButtonRequest
 import com.buttonlog.app.data.api.CreateGiftButtonRequest
 import com.buttonlog.app.data.api.SetAlertPreferenceRequest
@@ -131,11 +132,12 @@ class ButtonRepository @Inject constructor(
         }
     }
     
-    suspend fun clickButton(buttonId: String): Result<ButtonClick> {
+    suspend fun clickButton(buttonId: String, choice: String? = null): Result<ButtonClick> {
         return try {
             _error.value = null
 
-            val response = apiService.clickButton(buttonId)
+            val request = if (choice != null) ClickButtonRequest(choice = choice) else null
+            val response = apiService.clickButton(buttonId, request)
             if (response.success && response.data != null) {
                 // Refetch buttons to get updated state from server
                 // This ensures we have the latest button state after clicking

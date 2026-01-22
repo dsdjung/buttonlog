@@ -68,6 +68,9 @@ fun ButtonsScreen(
                     onButtonClick = { buttonId ->
                         viewModel.clickButton(buttonId)
                     },
+                    onButtonClickWithChoice = { buttonId, choice ->
+                        viewModel.clickButton(buttonId, choice)
+                    },
                     onEditClick = { button ->
                         onEditButton(button)
                     },
@@ -210,6 +213,7 @@ private fun EmptyStateView(onCreateButton: () -> Unit) {
 private fun ButtonsList(
     buttons: List<com.buttonlog.app.data.model.Button>,
     onButtonClick: (String) -> Unit,
+    onButtonClickWithChoice: (String, String) -> Unit,
     onEditClick: (com.buttonlog.app.data.model.Button) -> Unit,
     onHistoryClick: (com.buttonlog.app.data.model.Button) -> Unit,
     onAlertSettingsClick: (com.buttonlog.app.data.model.Button) -> Unit,
@@ -224,6 +228,7 @@ private fun ButtonsList(
             ButtonCard(
                 button = button,
                 onClick = { onButtonClick(button.id) },
+                onClickWithChoice = { choice -> onButtonClickWithChoice(button.id, choice) },
                 onEditClick = { onEditClick(button) },
                 onHistoryClick = { onHistoryClick(button) },
                 onAlertSettingsClick = if (button.isOwner) {{ onAlertSettingsClick(button) }} else null,

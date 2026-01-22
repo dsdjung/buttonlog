@@ -26,6 +26,9 @@ defmodule ButtonLog.Buttons.Button do
     field :archived, :boolean, default: false
     field :archived_at, :utc_datetime
 
+    # Multiple choice options (for one-time buttons)
+    field :choices, {:array, :string}
+
     # Relationships
     belongs_to :user, ButtonLog.Accounts.User
     belongs_to :created_by_friend, ButtonLog.Accounts.User
@@ -48,7 +51,8 @@ defmodule ButtonLog.Buttons.Button do
     |> cast(attrs, [:name, :description, :type, :icon, :color, :is_active,
                     :alerts_enabled, :auto_stop_enabled, :auto_stop_minutes,
                     :scheduled_stop_at, :calendar_sync_enabled,
-                    :current_state, :state_changed_at, :user_id, :archived, :archived_at])
+                    :current_state, :state_changed_at, :user_id, :archived, :archived_at,
+                    :choices])
     |> validate_required([:name, :type])
     |> validate_length(:name, min: 1, max: 100)
     |> validate_length(:description, max: 500)
@@ -56,6 +60,7 @@ defmodule ButtonLog.Buttons.Button do
     |> validate_inclusion(:current_state, ["idle", "active"], allow_blank: true)
     |> validate_format(:color, ~r/^#[0-9A-Fa-f]{6}$/, message: "must be a valid hex color")
     |> validate_auto_stop_minutes()
+    |> validate_choices()
   end
 
   defp validate_auto_stop_minutes(changeset) do
@@ -63,6 +68,36 @@ defmodule ButtonLog.Buttons.Button do
       nil -> changeset
       minutes when minutes in [15, 30, 60, 120, 240, 480] -> changeset
       _ -> add_error(changeset, :auto_stop_minutes, "must be 15, 30, 60, 120, 240, or 480 minutes")
+    end
+  end
+
+  defp validate_choices(changeset) do
+    type = get_field(changeset, :type)
+    choices = get_change(changeset, :choices)
+
+    cond do
+      # No choices provided - OK
+      is_nil(choices) ->
+        changeset
+
+      # Choices can only be set for one-time buttons
+      choices != nil and type != "one-time" ->
+        add_error(changeset, :choices, "can only be set for one-time buttons")
+
+      # If choices exist, must have at least 2 options
+      is_list(choices) and length(choices) < 2 ->
+        add_error(changeset, :choices, "must have at least 2 options")
+
+      # Limit to reasonable number of choices
+      is_list(choices) and length(choices) > 10 ->
+        add_error(changeset, :choices, "cannot exceed 10 options")
+
+      # Choices must not be empty strings
+      is_list(choices) and Enum.any?(choices, &(String.trim(&1) == "")) ->
+        add_error(changeset, :choices, "cannot contain empty options")
+
+      true ->
+        changeset
     end
   end
 
