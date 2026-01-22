@@ -141,4 +141,35 @@ defmodule ButtonLogWeb.ButtonLive.Show do
     naive_datetime |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_iso8601()
   end
   defp safe_to_iso8601(nil), do: ""
+
+  # Format auto-stop duration in human-readable form
+  defp format_auto_stop_duration(nil), do: nil
+  defp format_auto_stop_duration(minutes) when minutes < 60, do: "#{minutes} min"
+  defp format_auto_stop_duration(60), do: "1 hour"
+  defp format_auto_stop_duration(minutes) when rem(minutes, 60) == 0, do: "#{div(minutes, 60)} hours"
+  defp format_auto_stop_duration(minutes), do: "#{div(minutes, 60)}h #{rem(minutes, 60)}m"
+
+  # Format remaining time until scheduled stop
+  defp format_time_remaining(nil), do: ""
+  defp format_time_remaining(%DateTime{} = scheduled_stop_at) do
+    now = DateTime.utc_now()
+    diff_seconds = DateTime.diff(scheduled_stop_at, now, :second)
+
+    if diff_seconds > 0 do
+      minutes = div(diff_seconds, 60)
+      cond do
+        minutes < 1 -> "< 1 min"
+        minutes < 60 -> "#{minutes} min"
+        rem(minutes, 60) == 0 -> "#{div(minutes, 60)} hr"
+        true -> "#{div(minutes, 60)}h #{rem(minutes, 60)}m"
+      end
+    else
+      "now"
+    end
+  end
+  defp format_time_remaining(%NaiveDateTime{} = scheduled_stop_at) do
+    scheduled_stop_at
+    |> DateTime.from_naive!("Etc/UTC")
+    |> format_time_remaining()
+  end
 end

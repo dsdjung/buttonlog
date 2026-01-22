@@ -149,14 +149,31 @@
                   <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <span class="font-medium text-gray-900">Auto-stop</span>
-                      <p class="text-sm text-gray-500">Automatically stop toggle buttons</p>
+                      <p class="text-sm text-gray-500">
+                        <%= if @button.auto_stop_enabled && @button.auto_stop_minutes do %>
+                          Automatically stops toggle buttons after <%= format_auto_stop_duration(@button.auto_stop_minutes) %>
+                        <% else %>
+                          Automatically stop toggle buttons
+                        <% end %>
+                      </p>
                     </div>
-                    <span class={[
-                      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                      if(@button.auto_stop_enabled, do: "bg-blue-100 text-blue-800", else: "bg-gray-100 text-gray-800")
-                    ]}>
-                      <%= if @button.auto_stop_enabled, do: "Enabled", else: "Disabled" %>
-                    </span>
+                    <div class="flex items-center space-x-2">
+                      <%= if @button.scheduled_stop_at && @button.current_state == "active" do %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          ⏰ <%= format_time_remaining(@button.scheduled_stop_at) %>
+                        </span>
+                      <% end %>
+                      <span class={[
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                        if(@button.auto_stop_enabled, do: "bg-blue-100 text-blue-800", else: "bg-gray-100 text-gray-800")
+                      ]}>
+                        <%= if @button.auto_stop_enabled do %>
+                          <%= if @button.auto_stop_minutes, do: format_auto_stop_duration(@button.auto_stop_minutes), else: "Enabled" %>
+                        <% else %>
+                          Disabled
+                        <% end %>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -13,6 +13,8 @@ struct Button: Identifiable, Codable, Equatable {
     let stateChangedAt: Date?
     let notificationsEnabled: Bool
     let autoStopEnabled: Bool
+    var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
+    var scheduledStopAt: Date? = nil  // When the button will auto-stop
     let calendarSyncEnabled: Bool
     let userId: String
     let createdAt: Date
@@ -60,6 +62,46 @@ struct Button: Identifiable, Codable, Equatable {
         return isSharedWithMe != true
     }
 
+    /// Formatted auto-stop duration (e.g., "1 hour", "30 minutes")
+    var autoStopDurationText: String? {
+        guard let minutes = autoStopMinutes else { return nil }
+        if minutes < 60 {
+            return "\(minutes) minutes"
+        } else if minutes == 60 {
+            return "1 hour"
+        } else if minutes % 60 == 0 {
+            return "\(minutes / 60) hours"
+        } else {
+            return "\(minutes / 60) hr \(minutes % 60) min"
+        }
+    }
+
+    /// Time remaining until auto-stop (nil if not scheduled or already passed)
+    var timeUntilAutoStop: TimeInterval? {
+        guard let stopAt = scheduledStopAt else { return nil }
+        let remaining = stopAt.timeIntervalSinceNow
+        return remaining > 0 ? remaining : nil
+    }
+
+    /// Formatted time remaining until auto-stop
+    var autoStopRemainingText: String? {
+        guard let remaining = timeUntilAutoStop else { return nil }
+        let minutes = Int(remaining / 60)
+        if minutes < 1 {
+            return "< 1 min"
+        } else if minutes < 60 {
+            return "\(minutes) min"
+        } else {
+            let hours = minutes / 60
+            let mins = minutes % 60
+            if mins == 0 {
+                return "\(hours) hr"
+            } else {
+                return "\(hours) hr \(mins) min"
+            }
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, name, description, type, icon, color
         case isActive = "is_active"
@@ -67,6 +109,8 @@ struct Button: Identifiable, Codable, Equatable {
         case stateChangedAt = "state_changed_at"
         case notificationsEnabled = "notifications_enabled"
         case autoStopEnabled = "auto_stop_enabled"
+        case autoStopMinutes = "auto_stop_minutes"
+        case scheduledStopAt = "scheduled_stop_at"
         case calendarSyncEnabled = "calendar_sync_enabled"
         case userId = "user_id"
         case createdAt = "created_at"
@@ -228,14 +272,25 @@ struct ButtonFormData {
     var color: String = "#007AFF"
     var notificationsEnabled: Bool = true
     var autoStopEnabled: Bool = false
+    var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var calendarSyncEnabled: Bool = false
-    
+
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
+
+    /// Available auto-stop duration options
+    static let autoStopOptions: [(minutes: Int, label: String)] = [
+        (15, "15 minutes"),
+        (30, "30 minutes"),
+        (60, "1 hour"),
+        (120, "2 hours"),
+        (240, "4 hours"),
+        (480, "8 hours")
+    ]
+
     func toRequestBody() -> [String: Any] {
-        return [
+        var body: [String: Any] = [
             "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
             "description": description.isEmpty ? nil : description,
             "type": type.rawValue,
@@ -245,6 +300,13 @@ struct ButtonFormData {
             "auto_stop_enabled": autoStopEnabled,
             "calendar_sync_enabled": calendarSyncEnabled
         ].compactMapValues { $0 }
+
+        // Only include auto_stop_minutes if auto-stop is enabled
+        if autoStopEnabled, let minutes = autoStopMinutes {
+            body["auto_stop_minutes"] = minutes
+        }
+
+        return body
     }
 }
 

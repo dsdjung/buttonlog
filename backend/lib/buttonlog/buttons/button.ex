@@ -18,6 +18,8 @@ defmodule ButtonLog.Buttons.Button do
     # Settings
     field :notifications_enabled, :boolean
     field :auto_stop_enabled, :boolean
+    field :auto_stop_minutes, :integer  # Duration in minutes (15, 30, 60, 120, 240, 480)
+    field :scheduled_stop_at, :utc_datetime  # When the button should auto-stop
     field :calendar_sync_enabled, :boolean
 
     # Archival (for one-time buttons)
@@ -44,7 +46,8 @@ defmodule ButtonLog.Buttons.Button do
   def changeset(button, attrs) do
     button
     |> cast(attrs, [:name, :description, :type, :icon, :color, :is_active,
-                    :notifications_enabled, :auto_stop_enabled, :calendar_sync_enabled,
+                    :notifications_enabled, :auto_stop_enabled, :auto_stop_minutes,
+                    :scheduled_stop_at, :calendar_sync_enabled,
                     :current_state, :state_changed_at, :user_id, :archived, :archived_at])
     |> validate_required([:name, :type])
     |> validate_length(:name, min: 1, max: 100)
@@ -52,6 +55,15 @@ defmodule ButtonLog.Buttons.Button do
     |> validate_inclusion(:type, ["instant", "toggle", "one-time", "workflow"])
     |> validate_inclusion(:current_state, ["idle", "active"], allow_blank: true)
     |> validate_format(:color, ~r/^#[0-9A-Fa-f]{6}$/, message: "must be a valid hex color")
+    |> validate_auto_stop_minutes()
+  end
+
+  defp validate_auto_stop_minutes(changeset) do
+    case get_change(changeset, :auto_stop_minutes) do
+      nil -> changeset
+      minutes when minutes in [15, 30, 60, 120, 240, 480] -> changeset
+      _ -> add_error(changeset, :auto_stop_minutes, "must be 15, 30, 60, 120, 240, or 480 minutes")
+    end
   end
 
   def create_changeset(button, attrs, user_id) do

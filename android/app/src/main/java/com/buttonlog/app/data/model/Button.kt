@@ -21,6 +21,10 @@ data class Button(
     val notificationsEnabled: Boolean,
     @SerializedName("auto_stop_enabled")
     val autoStopEnabled: Boolean,
+    @SerializedName("auto_stop_minutes")
+    val autoStopMinutes: Int? = null,  // Duration in minutes (15, 30, 60, 120, 240, 480)
+    @SerializedName("scheduled_stop_at")
+    val scheduledStopAt: Date? = null,  // When the button will auto-stop
     @SerializedName("calendar_sync_enabled")
     val calendarSyncEnabled: Boolean,
     @SerializedName("user_id")
@@ -71,6 +75,51 @@ data class Button(
     /** True if the current user is the owner of this button */
     val isOwner: Boolean
         get() = isSharedWithMe != true
+
+    /** Formatted auto-stop duration (e.g., "1 hour", "30 minutes") */
+    val autoStopDurationText: String?
+        get() {
+            val minutes = autoStopMinutes ?: return null
+            return when {
+                minutes < 60 -> "$minutes minutes"
+                minutes == 60 -> "1 hour"
+                minutes % 60 == 0 -> "${minutes / 60} hours"
+                else -> "${minutes / 60} hr ${minutes % 60} min"
+            }
+        }
+
+    /** Time remaining until auto-stop in milliseconds (null if not scheduled or already passed) */
+    val timeUntilAutoStopMs: Long?
+        get() {
+            val stopAt = scheduledStopAt ?: return null
+            val remaining = stopAt.time - System.currentTimeMillis()
+            return if (remaining > 0) remaining else null
+        }
+
+    /** Formatted time remaining until auto-stop */
+    val autoStopRemainingText: String?
+        get() {
+            val remainingMs = timeUntilAutoStopMs ?: return null
+            val minutes = (remainingMs / 60000).toInt()
+            return when {
+                minutes < 1 -> "< 1 min"
+                minutes < 60 -> "$minutes min"
+                minutes % 60 == 0 -> "${minutes / 60} hr"
+                else -> "${minutes / 60} hr ${minutes % 60} min"
+            }
+        }
+
+    companion object {
+        /** Available auto-stop duration options */
+        val AUTO_STOP_OPTIONS = listOf(
+            15 to "15 minutes",
+            30 to "30 minutes",
+            60 to "1 hour",
+            120 to "2 hours",
+            240 to "4 hours",
+            480 to "8 hours"
+        )
+    }
 }
 
 /** Minimal user info for gift button creator */
@@ -157,10 +206,32 @@ data class ButtonFormData(
     var color: String = "#007AFF",
     var notificationsEnabled: Boolean = true,
     var autoStopEnabled: Boolean = false,
+    var autoStopMinutes: Int? = null,  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var calendarSyncEnabled: Boolean = false
 ) {
     val isValid: Boolean
         get() = name.trim().isNotEmpty()
+
+    /** Convert to request body map for API call */
+    fun toRequestBody(): Map<String, Any?> {
+        val body = mutableMapOf<String, Any?>(
+            "name" to name.trim(),
+            "description" to description.ifEmpty { null },
+            "type" to type.name.lowercase().replace("_", "-"),
+            "icon" to icon,
+            "color" to color,
+            "notifications_enabled" to notificationsEnabled,
+            "auto_stop_enabled" to autoStopEnabled,
+            "calendar_sync_enabled" to calendarSyncEnabled
+        )
+
+        // Only include auto_stop_minutes if auto-stop is enabled
+        if (autoStopEnabled && autoStopMinutes != null) {
+            body["auto_stop_minutes"] = autoStopMinutes
+        }
+
+        return body.filterValues { it != null }
+    }
 }
 
 // Button click data

@@ -15,9 +15,9 @@ defmodule ButtonLog.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: ButtonLog.PubSub},
       # Start the Endpoint (http/https)
-      ButtonLogWeb.Endpoint
-      # Start a worker by calling: ButtonLog.Worker.start_link(arg)
-      # {ButtonLog.Worker, arg}
+      ButtonLogWeb.Endpoint,
+      # Start the Auto-Stop worker for toggle buttons
+      ButtonLog.Buttons.AutoStopWorker
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

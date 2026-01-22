@@ -17,7 +17,7 @@ defmodule ButtonLog.Buttons do
       left_join: bc in ButtonClick, on: b.id == bc.button_id,
       left_join: gifter in assoc(b, :created_by_friend),
       where: b.user_id == ^user_id and (is_nil(b.archived) or b.archived == false),
-      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.notifications_enabled, b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, gifter.id, gifter.username, gifter.display_name],
+      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.notifications_enabled, b.auto_stop_enabled, b.auto_stop_minutes, b.scheduled_stop_at, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, gifter.id, gifter.username, gifter.display_name],
       order_by: [asc: b.name],
       select: %{
         id: b.id,
@@ -31,6 +31,8 @@ defmodule ButtonLog.Buttons do
         state_changed_at: b.state_changed_at,
         notifications_enabled: b.notifications_enabled,
         auto_stop_enabled: b.auto_stop_enabled,
+        auto_stop_minutes: b.auto_stop_minutes,
+        scheduled_stop_at: b.scheduled_stop_at,
         calendar_sync_enabled: b.calendar_sync_enabled,
         user_id: b.user_id,
         inserted_at: b.inserted_at,
@@ -180,13 +182,18 @@ defmodule ButtonLog.Buttons do
         _ -> {"active", "start"}  # Default to start if state is nil or unknown
       end
 
+    # Calculate scheduled_stop_at if starting with auto-stop enabled
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    scheduled_stop_at = calculate_scheduled_stop_at(button, action, now)
+
     # Use a transaction to ensure consistency
     result = Repo.transaction(fn ->
       # Update button state
       button
       |> Button.changeset(%{
         current_state: new_state,
-        state_changed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        state_changed_at: now,
+        scheduled_stop_at: scheduled_stop_at
       })
       |> Repo.update!()
 
@@ -206,6 +213,23 @@ defmodule ButtonLog.Buttons do
     if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, action)
 
     result
+  end
+
+  # Calculate when the button should auto-stop
+  defp calculate_scheduled_stop_at(button, action, now) do
+    cond do
+      # When starting and auto-stop is enabled with a duration
+      action == "start" and button.auto_stop_enabled and button.auto_stop_minutes ->
+        DateTime.add(now, button.auto_stop_minutes * 60, :second)
+
+      # When stopping (manually or otherwise), clear the scheduled stop
+      action in ["end", "stop"] ->
+        nil
+
+      # Otherwise no scheduled stop
+      true ->
+        nil
+    end
   end
 
   defp handle_one_time_button_click(button, user_id) do
@@ -832,12 +856,17 @@ defmodule ButtonLog.Buttons do
         _ -> {"active", "start"}
       end
 
+    # Calculate scheduled_stop_at if starting with auto-stop enabled
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    scheduled_stop_at = calculate_scheduled_stop_at(button, action, now)
+
     Repo.transaction(fn ->
       # Update button state
       button
       |> Button.changeset(%{
         current_state: new_state,
-        state_changed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        state_changed_at: now,
+        scheduled_stop_at: scheduled_stop_at
       })
       |> Repo.update!()
 
@@ -1161,7 +1190,8 @@ defmodule ButtonLog.Buttons do
         ),
         group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active,
                    b.current_state, b.state_changed_at, b.notifications_enabled,
-                   b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id,
+                   b.auto_stop_enabled, b.auto_stop_minutes, b.scheduled_stop_at,
+                   b.calendar_sync_enabled, b.user_id,
                    b.inserted_at, b.updated_at, b.sharing_mode, owner.id,
                    owner.display_name, owner.username],
         order_by: [asc: b.name],
@@ -1177,6 +1207,8 @@ defmodule ButtonLog.Buttons do
           state_changed_at: b.state_changed_at,
           notifications_enabled: b.notifications_enabled,
           auto_stop_enabled: b.auto_stop_enabled,
+          auto_stop_minutes: b.auto_stop_minutes,
+          scheduled_stop_at: b.scheduled_stop_at,
           calendar_sync_enabled: b.calendar_sync_enabled,
           user_id: b.user_id,
           inserted_at: b.inserted_at,
@@ -1188,5 +1220,119 @@ defmodule ButtonLog.Buttons do
           owner_name: coalesce(owner.display_name, owner.username)
         }
     )
+  end
+
+  # =============================================================================
+  # Auto-Stop Functions
+  # =============================================================================
+
+  @doc """
+  Returns all buttons that have scheduled stops that are due.
+  Used by the auto-stop background job.
+  """
+  def list_buttons_due_for_auto_stop do
+    now = DateTime.utc_now()
+
+    Repo.all(
+      from b in Button,
+        where: not is_nil(b.scheduled_stop_at) and b.scheduled_stop_at <= ^now,
+        where: b.current_state == "active"
+    )
+  end
+
+  @doc """
+  Processes auto-stop for a single button.
+  Called by the background job for each button that is due.
+  """
+  def process_auto_stop(button_id) do
+    case Repo.get(Button, button_id) do
+      nil ->
+        {:error, :not_found}
+
+      button ->
+        if button.current_state == "active" and button.scheduled_stop_at do
+          perform_auto_stop(button)
+        else
+          {:ok, :already_stopped}
+        end
+    end
+  end
+
+  defp perform_auto_stop(button) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    result = Repo.transaction(fn ->
+      # Update button state to idle and clear scheduled_stop_at
+      button
+      |> Button.changeset(%{
+        current_state: "idle",
+        state_changed_at: now,
+        scheduled_stop_at: nil
+      })
+      |> Repo.update!()
+
+      # Create a button click record with "auto_stop" action
+      %ButtonClick{}
+      |> ButtonClick.create_changeset(%{
+        device: "system",
+        platform: "auto_stop",
+        action: "auto_stop"
+      }, button.id, button.user_id)
+      |> Repo.insert!()
+    end)
+
+    # Send notification to the user about auto-stop
+    case result do
+      {:ok, click} ->
+        notify_auto_stop(button)
+        {:ok, click}
+
+      error ->
+        error
+    end
+  end
+
+  defp notify_auto_stop(button) do
+    alias ButtonLog.Notifications
+
+    # Calculate how long the button was active
+    duration_text = format_auto_stop_duration(button.auto_stop_minutes)
+
+    Notifications.create_notification(%{
+      notification_type: "button_auto_stopped",
+      title: "#{button.name} auto-stopped",
+      message: "Your button '#{button.name}' was automatically stopped after #{duration_text}",
+      metadata: %{
+        button_id: button.id,
+        button_name: button.name,
+        auto_stop_minutes: button.auto_stop_minutes
+      }
+    }, button.user_id, button.user_id, button.id)
+  end
+
+  defp format_auto_stop_duration(nil), do: "the configured time"
+  defp format_auto_stop_duration(minutes) when minutes < 60, do: "#{minutes} minutes"
+  defp format_auto_stop_duration(60), do: "1 hour"
+  defp format_auto_stop_duration(minutes) when rem(minutes, 60) == 0, do: "#{div(minutes, 60)} hours"
+  defp format_auto_stop_duration(minutes), do: "#{div(minutes, 60)} hours and #{rem(minutes, 60)} minutes"
+
+  @doc """
+  Processes all buttons due for auto-stop.
+  Called periodically by the auto-stop worker.
+  Returns the count of buttons processed.
+  """
+  def process_all_auto_stops do
+    buttons = list_buttons_due_for_auto_stop()
+
+    results = Enum.map(buttons, fn button ->
+      process_auto_stop(button.id)
+    end)
+
+    success_count = Enum.count(results, fn
+      {:ok, _} -> true
+      _ -> false
+    end)
+
+    {:ok, success_count}
   end
 end
