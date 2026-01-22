@@ -28,7 +28,6 @@ struct AppNotification: Identifiable, Codable {
         isRead = try container.decode(Bool.self, forKey: .isRead)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         sender = try container.decodeIfPresent(NotificationSender.self, forKey: .sender)
-
         // Try to decode data as [String: String], fall back to nil if it fails
         // This handles empty objects {} or objects with non-string values
         data = try? container.decodeIfPresent([String: String].self, forKey: .data)

@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 class APIService {
     static let shared = APIService()
@@ -589,6 +590,21 @@ extension JSONDecoder {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime]
             if let date = formatter.date(from: dateString) {
+                return date
+            }
+
+            // Try ISO8601 without timezone (backend sometimes sends dates without Z)
+            // e.g., "2026-01-22T01:50:40"
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+            dateFormatter.timeZone = TimeZone(identifier: "UTC")
+            if let date = dateFormatter.date(from: dateString) {
+                return date
+            }
+
+            // Try with fractional seconds but no timezone
+            dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+            if let date = dateFormatter.date(from: dateString) {
                 return date
             }
 
