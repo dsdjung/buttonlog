@@ -1,6 +1,11 @@
 defmodule ButtonLogWeb.NotificationsLive do
+  @moduledoc """
+  LiveView for viewing user alerts (formerly notifications).
+  This page shows in-app friend alerts for button clicks, etc.
+  """
+
   use ButtonLogWeb, :live_view
-  alias ButtonLog.Notifications
+  alias ButtonLog.Alerts
 
   @page_size 20
 
@@ -11,24 +16,24 @@ defmodule ButtonLogWeb.NotificationsLive do
     if user_id do
       current_user = ButtonLog.Accounts.get_user!(user_id)
 
-      # Get initial page of notifications
-      {notifications, has_more} = Notifications.get_user_notifications_paginated(user_id, @page_size, 0)
+      # Get initial page of alerts
+      {alerts, has_more} = Alerts.get_user_alerts_paginated(user_id, @page_size, 0)
 
       # Get unread count efficiently
-      unread_count = Notifications.count_unread_notifications(user_id)
+      unread_count = Alerts.count_unread_alerts(user_id)
 
       {:ok,
        socket
        |> assign(:current_user, current_user)
-       |> assign(:notifications, notifications)
+       |> assign(:alerts, alerts)
        |> assign(:unread_count, unread_count)
        |> assign(:has_more, has_more)
        |> assign(:loading_more, false)
-       |> assign(:page_title, "Notifications")}
+       |> assign(:page_title, "Alerts")}
     else
       {:ok,
        socket
-       |> put_flash(:error, "Please log in to view notifications")
+       |> put_flash(:error, "Please log in to view alerts")
        |> redirect(to: ~p"/auth/login")}
     end
   end
@@ -36,39 +41,39 @@ defmodule ButtonLogWeb.NotificationsLive do
   @impl true
   def handle_event("load_more", _params, socket) do
     user_id = socket.assigns.current_user.id
-    current_count = length(socket.assigns.notifications)
+    current_count = length(socket.assigns.alerts)
 
-    {more_notifications, has_more} = Notifications.get_user_notifications_paginated(user_id, @page_size, current_count)
+    {more_alerts, has_more} = Alerts.get_user_alerts_paginated(user_id, @page_size, current_count)
 
     {:noreply,
      socket
-     |> assign(:notifications, socket.assigns.notifications ++ more_notifications)
+     |> assign(:alerts, socket.assigns.alerts ++ more_alerts)
      |> assign(:has_more, has_more)
      |> assign(:loading_more, false)}
   end
 
   @impl true
-  def handle_event("mark_read", %{"id" => notification_id}, socket) do
+  def handle_event("mark_read", %{"id" => alert_id}, socket) do
     user_id = socket.assigns.current_user.id
 
-    case Notifications.mark_notification_read(notification_id, user_id) do
-      {:ok, updated_notification} ->
-        # Update the notification in the list without reloading all
-        notifications = Enum.map(socket.assigns.notifications, fn n ->
-          if n.id == updated_notification.id, do: updated_notification, else: n
+    case Alerts.mark_alert_read(alert_id, user_id) do
+      {:ok, updated_alert} ->
+        # Update the alert in the list without reloading all
+        alerts = Enum.map(socket.assigns.alerts, fn a ->
+          if a.id == updated_alert.id, do: updated_alert, else: a
         end)
 
         unread_count = max(0, socket.assigns.unread_count - 1)
 
         {:noreply,
          socket
-         |> assign(:notifications, notifications)
+         |> assign(:alerts, alerts)
          |> assign(:unread_count, unread_count)}
 
       {:error, _reason} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Failed to mark notification as read")}
+         |> put_flash(:error, "Failed to mark alert as read")}
     end
   end
 
@@ -76,36 +81,36 @@ defmodule ButtonLogWeb.NotificationsLive do
   def handle_event("mark_all_read", _params, socket) do
     user_id = socket.assigns.current_user.id
 
-    case Notifications.mark_all_notifications_read(user_id) do
+    case Alerts.mark_all_alerts_read(user_id) do
       {:ok, count} ->
-        # Update all notifications in the list to be read
-        notifications = Enum.map(socket.assigns.notifications, fn n ->
-          %{n | read: true}
+        # Update all alerts in the list to be read
+        alerts = Enum.map(socket.assigns.alerts, fn a ->
+          %{a | read: true}
         end)
 
         {:noreply,
          socket
-         |> put_flash(:info, "Marked #{count} notifications as read")
-         |> assign(:notifications, notifications)
+         |> put_flash(:info, "Marked #{count} alerts as read")
+         |> assign(:alerts, alerts)
          |> assign(:unread_count, 0)}
     end
   end
 
   @impl true
-  def handle_event("click_notification", %{"id" => notification_id}, socket) do
+  def handle_event("click_alert", %{"id" => alert_id}, socket) do
     user_id = socket.assigns.current_user.id
 
-    # Find the notification
-    notification = Enum.find(socket.assigns.notifications, fn n -> n.id == notification_id end)
+    # Find the alert
+    alert = Enum.find(socket.assigns.alerts, fn a -> a.id == alert_id end)
 
-    if notification do
+    if alert do
       # Mark as read if not already
-      unless notification.read do
-        Notifications.mark_notification_read(notification_id, user_id)
+      unless alert.read do
+        Alerts.mark_alert_read(alert_id, user_id)
       end
 
-      # Navigate based on notification type
-      path = get_notification_path(notification)
+      # Navigate based on alert type
+      path = get_alert_path(alert)
 
       {:noreply, push_navigate(socket, to: path)}
     else
@@ -118,46 +123,46 @@ defmodule ButtonLogWeb.NotificationsLive do
     {:noreply, socket}
   end
 
-  # Helper to determine navigation path based on notification type
-  defp get_notification_path(notification) do
-    case notification.notification_type do
+  # Helper to determine navigation path based on alert type
+  defp get_alert_path(alert) do
+    case alert.alert_type do
       "button_click" ->
-        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+        if alert.button_id, do: ~p"/buttons/#{alert.button_id}", else: ~p"/buttons"
 
       "button_created" ->
-        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+        if alert.button_id, do: ~p"/buttons/#{alert.button_id}", else: ~p"/buttons"
 
       "gift_button_received" ->
-        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+        if alert.button_id, do: ~p"/buttons/#{alert.button_id}", else: ~p"/buttons"
 
       "gift_button_clicked" ->
-        # Navigate to friend page when clicking on a "gift clicked" notification
+        # Navigate to friend page when clicking on a "gift clicked" alert
         # Use friend_id from metadata, or fall back to sender_id (the friend who clicked)
-        friend_id = get_in(notification.metadata, ["friend_id"]) ||
-                    notification.metadata[:friend_id] ||
-                    notification.sender_id
+        friend_id = get_in(alert.metadata, ["friend_id"]) ||
+                    alert.metadata[:friend_id] ||
+                    alert.sender_id
         if friend_id, do: ~p"/friends/#{friend_id}", else: ~p"/friends"
 
       "gift_button_deleted" ->
         ~p"/buttons"
 
       "gift_button_sent" ->
-        # Navigate to friend page when clicking on a "gift sent" notification
-        friend_id = get_in(notification.metadata, ["friend_id"]) || notification.metadata[:friend_id]
+        # Navigate to friend page when clicking on a "gift sent" alert
+        friend_id = get_in(alert.metadata, ["friend_id"]) || alert.metadata[:friend_id]
         if friend_id, do: ~p"/friends/#{friend_id}", else: ~p"/friends"
 
       "one_time_button_completed" ->
-        if notification.button_id, do: ~p"/buttons/#{notification.button_id}", else: ~p"/buttons"
+        if alert.button_id, do: ~p"/buttons/#{alert.button_id}", else: ~p"/buttons"
 
       "friend_request" ->
         ~p"/friends"
 
       "support_ticket_reply" ->
-        ticket_id = get_in(notification.metadata, ["ticket_id"]) || notification.metadata[:ticket_id]
+        ticket_id = get_in(alert.metadata, ["ticket_id"]) || alert.metadata[:ticket_id]
         if ticket_id, do: ~p"/support/#{ticket_id}", else: ~p"/support"
 
       "support_ticket_status_update" ->
-        ticket_id = get_in(notification.metadata, ["ticket_id"]) || notification.metadata[:ticket_id]
+        ticket_id = get_in(alert.metadata, ["ticket_id"]) || alert.metadata[:ticket_id]
         if ticket_id, do: ~p"/support/#{ticket_id}", else: ~p"/support"
 
       _ ->

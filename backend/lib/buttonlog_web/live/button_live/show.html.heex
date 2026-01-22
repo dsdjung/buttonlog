@@ -114,20 +114,20 @@
                   <a href={~p"/buttons/#{@button.id}/notifications"} class="block">
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                       <div>
-                        <span class="font-medium text-gray-900">Friend Notifications</span>
+                        <span class="font-medium text-gray-900">Friend Alerts</span>
                         <div class="flex items-center space-x-2">
-                          <p class="text-sm text-gray-500">Notify your friends when button is clicked</p>
+                          <p class="text-sm text-gray-500">Alert your friends when button is clicked</p>
                           <%= 
-                            # Get notification count for this button
-                            notification_count = case ButtonLog.Notifications.get_button_notification_preferences(@button.id, @current_user.id) do
-                              prefs when is_list(prefs) -> 
+                            # Get alert count for this button
+                            alert_count = case ButtonLog.Alerts.get_button_alert_preferences(@button.id, @current_user.id) do
+                              prefs when is_list(prefs) ->
                                 Enum.count(prefs, fn pref -> pref.enabled end)
                               _ -> 0
                             end
                           %>
-                          <%= if notification_count > 0 do %>
+                          <%= if alert_count > 0 do %>
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              <%= notification_count %> friend<%= if notification_count != 1, do: "s", else: "" %> selected
+                              <%= alert_count %> friend<%= if alert_count != 1, do: "s", else: "" %> selected
                             </span>
                           <% end %>
                         </div>
@@ -135,9 +135,9 @@
                       <div class="flex items-center space-x-2">
                         <span class={[
                           "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                          if(@button.notifications_enabled, do: "bg-green-100 text-green-800", else: "bg-gray-100 text-gray-800")
+                          if(@button.alerts_enabled, do: "bg-green-100 text-green-800", else: "bg-gray-100 text-gray-800")
                         ]}>
-                          <%= if @button.notifications_enabled, do: "Configure", else: "Configure" %>
+                          <%= if @button.alerts_enabled, do: "Configure", else: "Configure" %>
                         </span>
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

@@ -16,7 +16,7 @@ defmodule ButtonLog.Buttons.Button do
     field :state_changed_at, :utc_datetime
 
     # Settings
-    field :notifications_enabled, :boolean
+    field :alerts_enabled, :boolean
     field :auto_stop_enabled, :boolean
     field :auto_stop_minutes, :integer  # Duration in minutes (15, 30, 60, 120, 240, 480)
     field :scheduled_stop_at, :utc_datetime  # When the button should auto-stop
@@ -46,7 +46,7 @@ defmodule ButtonLog.Buttons.Button do
   def changeset(button, attrs) do
     button
     |> cast(attrs, [:name, :description, :type, :icon, :color, :is_active,
-                    :notifications_enabled, :auto_stop_enabled, :auto_stop_minutes,
+                    :alerts_enabled, :auto_stop_enabled, :auto_stop_minutes,
                     :scheduled_stop_at, :calendar_sync_enabled,
                     :current_state, :state_changed_at, :user_id, :archived, :archived_at])
     |> validate_required([:name, :type])
@@ -72,7 +72,7 @@ defmodule ButtonLog.Buttons.Button do
     |> put_change(:user_id, user_id)
     |> put_change(:is_active, true)
     |> put_change(:current_state, "idle")
-    |> put_change(:notifications_enabled, true)
+    |> put_change(:alerts_enabled, true)
     |> put_change(:auto_stop_enabled, false)
     |> put_change(:calendar_sync_enabled, false)
   end

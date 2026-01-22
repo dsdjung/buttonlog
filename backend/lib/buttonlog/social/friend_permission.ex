@@ -7,7 +7,7 @@ defmodule ButtonLog.Social.FriendPermission do
 
   schema "friend_permissions" do
     field :can_view_history, :boolean
-    field :can_receive_notifications, :boolean
+    field :can_receive_alerts, :boolean
     field :can_view_buttons, :boolean
 
     # Relationships
@@ -19,7 +19,7 @@ defmodule ButtonLog.Social.FriendPermission do
 
   def changeset(permission, attrs) do
     permission
-    |> cast(attrs, [:user_id, :friend_id, :can_view_history, :can_receive_notifications, :can_view_buttons])
+    |> cast(attrs, [:user_id, :friend_id, :can_view_history, :can_receive_alerts, :can_view_buttons])
     |> validate_required([:user_id, :friend_id])
     |> unique_constraint([:user_id, :friend_id], name: :friend_permissions_user_friend_index)
   end
@@ -30,7 +30,7 @@ defmodule ButtonLog.Social.FriendPermission do
     |> put_change(:user_id, user_id)
     |> put_change(:friend_id, friend_id)
     |> put_change(:can_view_history, true)
-    |> put_change(:can_receive_notifications, true)
+    |> put_change(:can_receive_alerts, true)
     |> put_change(:can_view_buttons, true)
   end
 end

@@ -26,22 +26,31 @@ defmodule ButtonLogWeb.UserChannel do
     end
   end
 
-  def handle_in("send_notification", %{"recipient_id" => recipient_id, "message" => message}, socket) do
+  def handle_in("send_alert", %{"recipient_id" => recipient_id, "message" => message}, socket) do
     sender_id = socket.assigns.user_id
 
-    case ButtonLog.Notifications.create_notification(recipient_id, sender_id, "message", message) do
-      {:ok, notification} ->
+    case ButtonLog.Alerts.create_alert(
+      %{
+        alert_type: "general",
+        title: "Message",
+        message: message
+      },
+      recipient_id,
+      sender_id,
+      nil
+    ) do
+      {:ok, alert} ->
         # Broadcast to the recipient
         ButtonLogWeb.Endpoint.broadcast!(
           "user:#{recipient_id}",
-          "notification_received",
+          "alert_received",
           %{
-            id: notification.id,
-            title: notification.title,
-            body: notification.body,
-            type: notification.type,
+            id: alert.id,
+            title: alert.title,
+            body: alert.message,
+            type: alert.alert_type,
             sender_id: sender_id,
-            created_at: notification.inserted_at
+            created_at: alert.inserted_at
           }
         )
 

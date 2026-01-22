@@ -312,7 +312,7 @@ defmodule ButtonLog.Support do
       admin = ButtonLog.Accounts.get_user!(admin_id)
 
       notification_attrs = %{
-        notification_type: "support_ticket_reply",
+        alert_type: "support_ticket_reply",
         title: "New reply on your support ticket",
         message: "Support team replied to: #{ticket.subject}",
         metadata: %{
@@ -321,8 +321,8 @@ defmodule ButtonLog.Support do
         }
       }
 
-      # Create in-app notification (sender_id is admin, button_id is nil for support)
-      ButtonLog.Notifications.create_notification(
+      # Create in-app alert (sender_id is admin, button_id is nil for support)
+      ButtonLog.Alerts.create_alert(
         notification_attrs,
         ticket.user_id,
         admin_id,
@@ -332,7 +332,7 @@ defmodule ButtonLog.Support do
       # Broadcast via WebSocket for real-time update
       ButtonLogWeb.Endpoint.broadcast(
         "user:#{ticket.user_id}",
-        "notification_received",
+        "alert_received",
         %{
           type: "support_ticket_reply",
           title: notification_attrs.title,
@@ -350,7 +350,7 @@ defmodule ButtonLog.Support do
   end
 
   @doc """
-  Sends a notification when ticket status is updated.
+  Sends an alert when ticket status is updated.
   """
   def notify_ticket_status_update(ticket_id, new_status) do
     with {:ok, ticket} <- get_ticket_admin(ticket_id),
@@ -358,7 +358,7 @@ defmodule ButtonLog.Support do
       status_display = status_display_name(new_status)
 
       notification_attrs = %{
-        notification_type: "support_ticket_status_update",
+        alert_type: "support_ticket_status_update",
         title: "Ticket status updated",
         message: "Your ticket \"#{ticket.subject}\" is now #{status_display}",
         metadata: %{
@@ -368,8 +368,8 @@ defmodule ButtonLog.Support do
         }
       }
 
-      # Create in-app notification (no sender for system updates)
-      ButtonLog.Notifications.create_notification(
+      # Create in-app alert (no sender for system updates)
+      ButtonLog.Alerts.create_alert(
         notification_attrs,
         ticket.user_id,
         nil,
@@ -379,7 +379,7 @@ defmodule ButtonLog.Support do
       # Broadcast via WebSocket for real-time update
       ButtonLogWeb.Endpoint.broadcast(
         "user:#{ticket.user_id}",
-        "notification_received",
+        "alert_received",
         %{
           type: "support_ticket_status_update",
           title: notification_attrs.title,

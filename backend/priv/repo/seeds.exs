@@ -38,7 +38,7 @@ Repo.insert!(%Button{
   icon: "☕",
   color: "#8B4513",
   is_active: true,
-  notifications_enabled: true,
+  alerts_enabled: true,
   auto_stop_enabled: false,
   calendar_sync_enabled: false
 })
@@ -51,7 +51,7 @@ Repo.insert!(%Button{
   icon: "💼",
   color: "#4CAF50",
   is_active: true,
-  notifications_enabled: true,
+  alerts_enabled: true,
   auto_stop_enabled: true,
   calendar_sync_enabled: true
 })
@@ -64,7 +64,7 @@ Repo.insert!(%Button{
   icon: "🏃",
   color: "#FF5722",
   is_active: true,
-  notifications_enabled: false,
+  alerts_enabled: false,
   auto_stop_enabled: false,
   calendar_sync_enabled: false
 })

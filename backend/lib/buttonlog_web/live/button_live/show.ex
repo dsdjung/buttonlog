@@ -56,8 +56,8 @@ defmodule ButtonLogWeb.ButtonLive.Show do
 
     case Buttons.click_button(button.id, user.id) do
       {:ok, click} ->
-        # Send notifications to friends
-        ButtonLog.Notifications.send_button_click_notifications(button.id, user.id, %{
+        # Send alerts to friends
+        ButtonLog.Alerts.send_button_click_alerts(button.id, user.id, %{
           clicked_at: click.clicked_at,
           action: click.action,
           platform: click.platform

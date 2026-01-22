@@ -1,4 +1,3 @@
-how do i access admin ui
 
 What does auto-stop do? Need be clearer.
 

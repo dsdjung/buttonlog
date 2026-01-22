@@ -345,7 +345,7 @@ defmodule ButtonLogWeb.API.SocialController do
       is_active: button.is_active,
       current_state: button.current_state || "idle",
       state_changed_at: format_datetime(button.state_changed_at),
-      notifications_enabled: button.notifications_enabled,
+      alerts_enabled: button.alerts_enabled,
       auto_stop_enabled: button.auto_stop_enabled,
       calendar_sync_enabled: button.calendar_sync_enabled,
       user_id: button.user_id,

@@ -17,7 +17,7 @@ defmodule ButtonLog.Buttons do
       left_join: bc in ButtonClick, on: b.id == bc.button_id,
       left_join: gifter in assoc(b, :created_by_friend),
       where: b.user_id == ^user_id and (is_nil(b.archived) or b.archived == false),
-      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.notifications_enabled, b.auto_stop_enabled, b.auto_stop_minutes, b.scheduled_stop_at, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, gifter.id, gifter.username, gifter.display_name],
+      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.alerts_enabled, b.auto_stop_enabled, b.auto_stop_minutes, b.scheduled_stop_at, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, gifter.id, gifter.username, gifter.display_name],
       order_by: [asc: b.name],
       select: %{
         id: b.id,
@@ -29,7 +29,7 @@ defmodule ButtonLog.Buttons do
         is_active: b.is_active,
         current_state: b.current_state,
         state_changed_at: b.state_changed_at,
-        notifications_enabled: b.notifications_enabled,
+        alerts_enabled: b.alerts_enabled,
         auto_stop_enabled: b.auto_stop_enabled,
         auto_stop_minutes: b.auto_stop_minutes,
         scheduled_stop_at: b.scheduled_stop_at,
@@ -57,7 +57,7 @@ defmodule ButtonLog.Buttons do
       from b in Button,
       left_join: bc in ButtonClick, on: b.id == bc.button_id,
       where: b.user_id == ^friend_id and b.created_by_friend_id == ^creator_id,
-      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.notifications_enabled, b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, b.archived, b.archived_at],
+      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.alerts_enabled, b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, b.archived, b.archived_at],
       order_by: [desc: b.inserted_at],
       select: %{
         id: b.id,
@@ -68,7 +68,7 @@ defmodule ButtonLog.Buttons do
         color: b.color,
         is_active: b.is_active,
         current_state: b.current_state,
-        notifications_enabled: b.notifications_enabled,
+        alerts_enabled: b.alerts_enabled,
         user_id: b.user_id,
         inserted_at: b.inserted_at,
         latest_click_at: max(bc.clicked_at),
@@ -370,7 +370,7 @@ defmodule ButtonLog.Buttons do
         is_active: button.is_active,
         current_state: button.current_state,
         state_changed_at: button.state_changed_at,
-        notifications_enabled: button.notifications_enabled,
+        alerts_enabled: button.notifications_enabled,
         auto_stop_enabled: button.auto_stop_enabled,
         calendar_sync_enabled: button.calendar_sync_enabled,
         user_id: button.user_id,
@@ -587,7 +587,7 @@ defmodule ButtonLog.Buttons do
   """
   def create_button_for_friend(attrs, friend_id, creator_id, message \\ nil) do
     alias ButtonLog.Social
-    alias ButtonLog.Notifications
+    alias ButtonLog.Alerts
 
     if Social.are_friends?(creator_id, friend_id) do
       # Create the button owned by the friend
@@ -599,8 +599,8 @@ defmodule ButtonLog.Buttons do
         {:ok, button} ->
           # Send notification to the friend about their new button
           creator = ButtonLog.Accounts.get_user!(creator_id)
-          Notifications.create_notification(%{
-            notification_type: "gift_button_received",
+          Alerts.create_alert(%{
+            alert_type: "gift_button_received",
             title: "New Button Gift!",
             message: "#{creator.display_name || creator.username} created a button for you: #{button.name}",
             metadata: %{
@@ -631,7 +631,7 @@ defmodule ButtonLog.Buttons do
   """
   def notify_gift_creator_of_click(button, action) do
     if button.created_by_friend_id do
-      alias ButtonLog.Notifications
+      alias ButtonLog.Alerts
 
       owner = ButtonLog.Accounts.get_user!(button.user_id)
       action_past = case action do
@@ -642,8 +642,8 @@ defmodule ButtonLog.Buttons do
         _ -> "clicked"
       end
 
-      Notifications.create_notification(%{
-        notification_type: "gift_button_clicked",
+      Alerts.create_alert(%{
+        alert_type: "gift_button_clicked",
         title: "#{button.name} was #{action_past}!",
         message: "#{owner.display_name || owner.username} #{action_past} the '#{button.name}' button you created for them",
         metadata: %{
@@ -662,12 +662,12 @@ defmodule ButtonLog.Buttons do
   """
   def notify_gift_creator_of_deletion(button) do
     if button.created_by_friend_id do
-      alias ButtonLog.Notifications
+      alias ButtonLog.Alerts
 
       owner = ButtonLog.Accounts.get_user!(button.user_id)
 
-      Notifications.create_notification(%{
-        notification_type: "gift_button_deleted",
+      Alerts.create_alert(%{
+        alert_type: "gift_button_deleted",
         title: "Button Removed",
         message: "#{owner.display_name || owner.username} deleted the '#{button.name}' button you created for them",
         metadata: %{
@@ -679,10 +679,10 @@ defmodule ButtonLog.Buttons do
 
   # Sends a notification to the user when they create a button.
   defp notify_button_created(button, user_id) do
-    alias ButtonLog.Notifications
+    alias ButtonLog.Alerts
 
-    Notifications.create_notification(%{
-      notification_type: "button_created",
+    Alerts.create_alert(%{
+      alert_type: "button_created",
       title: "Button Created!",
       message: "Your button '#{button.name}' has been created successfully",
       metadata: %{
@@ -694,12 +694,12 @@ defmodule ButtonLog.Buttons do
 
   # Sends a notification to the creator when they create a gift button for a friend.
   defp notify_gift_button_sent(button, creator_id, friend_id) do
-    alias ButtonLog.Notifications
+    alias ButtonLog.Alerts
 
     friend = ButtonLog.Accounts.get_user!(friend_id)
 
-    Notifications.create_notification(%{
-      notification_type: "gift_button_sent",
+    Alerts.create_alert(%{
+      alert_type: "gift_button_sent",
       title: "Gift Button Sent!",
       message: "You created '#{button.name}' for #{friend.display_name || friend.username}",
       metadata: %{
@@ -712,10 +712,10 @@ defmodule ButtonLog.Buttons do
 
   # Sends a notification to the user when they complete a one-time button.
   defp notify_one_time_button_completed(button, user_id) do
-    alias ButtonLog.Notifications
+    alias ButtonLog.Alerts
 
-    Notifications.create_notification(%{
-      notification_type: "one_time_button_completed",
+    Alerts.create_alert(%{
+      alert_type: "one_time_button_completed",
       title: "Task Completed!",
       message: "'#{button.name}' has been completed and archived",
       metadata: %{
@@ -886,12 +886,12 @@ defmodule ButtonLog.Buttons do
   end
 
   defp notify_owner_of_collaborator_click(button, clicker_id, _click) do
-    alias ButtonLog.Notifications
+    alias ButtonLog.Alerts
 
     clicker = ButtonLog.Accounts.get_user!(clicker_id)
 
-    Notifications.create_notification(%{
-      notification_type: "shared_button_clicked",
+    Alerts.create_alert(%{
+      alert_type: "shared_button_clicked",
       title: "#{button.name} was clicked!",
       message: "#{clicker.display_name || clicker.username} clicked your shared button '#{button.name}'",
       metadata: %{
@@ -1120,12 +1120,12 @@ defmodule ButtonLog.Buttons do
   end
 
   defp notify_collaborator_added(button, owner_id, collaborator_id) do
-    alias ButtonLog.Notifications
+    alias ButtonLog.Alerts
 
     owner = ButtonLog.Accounts.get_user!(owner_id)
 
-    Notifications.create_notification(%{
-      notification_type: "button_shared_with_you",
+    Alerts.create_alert(%{
+      alert_type: "button_shared_with_you",
       title: "Button Shared!",
       message: "#{owner.display_name || owner.username} shared '#{button.name}' with you",
       metadata: %{
@@ -1189,7 +1189,7 @@ defmodule ButtonLog.Buttons do
           (b.sharing_mode == "friends" and b.user_id in ^friend_ids)
         ),
         group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active,
-                   b.current_state, b.state_changed_at, b.notifications_enabled,
+                   b.current_state, b.state_changed_at, b.alerts_enabled,
                    b.auto_stop_enabled, b.auto_stop_minutes, b.scheduled_stop_at,
                    b.calendar_sync_enabled, b.user_id,
                    b.inserted_at, b.updated_at, b.sharing_mode, owner.id,
@@ -1205,7 +1205,7 @@ defmodule ButtonLog.Buttons do
           is_active: b.is_active,
           current_state: b.current_state,
           state_changed_at: b.state_changed_at,
-          notifications_enabled: b.notifications_enabled,
+          alerts_enabled: b.alerts_enabled,
           auto_stop_enabled: b.auto_stop_enabled,
           auto_stop_minutes: b.auto_stop_minutes,
           scheduled_stop_at: b.scheduled_stop_at,
@@ -1293,13 +1293,13 @@ defmodule ButtonLog.Buttons do
   end
 
   defp notify_auto_stop(button) do
-    alias ButtonLog.Notifications
+    alias ButtonLog.Alerts
 
     # Calculate how long the button was active
     duration_text = format_auto_stop_duration(button.auto_stop_minutes)
 
-    Notifications.create_notification(%{
-      notification_type: "button_auto_stopped",
+    Alerts.create_alert(%{
+      alert_type: "button_auto_stopped",
       title: "#{button.name} auto-stopped",
       message: "Your button '#{button.name}' was automatically stopped after #{duration_text}",
       metadata: %{

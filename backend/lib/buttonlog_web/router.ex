@@ -105,10 +105,26 @@ defmodule ButtonLogWeb.Router do
     get "/friends/:friend_id/buttons", API.SocialController, :friend_buttons
     get "/friends/:friend_id/activity", API.SocialController, :friend_activity
 
-    # Notification endpoints
+    # Alert endpoints (in-app friend alerts - formerly "notifications")
+    get "/alerts", API.AlertController, :index
+    get "/alerts/unread", API.AlertController, :unread
+    get "/alerts/unread/count", API.AlertController, :unread_count
+    put "/alerts/:id/read", API.AlertController, :mark_read
+    put "/alerts/read-all", API.AlertController, :mark_all_read
+    get "/alerts/from/:friend_id", API.AlertController, :from_friend
+
+    # Webhook notification endpoints (external integrations)
+    get "/notifications/settings", API.WebhookNotificationController, :show_settings
+    put "/notifications/settings", API.WebhookNotificationController, :update_settings
+    get "/notifications/deliveries", API.WebhookNotificationController, :list_deliveries
+    post "/notifications/deliveries/:id/retry", API.WebhookNotificationController, :retry_delivery
+    post "/notifications/test", API.WebhookNotificationController, :test_webhook
+    get "/buttons/:id/notifications", API.WebhookNotificationController, :show_button_settings
+    put "/buttons/:id/notifications", API.WebhookNotificationController, :update_button_settings
+
+    # Legacy notification endpoints (deprecated, use /alerts instead)
     get "/notifications", API.NotificationController, :index
     put "/notifications/:id/read", API.NotificationController, :mark_read
-    delete "/notifications/:id", API.ButtonController, :delete
 
     # Device/Push notification endpoints
     post "/devices/register", API.MobileController, :register_device
