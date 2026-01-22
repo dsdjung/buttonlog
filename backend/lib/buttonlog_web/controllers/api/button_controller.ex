@@ -852,6 +852,284 @@ defmodule ButtonLogWeb.API.ButtonController do
   defp format_datetime(%DateTime{} = datetime) do
     DateTime.to_iso8601(datetime)
   end
+
+  # =====================
+  # Alert Preferences
+  # =====================
+
+  @doc """
+  Gets alert preferences for a button - which friends should receive alerts.
+  GET /api/buttons/:id/alerts
+  """
+  def alert_preferences(conn, %{"id" => button_id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.get_button(button_id, user.id) do
+      {:ok, button} ->
+        if button.user_id == user.id do
+          # Get all friends
+          friends = Social.get_user_friends(user.id)
+
+          # Get current alert preferences for this button
+          preferences = ButtonLog.Alerts.get_button_alert_preferences(button_id, user.id)
+          preferences_map = Map.new(preferences, fn p -> {p.friend_id, p} end)
+
+          # Build list with friend info and alert enabled status
+          alert_settings = Enum.map(friends, fn friend ->
+            pref = Map.get(preferences_map, friend.id)
+            %{
+              friend_id: friend.id,
+              friend_username: friend.username,
+              friend_display_name: friend.display_name,
+              enabled: if(pref, do: pref.enabled, else: false),
+              alert_type: if(pref, do: pref.alert_type, else: "click")
+            }
+          end)
+
+          json(conn, %{
+            success: true,
+            data: alert_settings,
+            meta: %{
+              timestamp: DateTime.utc_now(),
+              request_id: generate_request_id()
+            }
+          })
+        else
+          conn
+          |> put_status(:forbidden)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "FORBIDDEN",
+              message: "Only the button owner can manage alert preferences"
+            }
+          })
+        end
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FOUND",
+            message: "Button not found"
+          }
+        })
+    end
+  end
+
+  @doc """
+  Toggles alert preference for a specific friend on a button.
+  POST /api/buttons/:id/alerts/:friend_id/toggle
+  """
+  def toggle_alert_preference(conn, %{"id" => button_id, "friend_id" => friend_id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.get_button(button_id, user.id) do
+      {:ok, button} ->
+        if button.user_id == user.id do
+          case ButtonLog.Alerts.toggle_button_friend_alert(button_id, user.id, friend_id) do
+            {:ok, preference} ->
+              json(conn, %{
+                success: true,
+                data: %{
+                  friend_id: friend_id,
+                  enabled: preference.enabled,
+                  alert_type: preference.alert_type
+                }
+              })
+
+            {:error, reason} ->
+              conn
+              |> put_status(:unprocessable_entity)
+              |> json(%{
+                success: false,
+                error: %{
+                  code: "UPDATE_FAILED",
+                  message: "Failed to update alert preference: #{inspect(reason)}"
+                }
+              })
+          end
+        else
+          conn
+          |> put_status(:forbidden)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "FORBIDDEN",
+              message: "Only the button owner can manage alert preferences"
+            }
+          })
+        end
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FOUND",
+            message: "Button not found"
+          }
+        })
+    end
+  end
+
+  @doc """
+  Sets alert preference for a specific friend on a button.
+  PUT /api/buttons/:id/alerts/:friend_id
+  """
+  def set_alert_preference(conn, %{"id" => button_id, "friend_id" => friend_id} = params) do
+    user = conn.assigns.current_user
+    enabled = Map.get(params, "enabled", true)
+    alert_type = Map.get(params, "alert_type", "click")
+
+    case Buttons.get_button(button_id, user.id) do
+      {:ok, button} ->
+        if button.user_id == user.id do
+          case ButtonLog.Alerts.set_button_friend_alert(button_id, user.id, friend_id, enabled, alert_type) do
+            {:ok, preference} ->
+              json(conn, %{
+                success: true,
+                data: %{
+                  friend_id: friend_id,
+                  enabled: preference.enabled,
+                  alert_type: preference.alert_type
+                }
+              })
+
+            {:error, reason} ->
+              conn
+              |> put_status(:unprocessable_entity)
+              |> json(%{
+                success: false,
+                error: %{
+                  code: "UPDATE_FAILED",
+                  message: "Failed to update alert preference: #{inspect(reason)}"
+                }
+              })
+          end
+        else
+          conn
+          |> put_status(:forbidden)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "FORBIDDEN",
+              message: "Only the button owner can manage alert preferences"
+            }
+          })
+        end
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FOUND",
+            message: "Button not found"
+          }
+        })
+    end
+  end
+
+  @doc """
+  Enable alerts for all friends on a button.
+  POST /api/buttons/:id/alerts/select-all
+  """
+  def select_all_alerts(conn, %{"id" => button_id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.get_button(button_id, user.id) do
+      {:ok, button} ->
+        if button.user_id == user.id do
+          friends = Social.get_user_friends(user.id)
+
+          Enum.each(friends, fn friend ->
+            ButtonLog.Alerts.set_button_friend_alert(button_id, user.id, friend.id, true)
+          end)
+
+          json(conn, %{
+            success: true,
+            data: %{
+              message: "All friends selected for alerts",
+              count: length(friends)
+            }
+          })
+        else
+          conn
+          |> put_status(:forbidden)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "FORBIDDEN",
+              message: "Only the button owner can manage alert preferences"
+            }
+          })
+        end
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FOUND",
+            message: "Button not found"
+          }
+        })
+    end
+  end
+
+  @doc """
+  Disable alerts for all friends on a button.
+  POST /api/buttons/:id/alerts/deselect-all
+  """
+  def deselect_all_alerts(conn, %{"id" => button_id}) do
+    user = conn.assigns.current_user
+
+    case Buttons.get_button(button_id, user.id) do
+      {:ok, button} ->
+        if button.user_id == user.id do
+          friends = Social.get_user_friends(user.id)
+
+          Enum.each(friends, fn friend ->
+            ButtonLog.Alerts.set_button_friend_alert(button_id, user.id, friend.id, false)
+          end)
+
+          json(conn, %{
+            success: true,
+            data: %{
+              message: "All friends deselected for alerts",
+              count: length(friends)
+            }
+          })
+        else
+          conn
+          |> put_status(:forbidden)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "FORBIDDEN",
+              message: "Only the button owner can manage alert preferences"
+            }
+          })
+        end
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FOUND",
+            message: "Button not found"
+          }
+        })
+    end
+  end
 end
 
 

@@ -7,6 +7,7 @@ struct ButtonsView: View {
     @State private var selectedButton: Button?
     @State private var historyButton: Button?
     @State private var sharingButton: Button?
+    @State private var alertSettingsButton: Button?
     
     var filteredButtons: [Button] {
         if searchText.isEmpty {
@@ -63,6 +64,9 @@ struct ButtonsView: View {
                                 },
                                 onSharing: {
                                     sharingButton = button
+                                },
+                                onAlertSettings: {
+                                    alertSettingsButton = button
                                 }
                             )
                         }
@@ -96,6 +100,9 @@ struct ButtonsView: View {
         .sheet(item: $sharingButton) { button in
             ButtonSharingView(button: button)
         }
+        .sheet(item: $alertSettingsButton) { button in
+            ButtonAlertSettingsView(button: button)
+        }
     }
 }
 
@@ -105,6 +112,7 @@ struct ButtonCard: View {
     let onEdit: () -> Void
     let onHistory: () -> Void
     var onSharing: (() -> Void)? = nil
+    var onAlertSettings: (() -> Void)? = nil
 
     @State private var isPressed = false
 
@@ -168,6 +176,12 @@ struct ButtonCard: View {
                         if let onSharing = onSharing {
                             SwiftUI.Button(action: onSharing) {
                                 Label("Sharing", systemImage: "person.2")
+                            }
+                        }
+
+                        if let onAlertSettings = onAlertSettings {
+                            SwiftUI.Button(action: onAlertSettings) {
+                                Label("Alert Settings", systemImage: "bell")
                             }
                         }
 

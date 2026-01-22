@@ -413,6 +413,50 @@ class APIService {
         )
     }
 
+    // MARK: - Button Alert Preferences
+
+    /// Get alert preferences for a button (which friends receive alerts)
+    func getButtonAlertPreferences(buttonId: String) async throws -> [ButtonAlertPreference] {
+        return try await makeRequest(endpoint: "/buttons/\(buttonId)/alerts")
+    }
+
+    /// Toggle alert preference for a specific friend on a button
+    func toggleButtonAlertPreference(buttonId: String, friendId: String) async throws -> ButtonAlertPreferenceResponse {
+        return try await makeRequest(
+            endpoint: "/buttons/\(buttonId)/alerts/\(friendId)/toggle",
+            method: .POST
+        )
+    }
+
+    /// Set alert preference for a specific friend on a button
+    func setButtonAlertPreference(buttonId: String, friendId: String, enabled: Bool, alertType: String = "click") async throws -> ButtonAlertPreferenceResponse {
+        let body: [String: Any] = [
+            "enabled": enabled,
+            "alert_type": alertType
+        ]
+        return try await makeRequest(
+            endpoint: "/buttons/\(buttonId)/alerts/\(friendId)",
+            method: .PUT,
+            body: body
+        )
+    }
+
+    /// Enable alerts for all friends on a button
+    func selectAllButtonAlerts(buttonId: String) async throws {
+        try await makeVoidRequest(
+            endpoint: "/buttons/\(buttonId)/alerts/select-all",
+            method: .POST
+        )
+    }
+
+    /// Disable alerts for all friends on a button
+    func deselectAllButtonAlerts(buttonId: String) async throws {
+        try await makeVoidRequest(
+            endpoint: "/buttons/\(buttonId)/alerts/deselect-all",
+            method: .POST
+        )
+    }
+
     // MARK: - Friends & Social
     
     func getFriends() async throws -> [Friend] {

@@ -387,6 +387,42 @@ struct ButtonSharingSetting: Identifiable, Codable, Equatable {
     }
 }
 
+// Button alert preference for a specific friend
+struct ButtonAlertPreference: Identifiable, Codable, Equatable {
+    let friendId: String
+    let friendUsername: String
+    let friendDisplayName: String?
+    var enabled: Bool
+    var alertType: String
+
+    var id: String { friendId }
+
+    var displayName: String {
+        friendDisplayName ?? friendUsername
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case friendId = "friend_id"
+        case friendUsername = "friend_username"
+        case friendDisplayName = "friend_display_name"
+        case enabled
+        case alertType = "alert_type"
+    }
+}
+
+// Response for toggling/setting alert preference
+struct ButtonAlertPreferenceResponse: Codable {
+    let friendId: String
+    let enabled: Bool
+    let alertType: String
+
+    enum CodingKeys: String, CodingKey {
+        case friendId = "friend_id"
+        case enabled
+        case alertType = "alert_type"
+    }
+}
+
 // Button click data
 struct ButtonClick: Identifiable, Codable {
     let id: String

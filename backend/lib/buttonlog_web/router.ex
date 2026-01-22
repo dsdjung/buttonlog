@@ -95,6 +95,13 @@ defmodule ButtonLogWeb.Router do
     delete "/buttons/:id/collaborators/:user_id", API.ButtonController, :remove_collaborator
     post "/buttons/join/:token", API.ButtonController, :join_by_token
 
+    # Button alert preferences endpoints
+    get "/buttons/:id/alerts", API.ButtonController, :alert_preferences
+    post "/buttons/:id/alerts/:friend_id/toggle", API.ButtonController, :toggle_alert_preference
+    put "/buttons/:id/alerts/:friend_id", API.ButtonController, :set_alert_preference
+    post "/buttons/:id/alerts/select-all", API.ButtonController, :select_all_alerts
+    post "/buttons/:id/alerts/deselect-all", API.ButtonController, :deselect_all_alerts
+
     # User endpoints
     get "/users/profile", API.UserController, :profile
     put "/users/profile", API.UserController, :update_profile
