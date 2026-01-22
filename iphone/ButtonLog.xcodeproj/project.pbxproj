@@ -32,6 +32,10 @@
 		CD11234567890037 /* FriendButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890036 /* FriendButtonsView.swift */; };
 		CD11234567890039 /* FriendActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890038 /* FriendActivityView.swift */; };
 		CD11234567890041 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890040 /* PushNotificationManager.swift */; };
+		CD11234567890043 /* Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890042 /* Support.swift */; };
+		CD11234567890045 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890044 /* SupportView.swift */; };
+		CD11234567890047 /* SupportTicketView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890046 /* SupportTicketView.swift */; };
+		CD11234567890049 /* CreateTicketView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890048 /* CreateTicketView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +65,10 @@
 		CD11234567890036 /* FriendButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendButtonsView.swift; sourceTree = "<group>"; };
 		CD11234567890038 /* FriendActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendActivityView.swift; sourceTree = "<group>"; };
 		CD11234567890040 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
+		CD11234567890042 /* Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Support.swift; sourceTree = "<group>"; };
+		CD11234567890044 /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
+		CD11234567890046 /* SupportTicketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportTicketView.swift; sourceTree = "<group>"; };
+		CD11234567890048 /* CreateTicketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTicketView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +129,7 @@
 				CD11234567890004 /* Subscription.swift */,
 				CD11234567890006 /* Social.swift */,
 				CD11234567890008 /* Notification.swift */,
+				CD11234567890042 /* Support.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -158,6 +167,9 @@
 				CD11234567890030 /* DiaryView.swift */,
 				CD11234567890032 /* AccountView.swift */,
 				CD11234567890034 /* ButtonHistoryView.swift */,
+				CD11234567890044 /* SupportView.swift */,
+				CD11234567890046 /* SupportTicketView.swift */,
+				CD11234567890048 /* CreateTicketView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -255,6 +267,10 @@
 				CD11234567890037 /* FriendButtonsView.swift in Sources */,
 				CD11234567890039 /* FriendActivityView.swift in Sources */,
 				CD11234567890041 /* PushNotificationManager.swift in Sources */,
+				CD11234567890043 /* Support.swift in Sources */,
+				CD11234567890045 /* SupportView.swift in Sources */,
+				CD11234567890047 /* SupportTicketView.swift in Sources */,
+				CD11234567890049 /* CreateTicketView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
