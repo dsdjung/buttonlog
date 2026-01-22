@@ -89,14 +89,16 @@ defmodule ButtonLog.PushNotifications do
 
   @doc """
   Sends a button click notification to a friend.
+  The action_past parameter specifies the action verb (started, stopped, clicked).
   """
-  def send_button_click_notification(recipient_id, sender_name, button_name, button_id) do
-    title = "#{sender_name} clicked a button"
-    body = "#{sender_name} just clicked '#{button_name}'"
+  def send_button_click_notification(recipient_id, sender_name, button_name, button_id, action_past \\ "clicked") do
+    title = "#{sender_name} #{action_past} a button"
+    body = "#{sender_name} just #{action_past} '#{button_name}'"
     data = %{
       "type" => "button_click",
       "button_id" => button_id,
-      "action" => "view_button"
+      "action" => "view_button",
+      "action_type" => action_past
     }
 
     send_to_user(recipient_id, title, body, data)

@@ -241,13 +241,18 @@ defmodule ButtonLog.Notifications do
         # Get user details for the button owner
         button_owner = ButtonLog.Accounts.get_user!(button_data.user_id)
 
+        # Determine action verb based on click_data action
+        # Support both atom and string keys for action
+        action = click_data[:action] || click_data["action"] || "click"
+        {_action_verb, action_past} = get_action_verbs(action)
+
         # Send notifications to each recipient
         results = Enum.map(recipients, fn friend ->
           # Create in-app notification
           notification_result = create_notification(%{
             notification_type: "button_click",
-            title: "#{button_data.name} was clicked!",
-            message: "#{button_owner.display_name} just clicked their '#{button_data.name}' button",
+            title: "#{button_data.name} was #{action_past}!",
+            message: "#{button_owner.display_name} just #{action_past} their '#{button_data.name}' button",
             clicked_at: click_data[:clicked_at] || DateTime.utc_now(),
             metadata: click_data
           }, friend.id, user_id, button_id)
@@ -258,7 +263,8 @@ defmodule ButtonLog.Notifications do
               friend.id,
               button_owner.display_name,
               button_data.name,
-              button_id
+              button_id,
+              action_past
             )
           end)
 
@@ -268,11 +274,12 @@ defmodule ButtonLog.Notifications do
             "notification_received",
             %{
               type: "button_click",
-              title: "#{button_data.name} was clicked!",
-              message: "#{button_owner.display_name} just clicked their '#{button_data.name}' button",
+              title: "#{button_data.name} was #{action_past}!",
+              message: "#{button_owner.display_name} just #{action_past} their '#{button_data.name}' button",
               button_id: button_id,
               sender_id: user_id,
-              sender_name: button_owner.display_name
+              sender_name: button_owner.display_name,
+              action: action
             }
           )
 
@@ -286,6 +293,19 @@ defmodule ButtonLog.Notifications do
         Logger.warning("Button not found for notification: #{button_id}")
         {:error, :button_not_found}
     end
+  end
+
+  # Helper function to get appropriate action verbs for notification messages
+  defp get_action_verbs(action) when action in ["start", :start] do
+    {"start", "started"}
+  end
+
+  defp get_action_verbs(action) when action in ["stop", :stop] do
+    {"stop", "stopped"}
+  end
+
+  defp get_action_verbs(_action) do
+    {"click", "clicked"}
   end
 
   @doc """
