@@ -23,6 +23,8 @@ data class User(
     val isActive: Boolean?,
     @SerializedName("email_verified")
     val emailVerified: Boolean?,
+    @SerializedName("onboarding_completed")
+    val onboardingCompleted: Boolean = false,
     @SerializedName("created_at")
     val createdAt: String?,
     @SerializedName("updated_at")

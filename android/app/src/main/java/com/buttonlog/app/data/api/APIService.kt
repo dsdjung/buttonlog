@@ -71,13 +71,16 @@ interface APIService {
     suspend fun createButtonForFriend(@Body request: CreateGiftButtonRequest): ButtonResponse
 
     // MARK: - User Endpoints
-    
+
     @GET("users/profile")
     suspend fun getUserProfile(): User
-    
+
     @PUT("users/profile")
     suspend fun updateUserProfile(@Body user: User): User
-    
+
+    @POST("users/complete-onboarding")
+    suspend fun completeOnboarding(): GenericResponse
+
     // MARK: - Social Endpoints
 
     @GET("friends")

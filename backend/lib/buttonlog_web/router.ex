@@ -98,6 +98,7 @@ defmodule ButtonLogWeb.Router do
     # User endpoints
     get "/users/profile", API.UserController, :profile
     put "/users/profile", API.UserController, :update_profile
+    post "/users/complete-onboarding", API.UserController, :complete_onboarding
     get "/users/:id/public-profile", API.UserController, :public_profile
 
     # Social endpoints

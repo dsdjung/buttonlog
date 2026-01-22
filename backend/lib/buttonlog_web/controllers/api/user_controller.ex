@@ -81,6 +81,32 @@ defmodule ButtonLogWeb.API.UserController do
     end
   end
 
+  def complete_onboarding(conn, _params) do
+    user = conn.assigns.current_user
+
+    case Accounts.update_user(user, %{onboarding_completed: true}) do
+      {:ok, _updated_user} ->
+        conn
+        |> json(%{
+          success: true,
+          data: %{
+            onboarding_completed: true
+          }
+        })
+
+      {:error, _changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "UPDATE_FAILED",
+            message: "Failed to update onboarding status"
+          }
+        })
+    end
+  end
+
   defp format_changeset_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
       Enum.reduce(opts, msg, fn {key, value}, acc ->

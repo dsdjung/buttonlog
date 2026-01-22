@@ -12,6 +12,7 @@ struct User: Identifiable, Codable {
     let subscriptionTier: SubscriptionTier
     let isActive: Bool
     let emailVerified: Bool
+    let onboardingCompleted: Bool
     let createdAt: Date
     let updatedAt: Date
     
@@ -32,6 +33,7 @@ struct User: Identifiable, Codable {
         case subscriptionTier = "subscription_tier"
         case isActive = "is_active"
         case emailVerified = "email_verified"
+        case onboardingCompleted = "onboarding_completed"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }

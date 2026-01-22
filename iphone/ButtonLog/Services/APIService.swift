@@ -270,7 +270,11 @@ class APIService {
     func getPublicProfile(userId: String) async throws -> PublicUser {
         return try await makeRequest(endpoint: "/users/\(userId)/public-profile")
     }
-    
+
+    func completeOnboarding() async throws {
+        try await makeVoidRequest(endpoint: "/users/complete-onboarding", method: .POST)
+    }
+
     // MARK: - Buttons
     
     func getButtons() async throws -> [Button] {

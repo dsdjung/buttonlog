@@ -20,10 +20,18 @@ class AuthRepository @Inject constructor(
         private const val KEY_AUTH_TOKEN = "auth_token"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_USER_EMAIL = "user_email"
+        private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
     }
 
     private val _isLoggedIn = MutableStateFlow(hasToken())
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    private val _onboardingCompleted = MutableStateFlow(getStoredOnboardingStatus())
+    val onboardingCompleted: StateFlow<Boolean> = _onboardingCompleted.asStateFlow()
+
+    private fun getStoredOnboardingStatus(): Boolean {
+        return sharedPreferences.getBoolean(KEY_ONBOARDING_COMPLETED, false)
+    }
 
     fun hasToken(): Boolean {
         return sharedPreferences.getString(KEY_AUTH_TOKEN, null) != null
@@ -39,6 +47,7 @@ class AuthRepository @Inject constructor(
             if (response.success && response.data != null) {
                 saveAuthData(response.data)
                 _isLoggedIn.value = true
+                _onboardingCompleted.value = response.data.user.onboardingCompleted
                 Result.success(response.data)
             } else {
                 val errorMessage = response.error?.message ?: "Login failed"
@@ -69,6 +78,7 @@ class AuthRepository @Inject constructor(
             if (response.success && response.data != null) {
                 saveAuthData(response.data)
                 _isLoggedIn.value = true
+                _onboardingCompleted.value = response.data.user.onboardingCompleted
                 Result.success(response.data)
             } else {
                 val errorMessage = response.error?.message ?: "Registration failed"
@@ -79,13 +89,42 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    suspend fun completeOnboarding(): Result<Unit> {
+        return try {
+            val response = apiService.completeOnboarding()
+            if (response.success) {
+                sharedPreferences.edit()
+                    .putBoolean(KEY_ONBOARDING_COMPLETED, true)
+                    .apply()
+                _onboardingCompleted.value = true
+                Result.success(Unit)
+            } else {
+                // Still mark as completed locally to not block the user
+                sharedPreferences.edit()
+                    .putBoolean(KEY_ONBOARDING_COMPLETED, true)
+                    .apply()
+                _onboardingCompleted.value = true
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            // Still mark as completed locally to not block the user
+            sharedPreferences.edit()
+                .putBoolean(KEY_ONBOARDING_COMPLETED, true)
+                .apply()
+            _onboardingCompleted.value = true
+            Result.success(Unit)
+        }
+    }
+
     fun logout() {
         sharedPreferences.edit()
             .remove(KEY_AUTH_TOKEN)
             .remove(KEY_USER_ID)
             .remove(KEY_USER_EMAIL)
+            .remove(KEY_ONBOARDING_COMPLETED)
             .apply()
         _isLoggedIn.value = false
+        _onboardingCompleted.value = false
     }
 
     private fun saveAuthData(authUserData: AuthUserData) {
@@ -93,6 +132,7 @@ class AuthRepository @Inject constructor(
             .putString(KEY_AUTH_TOKEN, authUserData.token)
             .putString(KEY_USER_ID, authUserData.user.id)
             .putString(KEY_USER_EMAIL, authUserData.user.email)
+            .putBoolean(KEY_ONBOARDING_COMPLETED, authUserData.user.onboardingCompleted)
             .apply()
     }
 }

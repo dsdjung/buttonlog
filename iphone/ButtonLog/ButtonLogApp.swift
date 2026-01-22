@@ -10,13 +10,18 @@ struct ButtonLogApp: App {
     var body: some Scene {
         WindowGroup {
             if authManager.isAuthenticated {
-                MainTabView()
-                    .environmentObject(appState)
-                    .environmentObject(authManager)
-                    .onAppear {
-                        // Request push notification permission when user is authenticated
-                        PushNotificationManager.shared.requestAuthorization()
-                    }
+                if authManager.onboardingCompleted {
+                    MainTabView()
+                        .environmentObject(appState)
+                        .environmentObject(authManager)
+                        .onAppear {
+                            // Request push notification permission when user is authenticated
+                            PushNotificationManager.shared.requestAuthorization()
+                        }
+                } else {
+                    OnboardingView()
+                        .environmentObject(authManager)
+                }
             } else {
                 AuthenticationView()
                     .environmentObject(authManager)

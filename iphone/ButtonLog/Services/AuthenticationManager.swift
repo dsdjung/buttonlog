@@ -8,6 +8,7 @@ class AuthenticationManager: NSObject, ObservableObject {
     @Published var currentUser: User?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var onboardingCompleted = false
 
     private let apiService = APIService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -42,6 +43,7 @@ class AuthenticationManager: NSObject, ObservableObject {
             // Update authentication state
             isAuthenticated = true
             currentUser = response.user
+            onboardingCompleted = response.user.onboardingCompleted
 
         } catch {
             errorMessage = error.localizedDescription
@@ -72,6 +74,7 @@ class AuthenticationManager: NSObject, ObservableObject {
             // Update authentication state
             isAuthenticated = true
             currentUser = response.user
+            onboardingCompleted = response.user.onboardingCompleted
 
         } catch {
             errorMessage = error.localizedDescription
@@ -162,6 +165,7 @@ class AuthenticationManager: NSObject, ObservableObject {
                 KeychainManager.shared.saveToken(response.token)
                 isAuthenticated = true
                 currentUser = response.user
+                onboardingCompleted = response.user.onboardingCompleted
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -189,6 +193,7 @@ class AuthenticationManager: NSObject, ObservableObject {
         // Clear user data
         currentUser = nil
         isAuthenticated = false
+        onboardingCompleted = false
 
         // Optionally notify server of logout
         try? await apiService.logout()
@@ -198,6 +203,7 @@ class AuthenticationManager: NSObject, ObservableObject {
         do {
             let user = try await apiService.getCurrentUser()
             currentUser = user
+            onboardingCompleted = user.onboardingCompleted
         } catch let error as APIError {
             // Only logout on authentication errors (401), not network issues
             if case .serverError(let message) = error,
@@ -237,6 +243,17 @@ class AuthenticationManager: NSObject, ObservableObject {
             KeychainManager.shared.saveToken(response.token)
         } catch {
             await logout()
+        }
+    }
+
+    func completeOnboarding() async {
+        do {
+            try await apiService.completeOnboarding()
+            onboardingCompleted = true
+        } catch {
+            print("Failed to complete onboarding: \(error)")
+            // Still mark as completed locally to not block the user
+            onboardingCompleted = true
         }
     }
 }

@@ -41,6 +41,7 @@ import com.buttonlog.app.ui.screens.CreateTicketScreen
 import com.buttonlog.app.ui.screens.TeamsScreen
 import com.buttonlog.app.ui.screens.OrganizationsScreen
 import com.buttonlog.app.ui.screens.SubscriptionScreen
+import com.buttonlog.app.ui.screens.OnboardingScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 import com.buttonlog.app.ui.viewmodels.SupportViewModel
@@ -59,9 +60,16 @@ class MainActivity : ComponentActivity() {
             ButtonLogTheme {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+                val onboardingCompleted by authViewModel.onboardingCompleted.collectAsState()
 
                 if (isLoggedIn) {
-                    MainScreen(onLogout = { authViewModel.logout() })
+                    if (onboardingCompleted) {
+                        MainScreen(onLogout = { authViewModel.logout() })
+                    } else {
+                        OnboardingScreen(
+                            onComplete = { authViewModel.completeOnboarding() }
+                        )
+                    }
                 } else {
                     LoginScreen(viewModel = authViewModel)
                 }

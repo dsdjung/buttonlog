@@ -16,6 +16,7 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
 
     val isLoggedIn: StateFlow<Boolean> = authRepository.isLoggedIn
+    val onboardingCompleted: StateFlow<Boolean> = authRepository.onboardingCompleted
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -64,6 +65,12 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         authRepository.logout()
+    }
+
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            authRepository.completeOnboarding()
+        }
     }
 
     fun clearError() {

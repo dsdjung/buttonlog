@@ -150,6 +150,7 @@ defmodule ButtonLogWeb.API.AuthController do
       subscription_tier: user.subscription_tier || "free",
       is_active: true,
       email_verified: user.email_verified || false,
+      onboarding_completed: user.onboarding_completed || false,
       created_at: format_datetime(user.inserted_at),
       updated_at: format_datetime(user.updated_at)
     }
