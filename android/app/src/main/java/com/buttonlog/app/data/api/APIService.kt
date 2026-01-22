@@ -208,8 +208,8 @@ data class ButtonUpdateData(
     val description: String?,
     val icon: String?,
     val color: String?,
-    @SerializedName("notifications_enabled")
-    val notificationsEnabled: Boolean?,
+    @SerializedName("alerts_enabled")
+    val alertsEnabled: Boolean?,
     @SerializedName("auto_stop_enabled")
     val autoStopEnabled: Boolean?,
     @SerializedName("calendar_sync_enabled")

@@ -11,7 +11,7 @@ struct Button: Identifiable, Codable, Equatable {
     let isActive: Bool
     let currentState: ButtonState
     let stateChangedAt: Date?
-    let notificationsEnabled: Bool
+    let alertsEnabled: Bool
     let autoStopEnabled: Bool
     var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var scheduledStopAt: Date? = nil  // When the button will auto-stop
@@ -107,7 +107,7 @@ struct Button: Identifiable, Codable, Equatable {
         case isActive = "is_active"
         case currentState = "current_state"
         case stateChangedAt = "state_changed_at"
-        case notificationsEnabled = "notifications_enabled"
+        case alertsEnabled = "alerts_enabled"
         case autoStopEnabled = "auto_stop_enabled"
         case autoStopMinutes = "auto_stop_minutes"
         case scheduledStopAt = "scheduled_stop_at"
@@ -270,7 +270,7 @@ struct ButtonFormData {
     var type: ButtonType = .instant
     var icon: String = "star.fill"
     var color: String = "#007AFF"
-    var notificationsEnabled: Bool = true
+    var alertsEnabled: Bool = true
     var autoStopEnabled: Bool = false
     var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var calendarSyncEnabled: Bool = false
@@ -296,7 +296,7 @@ struct ButtonFormData {
             "type": type.rawValue,
             "icon": icon,
             "color": color,
-            "notifications_enabled": notificationsEnabled,
+            "alerts_enabled": alertsEnabled,
             "auto_stop_enabled": autoStopEnabled,
             "calendar_sync_enabled": calendarSyncEnabled
         ].compactMapValues { $0 }
@@ -321,7 +321,7 @@ struct FriendButton: Identifiable, Codable, Equatable {
     let isActive: Bool
     let currentState: ButtonState
     let stateChangedAt: Date?
-    let notificationsEnabled: Bool
+    let alertsEnabled: Bool
     let autoStopEnabled: Bool
     let calendarSyncEnabled: Bool
     let userId: String
@@ -351,7 +351,7 @@ struct FriendButton: Identifiable, Codable, Equatable {
         case isActive = "is_active"
         case currentState = "current_state"
         case stateChangedAt = "state_changed_at"
-        case notificationsEnabled = "notifications_enabled"
+        case alertsEnabled = "alerts_enabled"
         case autoStopEnabled = "auto_stop_enabled"
         case calendarSyncEnabled = "calendar_sync_enabled"
         case userId = "user_id"

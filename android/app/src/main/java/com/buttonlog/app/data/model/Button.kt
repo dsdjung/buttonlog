@@ -17,8 +17,8 @@ data class Button(
     val currentState: ButtonState,
     @SerializedName("state_changed_at")
     val stateChangedAt: Date?,
-    @SerializedName("notifications_enabled")
-    val notificationsEnabled: Boolean,
+    @SerializedName("alerts_enabled")
+    val alertsEnabled: Boolean,
     @SerializedName("auto_stop_enabled")
     val autoStopEnabled: Boolean,
     @SerializedName("auto_stop_minutes")
@@ -204,7 +204,7 @@ data class ButtonFormData(
     var type: ButtonType = ButtonType.INSTANT,
     var icon: String = "star",
     var color: String = "#007AFF",
-    var notificationsEnabled: Boolean = true,
+    var alertsEnabled: Boolean = true,
     var autoStopEnabled: Boolean = false,
     var autoStopMinutes: Int? = null,  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var calendarSyncEnabled: Boolean = false
@@ -220,7 +220,7 @@ data class ButtonFormData(
             "type" to type.name.lowercase().replace("_", "-"),
             "icon" to icon,
             "color" to color,
-            "notifications_enabled" to notificationsEnabled,
+            "alerts_enabled" to alertsEnabled,
             "auto_stop_enabled" to autoStopEnabled,
             "calendar_sync_enabled" to calendarSyncEnabled
         )
@@ -269,8 +269,8 @@ data class FriendButton(
     val currentState: ButtonState,
     @SerializedName("state_changed_at")
     val stateChangedAt: String?,
-    @SerializedName("notifications_enabled")
-    val notificationsEnabled: Boolean,
+    @SerializedName("alerts_enabled")
+    val alertsEnabled: Boolean,
     @SerializedName("auto_stop_enabled")
     val autoStopEnabled: Boolean,
     @SerializedName("calendar_sync_enabled")

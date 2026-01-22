@@ -39,7 +39,7 @@ fun EditButtonScreen(
     var description by remember { mutableStateOf(button.description ?: "") }
     var selectedIcon by remember { mutableStateOf(button.icon) }
     var selectedColor by remember { mutableStateOf(button.color) }
-    var notificationsEnabled by remember { mutableStateOf(button.notificationsEnabled) }
+    var alertsEnabled by remember { mutableStateOf(button.alertsEnabled) }
     var localSharingSettings by remember(sharingSettings) { mutableStateOf(sharingSettings) }
 
     val scrollState = rememberScrollState()
@@ -61,7 +61,7 @@ fun EditButtonScreen(
                                 description = description.ifEmpty { null },
                                 icon = selectedIcon,
                                 color = selectedColor,
-                                notificationsEnabled = notificationsEnabled
+                                alertsEnabled = alertsEnabled
                             )
                             onSave(updatedButton, localSharingSettings)
                         },
@@ -134,16 +134,16 @@ fun EditButtonScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Notifications")
+                        Text("Alerts")
                         Text(
-                            text = "Get notified when clicked",
+                            text = "Send alerts when clicked",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Switch(
-                        checked = notificationsEnabled,
-                        onCheckedChange = { notificationsEnabled = it }
+                        checked = alertsEnabled,
+                        onCheckedChange = { alertsEnabled = it }
                     )
                 }
             }
@@ -381,7 +381,7 @@ fun CreateGiftButtonScreen(
                                 type = selectedType,
                                 icon = selectedIcon,
                                 color = selectedColor,
-                                notificationsEnabled = true,
+                                alertsEnabled = true,
                                 autoStopEnabled = false,
                                 calendarSyncEnabled = false
                             )

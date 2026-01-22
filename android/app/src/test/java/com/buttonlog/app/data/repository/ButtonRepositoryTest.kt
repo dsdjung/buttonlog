@@ -35,7 +35,7 @@ class ButtonRepositoryTest {
         clickCount = 5,
         currentState = ButtonState.IDLE,
         isActive = false,
-        notificationsEnabled = true,
+        alertsEnabled = true,
         autoStopEnabled = false,
         calendarSyncEnabled = false,
         createdAt = "2024-01-01T00:00:00Z",

@@ -87,7 +87,7 @@ struct CreateButtonView: View {
                 }
                 
                 Section(header: Text("Settings")) {
-                    Toggle("Enable Notifications", isOn: $formData.notificationsEnabled)
+                    Toggle("Enable Alerts", isOn: $formData.alertsEnabled)
                     
                     if formData.type == .toggle {
                         Toggle("Auto-stop", isOn: $formData.autoStopEnabled)
@@ -278,7 +278,7 @@ struct EditButtonView: View {
                 }
 
                 Section(header: Text("Settings")) {
-                    Toggle("Enable Notifications", isOn: $formData.notificationsEnabled)
+                    Toggle("Enable Alerts", isOn: $formData.alertsEnabled)
 
                     if formData.type == .toggle {
                         Toggle("Auto-stop", isOn: $formData.autoStopEnabled)
@@ -359,7 +359,7 @@ struct EditButtonView: View {
         formData.type = button.type
         formData.icon = button.icon
         formData.color = button.color
-        formData.notificationsEnabled = button.notificationsEnabled
+        formData.alertsEnabled = button.alertsEnabled
         formData.autoStopEnabled = button.autoStopEnabled
         formData.calendarSyncEnabled = button.calendarSyncEnabled
     }

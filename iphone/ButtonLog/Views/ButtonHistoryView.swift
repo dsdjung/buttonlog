@@ -220,7 +220,7 @@ struct ClickRow: View {
         isActive: true,
         currentState: .idle,
         stateChangedAt: nil,
-        notificationsEnabled: true,
+        alertsEnabled: true,
         autoStopEnabled: false,
         calendarSyncEnabled: false,
         userId: "user1",

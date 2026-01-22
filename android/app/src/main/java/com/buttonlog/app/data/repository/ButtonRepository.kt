@@ -82,7 +82,7 @@ class ButtonRepository @Inject constructor(
                 description = button.description,
                 icon = button.icon,
                 color = button.color,
-                notificationsEnabled = button.notificationsEnabled,
+                alertsEnabled = button.alertsEnabled,
                 autoStopEnabled = button.autoStopEnabled,
                 calendarSyncEnabled = button.calendarSyncEnabled
             )

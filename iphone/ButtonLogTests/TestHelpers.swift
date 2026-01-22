@@ -16,7 +16,7 @@ enum TestHelpers {
         color: String = "#007AFF",
         clickCount: Int = 0,
         currentState: ButtonState = .idle,
-        notificationsEnabled: Bool = true
+        alertsEnabled: Bool = true
     ) -> Button {
         return Button(
             id: id,
@@ -27,7 +27,7 @@ enum TestHelpers {
             color: color,
             clickCount: clickCount,
             currentState: currentState,
-            notificationsEnabled: notificationsEnabled,
+            alertsEnabled: alertsEnabled,
             autoStopEnabled: false,
             calendarSyncEnabled: false,
             createdAt: Date(),

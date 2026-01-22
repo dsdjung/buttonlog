@@ -115,7 +115,7 @@ final class AppStateTests: XCTestCase {
             color: "#007AFF",
             clickCount: clickCount,
             currentState: .idle,
-            notificationsEnabled: true,
+            alertsEnabled: true,
             autoStopEnabled: false,
             calendarSyncEnabled: false,
             createdAt: Date(),
