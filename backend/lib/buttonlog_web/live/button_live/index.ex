@@ -215,6 +215,9 @@ defmodule ButtonLogWeb.ButtonLive.Index do
           true ->
             "#{name} completed"
         end
+
+      "one-time" ->
+        "#{name} completed and archived"
     end
   end
 

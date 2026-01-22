@@ -48,11 +48,6 @@ defmodule ButtonLogWeb.ButtonLive.Show do
 
     case Buttons.click_button(button.id, user.id) do
       {:ok, click} ->
-        # Refresh button clicks to show the new one
-        {:ok, updated_clicks} = Buttons.list_button_clicks(button.id, user.id, 10)
-        # Reload button to get updated state
-        {:ok, updated_button} = Buttons.get_button(button.id, user.id)
-
         # Send notifications to friends
         ButtonLog.Notifications.send_button_click_notifications(button.id, user.id, %{
           clicked_at: click.clicked_at,
@@ -60,11 +55,24 @@ defmodule ButtonLogWeb.ButtonLive.Show do
           platform: click.platform
         })
 
-        message = generate_click_message(updated_button, click)
-        {:noreply, socket
-         |> assign(:button_clicks, updated_clicks)
-         |> assign(:button, updated_button)
-         |> put_flash(:info, message)}
+        # For one-time buttons, redirect back to buttons list since the button is now archived
+        if button.type == "one-time" do
+          {:noreply,
+           socket
+           |> put_flash(:info, "#{button.name} completed and archived")
+           |> push_navigate(to: ~p"/buttons")}
+        else
+          # Refresh button clicks to show the new one
+          {:ok, updated_clicks} = Buttons.list_button_clicks(button.id, user.id, 10)
+          # Reload button to get updated state
+          {:ok, updated_button} = Buttons.get_button(button.id, user.id)
+
+          message = generate_click_message(updated_button, click)
+          {:noreply, socket
+           |> assign(:button_clicks, updated_clicks)
+           |> assign(:button, updated_button)
+           |> put_flash(:info, message)}
+        end
 
       {:error, %Ecto.Changeset{} = changeset} ->
         errors = Enum.map(changeset.errors, fn {field, {msg, _opts}} -> "#{field} #{msg}" end)
@@ -119,6 +127,9 @@ defmodule ButtonLogWeb.ButtonLive.Show do
           true ->
             "#{name} completed"
         end
+
+      "one-time" ->
+        "#{name} completed and archived"
     end
   end
 
