@@ -58,16 +58,11 @@ struct WelcomePage: View {
         VStack(spacing: 32) {
             Spacer()
 
-            // App icon placeholder
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.1))
-                    .frame(width: 120, height: 120)
-
-                Image(systemName: "hand.tap.fill")
-                    .font(.system(size: 50))
-                    .foregroundColor(.blue)
-            }
+            // App logo
+            Image("Logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 120)
 
             VStack(spacing: 12) {
                 Text("Welcome to ButtonLog")

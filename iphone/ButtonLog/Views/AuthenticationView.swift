@@ -14,9 +14,10 @@ struct AuthenticationView: View {
                 VStack(spacing: BLSpacing.xl) {
                     // Logo and Title
                     VStack(spacing: BLSpacing.lg) {
-                        Image(systemName: "hand.tap.fill")
-                            .font(.system(size: 64))
-                            .foregroundColor(.blPrimary)
+                        Image("Logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 100)
 
                         Text("ButtonLog")
                             .font(BLTypography.displaySmall)
