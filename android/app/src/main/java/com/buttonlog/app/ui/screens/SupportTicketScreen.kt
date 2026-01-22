@@ -18,7 +18,9 @@ import com.buttonlog.app.data.model.SupportTicket
 import com.buttonlog.app.data.model.TicketMessage
 import com.buttonlog.app.ui.viewmodels.SupportViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,7 +213,7 @@ fun TicketHeader(ticket: SupportTicket) {
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = "Created ${formatRelativeTime(ticket.createdAt)} ago",
+            text = "Created ${formatRelativeTime(ticket.createdAt)}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -270,7 +272,7 @@ fun MessageBubble(message: TicketMessage) {
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(message.createdAt),
+                text = formatMessageTime(message.createdAt),
                 style = MaterialTheme.typography.labelSmall,
                 color = textColor.copy(alpha = 0.7f)
             )
@@ -323,5 +325,33 @@ fun MessageInput(
                 )
             }
         }
+    }
+}
+
+fun formatMessageTime(dateString: String): String {
+    return try {
+        val formats = listOf(
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault()),
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()),
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        )
+
+        var date: Date? = null
+        for (format in formats) {
+            format.timeZone = TimeZone.getTimeZone("UTC")
+            try {
+                date = format.parse(dateString)
+                if (date != null) break
+            } catch (e: Exception) {
+                // Try next format
+            }
+        }
+
+        if (date == null) return dateString
+
+        SimpleDateFormat("h:mm a", Locale.getDefault()).format(date)
+    } catch (e: Exception) {
+        dateString
     }
 }

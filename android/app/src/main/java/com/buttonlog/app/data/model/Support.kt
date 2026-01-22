@@ -2,7 +2,6 @@ package com.buttonlog.app.data.model
 
 import androidx.compose.ui.graphics.Color
 import com.google.gson.annotations.SerializedName
-import java.util.*
 
 // MARK: - Support Ticket
 
@@ -17,9 +16,9 @@ data class SupportTicket(
     @SerializedName("assigned_admin")
     val assignedAdmin: SupportAdmin?,
     @SerializedName("created_at")
-    val createdAt: Date,
+    val createdAt: String,
     @SerializedName("updated_at")
-    val updatedAt: Date,
+    val updatedAt: String,
     val messages: List<TicketMessage>?
 )
 
@@ -35,9 +34,9 @@ data class TicketMessage(
     @SerializedName("is_from_support")
     val isFromSupport: Boolean,
     @SerializedName("created_at")
-    val createdAt: Date,
+    val createdAt: String,
     @SerializedName("read_at")
-    val readAt: Date?
+    val readAt: String?
 )
 
 // MARK: - Support Admin
