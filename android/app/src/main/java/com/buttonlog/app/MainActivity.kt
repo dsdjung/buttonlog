@@ -38,6 +38,7 @@ import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 import com.buttonlog.app.ui.theme.ButtonLogTheme
 import com.buttonlog.app.ui.viewmodels.AuthViewModel
+import com.buttonlog.app.ui.viewmodels.NotificationsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -72,8 +73,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var friendForGiftButton by remember { mutableStateOf<Friend?>(null) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
+    val notificationsViewModel: NotificationsViewModel = hiltViewModel()
     val friendsUiState by friendsViewModel.uiState.collectAsState()
     val buttonsUiState by buttonsViewModel.uiState.collectAsState()
+    val notificationsUiState by notificationsViewModel.uiState.collectAsState()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -81,6 +84,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     Scaffold(
         bottomBar = {
             NavigationBar {
+                val pendingFriendRequestsCount = friendsUiState.pendingRequests.size
+                val unreadNotificationsCount = notificationsUiState.unreadCount
+
                 val items = listOf(
                     NavigationItem(
                         route = "home",
@@ -90,7 +96,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     NavigationItem(
                         route = "friends",
                         title = "Friends",
-                        icon = Icons.Default.People
+                        icon = Icons.Default.People,
+                        badgeCount = pendingFriendRequestsCount
                     ),
                     NavigationItem(
                         route = "diary",
@@ -100,7 +107,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     NavigationItem(
                         route = "notifications",
                         title = "Notifications",
-                        icon = Icons.Default.Notifications
+                        icon = Icons.Default.Notifications,
+                        badgeCount = unreadNotificationsCount
                     ),
                     NavigationItem(
                         route = "account",
@@ -108,12 +116,29 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         icon = Icons.Default.Person
                     )
                 )
-                
+
                 items.forEach { item ->
                     val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-                    
+
                     NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.title) },
+                        icon = {
+                            if (item.badgeCount > 0) {
+                                BadgedBox(
+                                    badge = {
+                                        Badge {
+                                            Text(
+                                                text = if (item.badgeCount > 99) "99+" else item.badgeCount.toString(),
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    Icon(item.icon, contentDescription = item.title)
+                                }
+                            } else {
+                                Icon(item.icon, contentDescription = item.title)
+                            }
+                        },
                         label = { Text(item.title) },
                         selected = selected,
                         onClick = {
@@ -293,6 +318,7 @@ fun PlaceholderScreen(title: String) {
 data class NavigationItem(
     val route: String,
     val title: String,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val badgeCount: Int = 0
 )
 

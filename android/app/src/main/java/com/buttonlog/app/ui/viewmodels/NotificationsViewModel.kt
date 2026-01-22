@@ -16,7 +16,10 @@ data class NotificationsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val showUnreadOnly: Boolean = false
-)
+) {
+    val unreadCount: Int
+        get() = notifications.count { !it.isRead }
+}
 
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
