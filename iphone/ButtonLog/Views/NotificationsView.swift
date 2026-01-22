@@ -217,7 +217,7 @@ struct NotificationRow: View {
         case .buttonShared:
             // Navigate to shared button
             break
-        case .systemAnnouncement:
+        case .systemAnnouncement, .general:
             // Show announcement detail
             break
         case .subscriptionExpiring, .subscriptionRenewed:
