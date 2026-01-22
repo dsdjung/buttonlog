@@ -268,8 +268,13 @@ defmodule ButtonLog.Buttons do
       click_result
     end)
 
-    # Notify gift creator if this is a gift button (outside transaction)
-    if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, "click")
+    # Send notifications (outside transaction)
+    if match?({:ok, _}, result) do
+      # Notify gift creator if this is a gift button
+      notify_gift_creator_of_click(button, "click")
+      # Notify the button owner that their one-time button was completed
+      notify_one_time_button_completed(button, user_id)
+    end
 
     result
   end
@@ -714,5 +719,20 @@ defmodule ButtonLog.Buttons do
         friend_id: friend_id
       }
     }, creator_id, creator_id, button.id)
+  end
+
+  # Sends a notification to the user when they complete a one-time button.
+  defp notify_one_time_button_completed(button, user_id) do
+    alias ButtonLog.Notifications
+
+    Notifications.create_notification(%{
+      notification_type: "one_time_button_completed",
+      title: "Task Completed!",
+      message: "'#{button.name}' has been completed and archived",
+      metadata: %{
+        button_id: button.id,
+        button_name: button.name
+      }
+    }, user_id, user_id, button.id)
   end
 end

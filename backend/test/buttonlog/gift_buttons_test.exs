@@ -274,6 +274,25 @@ defmodule ButtonLog.GiftButtonsTest do
       assert length(clicks) == 1
     end
 
+    test "one-time button click sends completion notification to owner" do
+      user = insert_user(%{email: "onetime4@test.com", username: "onetimeuser4"})
+
+      {:ok, button} = Buttons.create_button(%{"name" => "Complete Me", "type" => "one-time"}, user.id)
+
+      # Click the button
+      {:ok, _click} = Buttons.click_button(button.id, user.id)
+
+      # Check that a completion notification was sent to the owner
+      notifications = Notifications.get_user_notifications(user.id)
+      completion_notification = Enum.find(notifications, &(&1.notification_type == "one_time_button_completed"))
+
+      assert completion_notification != nil
+      assert completion_notification.title == "Task Completed!"
+      assert completion_notification.message =~ "Complete Me"
+      assert completion_notification.message =~ "completed and archived"
+      assert completion_notification.recipient_id == user.id
+    end
+
     test "gift one-time button notifies creator on click before archiving" do
       creator = insert_user(%{email: "creator_onetime@test.com", username: "creator_onetime"})
       friend = insert_user(%{email: "friend_onetime@test.com", username: "friend_onetime", display_name: "One Time Friend"})
