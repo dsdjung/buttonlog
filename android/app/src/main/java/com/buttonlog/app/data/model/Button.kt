@@ -203,7 +203,7 @@ data class ButtonFormData(
     var description: String = "",
     var type: ButtonType = ButtonType.INSTANT,
     var icon: String = "star",
-    var color: String = "#007AFF",
+    var color: String = "#00BFA5",
     var alertsEnabled: Boolean = true,
     var autoStopEnabled: Boolean = false,
     var autoStopMinutes: Int? = null,  // Duration in minutes (15, 30, 60, 120, 240, 480)

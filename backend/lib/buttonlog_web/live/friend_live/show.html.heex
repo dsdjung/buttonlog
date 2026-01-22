@@ -219,7 +219,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
               <div class="flex space-x-2">
-                <%= for color <- ["#007AFF", "#34C759", "#FF3B30", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE"] do %>
+                <%= for color <- ["#00BFA5", "#34C759", "#FF3B30", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#007AFF"] do %>
                   <button type="button"
                           phx-click="update_gift_button_field"
                           phx-value-field="color"
@@ -348,7 +348,7 @@
                 <div class="p-3 border border-gray-200 rounded-lg">
                   <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-                         style={"background-color: #{button.color || "#007AFF"}"}>
+                         style={"background-color: #{button.color || "#00BFA5"}"}>
                       <%= case button.type do %>
                         <% "instant" -> %>⚡
                         <% "toggle" -> %>🔄
@@ -435,7 +435,7 @@
                   <div class="p-3 border border-gray-200 rounded-lg">
                     <div class="flex items-center space-x-3">
                       <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-                           style={"background-color: #{activity.button_color || "#007AFF"}"}>
+                           style={"background-color: #{activity.button_color || "#00BFA5"}"}>
                         <%= case activity.button_type do %>
                           <% "instant" -> %>⚡
                           <% "timed" -> %>⏱️

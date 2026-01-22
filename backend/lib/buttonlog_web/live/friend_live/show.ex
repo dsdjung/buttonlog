@@ -52,7 +52,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
            |> assign(:gift_button_name, "")
            |> assign(:gift_button_type, "one-time")
            |> assign(:gift_button_icon, "star")
-           |> assign(:gift_button_color, "#007AFF")
+           |> assign(:gift_button_color, "#00BFA5")
            |> assign(:gift_button_message, "")
            |> assign(:my_permissions, my_permissions)
            |> assign(:show_permissions_form, false)
@@ -104,7 +104,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
      |> assign(:gift_button_name, "")
      |> assign(:gift_button_type, "one-time")
      |> assign(:gift_button_icon, "star")
-     |> assign(:gift_button_color, "#007AFF")
+     |> assign(:gift_button_color, "#00BFA5")
      |> assign(:gift_button_message, "")}
   end
 
@@ -122,7 +122,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
       "name" -> {:noreply, socket |> assign(:gift_button_name, value || "")}
       "type" -> {:noreply, socket |> assign(:gift_button_type, value || "instant")}
       "icon" -> {:noreply, socket |> assign(:gift_button_icon, value || "star")}
-      "color" -> {:noreply, socket |> assign(:gift_button_color, value || "#007AFF")}
+      "color" -> {:noreply, socket |> assign(:gift_button_color, value || "#00BFA5")}
       "message" -> {:noreply, socket |> assign(:gift_button_message, value || "")}
       _ -> {:noreply, socket}
     end
@@ -158,7 +158,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
          |> assign(:gift_button_name, "")
          |> assign(:gift_button_type, "one-time")
          |> assign(:gift_button_icon, "star")
-         |> assign(:gift_button_color, "#007AFF")
+         |> assign(:gift_button_color, "#00BFA5")
          |> assign(:gift_button_message, "")}
 
       {:error, :not_friends} ->

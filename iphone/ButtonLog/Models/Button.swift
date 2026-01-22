@@ -269,7 +269,7 @@ struct ButtonFormData {
     var description: String = ""
     var type: ButtonType = .instant
     var icon: String = "star.fill"
-    var color: String = "#007AFF"
+    var color: String = "#00BFA5"
     var alertsEnabled: Bool = true
     var autoStopEnabled: Bool = false
     var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
