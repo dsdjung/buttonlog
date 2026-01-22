@@ -88,10 +88,13 @@ interface APIService {
     // MARK: - Notification Endpoints
 
     @GET("notifications")
-    suspend fun getNotifications(): List<Notification>
+    suspend fun getNotifications(): NotificationsResponse
 
     @PUT("notifications/{id}/read")
-    suspend fun markNotificationAsRead(@Path("id") id: String): Unit
+    suspend fun markNotificationAsRead(@Path("id") id: String): GenericResponse
+
+    @DELETE("notifications/{id}")
+    suspend fun deleteNotification(@Path("id") id: String): GenericResponse
 
     // MARK: - Device Registration (Push Notifications)
 
@@ -170,8 +173,21 @@ data class Notification(
     @SerializedName("is_read")
     val isRead: Boolean,
     val data: Map<String, Any>?,
-    @SerializedName("created_at")
-    val createdAt: java.util.Date
+    val sender: NotificationSender?,
+    @SerializedName("inserted_at")
+    val insertedAt: String
+)
+
+data class NotificationSender(
+    val id: String,
+    val username: String,
+    @SerializedName("display_name")
+    val displayName: String?
+)
+
+data class NotificationsResponse(
+    val success: Boolean,
+    val data: List<Notification>
 )
 
 // MARK: - Device Registration Models

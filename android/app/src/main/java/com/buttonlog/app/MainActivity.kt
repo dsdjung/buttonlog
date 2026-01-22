@@ -32,6 +32,7 @@ import com.buttonlog.app.ui.screens.EditButtonScreen
 import com.buttonlog.app.ui.screens.FriendDetailScreen
 import com.buttonlog.app.ui.screens.FriendsScreen
 import com.buttonlog.app.ui.screens.LoginScreen
+import com.buttonlog.app.ui.screens.NotificationsScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 import com.buttonlog.app.ui.theme.ButtonLogTheme
@@ -157,7 +158,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     DiaryScreen(viewModel = buttonsViewModel)
                 }
                 composable("notifications") {
-                    PlaceholderScreen("Notifications")
+                    NotificationsScreen()
                 }
                 composable("account") {
                     AccountScreen(onLogout = onLogout)
