@@ -11,11 +11,11 @@ defmodule ButtonLog.Repo.Migrations.ConsolidateButtonTypes do
   """
 
   def up do
-    # First, migrate existing "timed" and "state" buttons to "toggle"
-    execute "UPDATE buttons SET type = 'toggle' WHERE type IN ('timed', 'state')"
-
-    # Drop the old constraint if it exists
+    # First, drop the old constraint to allow data migration
     execute "ALTER TABLE buttons DROP CONSTRAINT IF EXISTS buttons_type_check"
+
+    # Migrate existing "timed" and "state" buttons to "toggle"
+    execute "UPDATE buttons SET type = 'toggle' WHERE type IN ('timed', 'state')"
 
     # Add new constraint with updated types
     execute """
