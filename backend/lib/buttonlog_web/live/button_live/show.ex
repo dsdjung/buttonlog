@@ -248,6 +248,58 @@ defmodule ButtonLogWeb.ButtonLive.Show do
     end
   end
 
+  # Toggle auto-stop enabled
+  @impl true
+  def handle_event("toggle_auto_stop", _, socket) do
+    button = socket.assigns.button
+    user = socket.assigns.current_user
+
+    new_enabled = !button.auto_stop_enabled
+
+    # When enabling, set a default duration if none exists
+    attrs = if new_enabled && !button.auto_stop_minutes do
+      %{"auto_stop_enabled" => true, "auto_stop_minutes" => 60}
+    else
+      %{"auto_stop_enabled" => new_enabled}
+    end
+
+    case Buttons.update_button(button.id, attrs, user.id) do
+      {:ok, updated_button} ->
+        message = if new_enabled, do: "Auto-stop enabled", else: "Auto-stop disabled"
+        {:noreply,
+         socket
+         |> assign(:button, updated_button)
+         |> put_flash(:info, message)}
+
+      {:error, _reason} ->
+        {:noreply, socket |> put_flash(:error, "Failed to update auto-stop setting")}
+    end
+  end
+
+  # Update auto-stop duration
+  @impl true
+  def handle_event("update_auto_stop_duration", %{"duration" => duration_str}, socket) do
+    button = socket.assigns.button
+    user = socket.assigns.current_user
+
+    case Integer.parse(duration_str) do
+      {duration, ""} when duration in [15, 30, 60, 120, 240, 480] ->
+        case Buttons.update_button(button.id, %{"auto_stop_minutes" => duration}, user.id) do
+          {:ok, updated_button} ->
+            {:noreply,
+             socket
+             |> assign(:button, updated_button)
+             |> put_flash(:info, "Auto-stop duration updated to #{format_auto_stop_duration(duration)}")}
+
+          {:error, _reason} ->
+            {:noreply, socket |> put_flash(:error, "Failed to update auto-stop duration")}
+        end
+
+      _ ->
+        {:noreply, socket |> put_flash(:error, "Invalid duration")}
+    end
+  end
+
   # Private helper functions
   defp generate_click_message(%{name: name, type: type}, click) do
     case type do
@@ -291,7 +343,6 @@ defmodule ButtonLogWeb.ButtonLive.Show do
   defp safe_to_iso8601(nil), do: ""
 
   # Format auto-stop duration in human-readable form
-  defp format_auto_stop_duration(nil), do: nil
   defp format_auto_stop_duration(minutes) when minutes < 60, do: "#{minutes} min"
   defp format_auto_stop_duration(60), do: "1 hour"
   defp format_auto_stop_duration(minutes) when rem(minutes, 60) == 0, do: "#{div(minutes, 60)} hours"
