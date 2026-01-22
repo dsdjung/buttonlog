@@ -181,6 +181,203 @@
           </div>
         </div>
 
+        <!-- Sharing Section -->
+        <div class="mt-8 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Sharing</h2>
+            <p class="text-sm text-gray-500 mt-1">Control who can click this button</p>
+          </div>
+
+          <div class="px-6 py-6">
+            <!-- Sharing Mode Selection -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-3">Sharing Mode</label>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button
+                  phx-click="change_sharing_mode"
+                  phx-value-mode="private"
+                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if (@button.sharing_mode || "private") == "private", do: "border-blue-500 bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
+                  <div class="text-lg mb-1">🔒</div>
+                  <div class="font-medium text-sm">Private</div>
+                  <div class="text-xs text-gray-500">Only you</div>
+                </button>
+
+                <button
+                  phx-click="change_sharing_mode"
+                  phx-value-mode="friends"
+                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "friends", do: "border-blue-500 bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
+                  <div class="text-lg mb-1">👥</div>
+                  <div class="font-medium text-sm">Friends</div>
+                  <div class="text-xs text-gray-500">All friends</div>
+                </button>
+
+                <button
+                  phx-click="change_sharing_mode"
+                  phx-value-mode="invite_only"
+                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "invite_only", do: "border-blue-500 bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
+                  <div class="text-lg mb-1">✉️</div>
+                  <div class="font-medium text-sm">Invite Only</div>
+                  <div class="text-xs text-gray-500">Selected people</div>
+                </button>
+
+                <button
+                  phx-click="change_sharing_mode"
+                  phx-value-mode="public"
+                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "public", do: "border-blue-500 bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
+                  <div class="text-lg mb-1">🌐</div>
+                  <div class="font-medium text-sm">Public</div>
+                  <div class="text-xs text-gray-500">Anyone with link</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Collaborators Section (for invite_only mode) -->
+            <%= if @button.sharing_mode == "invite_only" do %>
+              <div class="mb-6 border-t border-gray-200 pt-6">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-sm font-medium text-gray-700">Collaborators</h3>
+                  <button
+                    phx-click="show_add_collaborator_modal"
+                    class="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add
+                  </button>
+                </div>
+
+                <%= if Enum.empty?(@collaborators) do %>
+                  <p class="text-sm text-gray-500 text-center py-4">No collaborators yet. Add friends to let them click this button.</p>
+                <% else %>
+                  <div class="space-y-2">
+                    <%= for collaborator <- @collaborators do %>
+                      <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                          <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="text-blue-600 font-medium text-sm">
+                              <%= String.first(collaborator.user_name || collaborator.user_display_name || "?") |> String.upcase() %>
+                            </span>
+                          </div>
+                          <div>
+                            <p class="font-medium text-gray-900 text-sm"><%= collaborator.user_display_name || collaborator.user_name || "Unknown" %></p>
+                            <%= if collaborator.user_name do %>
+                              <p class="text-xs text-gray-500">@<%= collaborator.user_name %></p>
+                            <% end %>
+                          </div>
+                        </div>
+                        <button
+                          phx-click="remove_collaborator"
+                          phx-value-user_id={collaborator.user_id}
+                          class="text-red-600 hover:text-red-700 p-1">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
+            <!-- Public Link Section (for public mode) -->
+            <%= if @button.sharing_mode == "public" do %>
+              <div class="border-t border-gray-200 pt-6">
+                <h3 class="text-sm font-medium text-gray-700 mb-4">Share Link</h3>
+
+                <%= if @button.share_token do %>
+                  <div class="space-y-3">
+                    <div class="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        readonly
+                        value={build_share_url(@button.share_token)}
+                        class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700"
+                      />
+                      <button
+                        id="copy-share-link"
+                        phx-hook="CopyToClipboard"
+                        data-copy-text={build_share_url(@button.share_token)}
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                        Copy
+                      </button>
+                    </div>
+                    <button
+                      phx-click="revoke_share_link"
+                      class="text-red-600 hover:text-red-700 text-sm font-medium">
+                      Revoke Link
+                    </button>
+                  </div>
+                <% else %>
+                  <button
+                    phx-click="generate_share_link"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                    </svg>
+                    Generate Share Link
+                  </button>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- Add Collaborator Modal -->
+        <%= if @show_add_collaborator_modal do %>
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" phx-click="hide_add_collaborator_modal">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" phx-click-away="hide_add_collaborator_modal">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-gray-900">Add Collaborator</h3>
+                  <button phx-click="hide_add_collaborator_modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="px-6 py-4 max-h-96 overflow-y-auto">
+                <% available = available_friends(@friends, @collaborators) %>
+                <%= if Enum.empty?(available) do %>
+                  <p class="text-gray-500 text-center py-4">No friends available to add. All your friends are already collaborators.</p>
+                <% else %>
+                  <p class="text-sm text-gray-500 mb-4">Select a friend to add as a collaborator:</p>
+                  <div class="space-y-2">
+                    <%= for friend <- available do %>
+                      <button
+                        phx-click="add_collaborator"
+                        phx-value-user_id={friend.id}
+                        class="w-full flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span class="text-blue-600 font-medium">
+                            <%= String.first(friend.display_name || friend.username || "?") |> String.upcase() %>
+                          </span>
+                        </div>
+                        <div>
+                          <p class="font-medium text-gray-900"><%= friend.display_name || friend.username %></p>
+                          <%= if friend.username do %>
+                            <p class="text-sm text-gray-500">@<%= friend.username %></p>
+                          <% end %>
+                        </div>
+                      </button>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+
+              <div class="px-6 py-4 border-t border-gray-200">
+                <button
+                  phx-click="hide_add_collaborator_modal"
+                  class="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
         <!-- Activity History Section -->
         <div class="mt-8 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200">

@@ -70,6 +70,29 @@ Hooks.DateSelector = {
   }
 };
 
+// Hook to copy text to clipboard
+Hooks.CopyToClipboard = {
+  mounted() {
+    this.el.addEventListener('click', (e) => {
+      const text = this.el.getAttribute('data-copy-text');
+      if (text && navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          // Store original text
+          const originalText = this.el.textContent;
+          // Show feedback
+          this.el.textContent = 'Copied!';
+          // Restore after 2 seconds
+          setTimeout(() => {
+            this.el.textContent = originalText;
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+        });
+      }
+    });
+  }
+};
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
