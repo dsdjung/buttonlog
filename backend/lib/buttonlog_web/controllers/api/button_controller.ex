@@ -1,6 +1,7 @@
 defmodule ButtonLogWeb.API.ButtonController do
   use ButtonLogWeb, :controller
   alias ButtonLog.Buttons
+  alias ButtonLog.Buttons.Button
   alias ButtonLog.Social
 
   def index(conn, _params) do
@@ -273,7 +274,7 @@ defmodule ButtonLogWeb.API.ButtonController do
     end)
   end
 
-  defp serialize_button(button) do
+  defp serialize_button(%Button{} = button) do
     base = %{
       id: button.id,
       name: button.name,
@@ -300,6 +301,41 @@ defmodule ButtonLogWeb.API.ButtonController do
         id: button.created_by_friend.id,
         username: button.created_by_friend.username,
         display_name: button.created_by_friend.display_name
+      })
+    else
+      base
+    end
+  end
+
+  # Handle maps from list_user_buttons query (returns map with embedded gift info)
+  defp serialize_button(%{} = button) do
+    base = %{
+      id: button.id,
+      name: button.name,
+      description: button.description,
+      type: button.type,
+      icon: button[:icon] || "star.fill",
+      color: button[:color] || "#007AFF",
+      is_active: button.is_active,
+      current_state: button[:current_state] || "idle",
+      state_changed_at: format_datetime(button[:state_changed_at]),
+      notifications_enabled: button.notifications_enabled,
+      auto_stop_enabled: button.auto_stop_enabled,
+      calendar_sync_enabled: button.calendar_sync_enabled,
+      user_id: button.user_id,
+      created_at: format_datetime(button.inserted_at),
+      updated_at: format_datetime(button.updated_at),
+      created_by_friend_id: button[:created_by_friend_id],
+      gift_message: button[:gift_message]
+    }
+
+    # Add created_by_friend info if present (from the query join)
+    created_by_friend = button[:created_by_friend]
+    if button[:created_by_friend_id] && created_by_friend && created_by_friend[:id] do
+      Map.put(base, :created_by_friend, %{
+        id: created_by_friend.id,
+        username: created_by_friend.username,
+        display_name: created_by_friend.display_name
       })
     else
       base

@@ -15,8 +15,9 @@ defmodule ButtonLog.Buttons do
     Repo.all(
       from b in Button,
       left_join: bc in ButtonClick, on: b.id == bc.button_id,
+      left_join: gifter in assoc(b, :created_by_friend),
       where: b.user_id == ^user_id,
-      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.notifications_enabled, b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at],
+      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.notifications_enabled, b.auto_stop_enabled, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, gifter.id, gifter.username, gifter.display_name],
       order_by: [asc: b.name],
       select: %{
         id: b.id,
@@ -34,7 +35,14 @@ defmodule ButtonLog.Buttons do
         user_id: b.user_id,
         inserted_at: b.inserted_at,
         updated_at: b.updated_at,
-        latest_click_at: max(bc.clicked_at)
+        latest_click_at: max(bc.clicked_at),
+        created_by_friend_id: b.created_by_friend_id,
+        gift_message: b.gift_message,
+        created_by_friend: %{
+          id: gifter.id,
+          username: gifter.username,
+          display_name: gifter.display_name
+        }
       }
     )
   end
