@@ -26,8 +26,8 @@ defmodule ButtonLog.Notifications.Notification do
     |> cast(attrs, [:notification_type, :title, :message, :read, :clicked_at, :metadata])
     |> validate_required([:notification_type, :title, :message])
     |> validate_inclusion(:notification_type, [
-      "button_click", "friend_request", "general",
-      "gift_button_received", "gift_button_clicked", "gift_button_deleted"
+      "button_click", "button_created", "friend_request", "general",
+      "gift_button_received", "gift_button_clicked", "gift_button_deleted", "gift_button_sent"
     ])
   end
 

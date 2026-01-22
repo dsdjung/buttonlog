@@ -61,9 +61,19 @@ defmodule ButtonLog.Buttons do
   Creates a button.
   """
   def create_button(attrs \\ %{}, user_id) do
-    %Button{}
+    result = %Button{}
     |> Button.create_changeset(attrs, user_id)
     |> Repo.insert()
+
+    case result do
+      {:ok, button} ->
+        # Notify the creator about their new button
+        notify_button_created(button, user_id)
+        {:ok, button}
+
+      error ->
+        error
+    end
   end
 
   @doc """
@@ -546,6 +556,9 @@ defmodule ButtonLog.Buttons do
             }
           }, friend_id, creator_id, button.id)
 
+          # Also notify the creator that their gift was sent
+          notify_gift_button_sent(button, creator_id, friend_id)
+
           # Preload the creator for the response
           button = Repo.preload(button, [:created_by_friend])
           {:ok, button}
@@ -606,5 +619,38 @@ defmodule ButtonLog.Buttons do
         }
       }, button.created_by_friend_id, button.user_id, nil)
     end
+  end
+
+  # Sends a notification to the user when they create a button.
+  defp notify_button_created(button, user_id) do
+    alias ButtonLog.Notifications
+
+    Notifications.create_notification(%{
+      notification_type: "button_created",
+      title: "Button Created!",
+      message: "Your button '#{button.name}' has been created successfully",
+      metadata: %{
+        button_id: button.id,
+        button_name: button.name
+      }
+    }, user_id, user_id, button.id)
+  end
+
+  # Sends a notification to the creator when they create a gift button for a friend.
+  defp notify_gift_button_sent(button, creator_id, friend_id) do
+    alias ButtonLog.Notifications
+
+    friend = ButtonLog.Accounts.get_user!(friend_id)
+
+    Notifications.create_notification(%{
+      notification_type: "gift_button_sent",
+      title: "Gift Button Sent!",
+      message: "You created '#{button.name}' for #{friend.display_name || friend.username}",
+      metadata: %{
+        button_id: button.id,
+        button_name: button.name,
+        friend_id: friend_id
+      }
+    }, creator_id, creator_id, button.id)
   end
 end

@@ -4,6 +4,30 @@ defmodule ButtonLog.GiftButtonsTest do
   alias ButtonLog.Buttons
   alias ButtonLog.Notifications
 
+  describe "create_button/2" do
+    test "sends notification to creator when button is created" do
+      user = insert_user(%{email: "button_creator@test.com", username: "buttoncreator"})
+
+      button_attrs = %{
+        "name" => "My New Button",
+        "type" => "instant"
+      }
+
+      {:ok, button} = Buttons.create_button(button_attrs, user.id)
+
+      # Check that a notification was sent to the creator
+      notifications = Notifications.get_user_notifications(user.id)
+      assert length(notifications) == 1
+
+      notification = hd(notifications)
+      assert notification.notification_type == "button_created"
+      assert notification.title == "Button Created!"
+      assert notification.message =~ "My New Button"
+      assert notification.recipient_id == user.id
+      assert notification.button_id == button.id
+    end
+  end
+
   describe "create_button_for_friend/4" do
     test "creates a button owned by the friend when users are friends" do
       creator = insert_user(%{email: "creator@test.com", username: "creator", display_name: "Creator"})
@@ -65,6 +89,30 @@ defmodule ButtonLog.GiftButtonsTest do
       assert notification.message =~ "Exercise Tracker"
       assert notification.recipient_id == friend.id
       assert notification.sender_id == creator.id
+    end
+
+    test "sends notification to creator when gift button is created" do
+      creator = insert_user(%{email: "creator3b@test.com", username: "creator3b", display_name: "The Creator"})
+      friend = insert_user(%{email: "friend3b@test.com", username: "friend3b", display_name: "The Friend"})
+      create_friendship(creator.id, friend.id)
+
+      button_attrs = %{
+        "name" => "Exercise Tracker",
+        "type" => "timed"
+      }
+
+      {:ok, _button} = Buttons.create_button_for_friend(button_attrs, friend.id, creator.id)
+
+      # Check that a notification was sent to the creator
+      notifications = Notifications.get_user_notifications(creator.id)
+      assert length(notifications) == 1
+
+      notification = hd(notifications)
+      assert notification.notification_type == "gift_button_sent"
+      assert notification.title == "Gift Button Sent!"
+      assert notification.message =~ "The Friend"
+      assert notification.message =~ "Exercise Tracker"
+      assert notification.recipient_id == creator.id
     end
   end
 
