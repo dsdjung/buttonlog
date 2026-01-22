@@ -3,7 +3,8 @@ import SwiftUI
 // Navigation destination enum for notifications
 enum NotificationDestination {
     case button(String)
-    case friends
+    case friend(String)  // Navigate to specific friend's page
+    case friends         // Navigate to friends list
     case support
     case supportTicket(String)
     case none
@@ -14,6 +15,7 @@ struct NotificationsView: View {
     @State private var showingUnreadOnly = false
     @State private var selectedButtonId: String?
     @State private var selectedTicketId: String?
+    @State private var selectedFriendId: String?
     @State private var navigateToFriends = false
     @State private var navigateToSupport = false
 
@@ -156,6 +158,18 @@ struct NotificationsView: View {
                         EmptyView()
                     }
                 }
+                if let friendId = selectedFriendId,
+                   let friend = appState.friends.first(where: { $0.friendId == friendId }) {
+                    NavigationLink(
+                        destination: FriendDetailView(friend: friend),
+                        isActive: Binding(
+                            get: { selectedFriendId != nil },
+                            set: { if !$0 { selectedFriendId = nil } }
+                        )
+                    ) {
+                        EmptyView()
+                    }
+                }
             }
         )
     }
@@ -164,6 +178,8 @@ struct NotificationsView: View {
         switch destination {
         case .button(let buttonId):
             selectedButtonId = buttonId
+        case .friend(let friendId):
+            selectedFriendId = friendId
         case .friends:
             navigateToFriends = true
         case .support:
@@ -293,11 +309,17 @@ struct NotificationRow: View {
 
     private func getNavigationDestination() -> NotificationDestination {
         switch notification.type {
-        case .buttonClick, .buttonShared, .giftButtonReceived, .giftButtonClicked, .giftButtonSent:
+        case .buttonClick, .buttonShared, .giftButtonReceived, .giftButtonClicked:
             if let buttonId = notification.buttonId {
                 return .button(buttonId)
             }
             return .none
+        case .giftButtonSent:
+            // Navigate to friend page when clicking on a "gift sent" notification
+            if let friendId = notification.friendId {
+                return .friend(friendId)
+            }
+            return .friends
         case .giftButtonDeleted:
             return .none  // Button no longer exists
         case .friendRequest, .friendAccepted:

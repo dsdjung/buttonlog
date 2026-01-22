@@ -204,6 +204,23 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                                         buttonToViewHistory = button
                                     }
                                 }
+                                is NotificationNavigation.Friend -> {
+                                    // Navigate to specific friend's page
+                                    val friend = friendsUiState.friends.find { it.friendId == destination.friendId }
+                                    if (friend != null) {
+                                        selectedFriend = friend
+                                        friendsViewModel.selectFriend(friend)
+                                    } else {
+                                        // Fallback to friends list if friend not found
+                                        navController.navigate("friends") {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                }
                                 is NotificationNavigation.Friends -> {
                                     navController.navigate("friends") {
                                         popUpTo(navController.graph.findStartDestination().id) {

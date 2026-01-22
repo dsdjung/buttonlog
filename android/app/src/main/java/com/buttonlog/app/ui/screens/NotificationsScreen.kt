@@ -23,7 +23,8 @@ import java.util.*
 // Navigation destination types for notifications
 sealed class NotificationNavigation {
     data class Button(val buttonId: String) : NotificationNavigation()
-    object Friends : NotificationNavigation()
+    data class Friend(val friendId: String) : NotificationNavigation()  // Navigate to specific friend's page
+    object Friends : NotificationNavigation()  // Navigate to friends list
     object Support : NotificationNavigation()
     data class SupportTicket(val ticketId: String) : NotificationNavigation()
     object None : NotificationNavigation()
@@ -380,13 +381,22 @@ fun getNotificationTypeDisplayName(type: String): String {
 
 fun getNavigationDestination(notification: Notification): NotificationNavigation {
     return when (notification.type) {
-        "button_click", "button_shared", "gift_button_received", "gift_button_clicked", "gift_button_sent" -> {
+        "button_click", "button_shared", "gift_button_received", "gift_button_clicked" -> {
             // Try to get button_id from the data map
             val buttonId = notification.data?.get("button_id")?.toString()
             if (buttonId != null) {
                 NotificationNavigation.Button(buttonId)
             } else {
                 NotificationNavigation.None
+            }
+        }
+        "gift_button_sent" -> {
+            // Navigate to friend page when clicking on a "gift sent" notification
+            val friendId = notification.data?.get("friend_id")?.toString()
+            if (friendId != null) {
+                NotificationNavigation.Friend(friendId)
+            } else {
+                NotificationNavigation.Friends
             }
         }
         "gift_button_deleted" -> {
