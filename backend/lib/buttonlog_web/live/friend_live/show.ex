@@ -96,9 +96,18 @@ defmodule ButtonLogWeb.FriendLive.Show do
   end
 
   @impl true
-  def handle_event("update_gift_button_field", %{"field" => field, "value" => value}, socket) do
-    field_atom = String.to_existing_atom("gift_button_#{field}")
-    {:noreply, socket |> assign(field_atom, value)}
+  def handle_event("update_gift_button_field", params, socket) do
+    field = params["field"]
+    value = params["value"]
+
+    case field do
+      "name" -> {:noreply, socket |> assign(:gift_button_name, value || "")}
+      "type" -> {:noreply, socket |> assign(:gift_button_type, value || "instant")}
+      "icon" -> {:noreply, socket |> assign(:gift_button_icon, value || "star")}
+      "color" -> {:noreply, socket |> assign(:gift_button_color, value || "#007AFF")}
+      "message" -> {:noreply, socket |> assign(:gift_button_message, value || "")}
+      _ -> {:noreply, socket}
+    end
   end
 
   @impl true
