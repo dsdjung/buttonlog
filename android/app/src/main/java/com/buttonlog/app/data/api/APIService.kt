@@ -86,12 +86,23 @@ interface APIService {
     ): FriendActivityResponse
 
     // MARK: - Notification Endpoints
-    
+
     @GET("notifications")
     suspend fun getNotifications(): List<Notification>
-    
+
     @PUT("notifications/{id}/read")
     suspend fun markNotificationAsRead(@Path("id") id: String): Unit
+
+    // MARK: - Device Registration (Push Notifications)
+
+    @POST("devices/register")
+    suspend fun registerDevice(@Body request: DeviceRegistrationRequest): DeviceRegistrationResponse
+
+    @HTTP(method = "DELETE", path = "devices/unregister", hasBody = true)
+    suspend fun unregisterDevice(@Body request: DeviceUnregisterRequest): GenericResponse
+
+    @GET("devices")
+    suspend fun getDevices(): DevicesResponse
 }
 
 // MARK: - Request/Response Models
@@ -161,6 +172,44 @@ data class Notification(
     val data: Map<String, Any>?,
     @SerializedName("created_at")
     val createdAt: java.util.Date
+)
+
+// MARK: - Device Registration Models
+
+data class DeviceRegistrationRequest(
+    @SerializedName("device_token")
+    val deviceToken: String,
+    val platform: String = "android",
+    @SerializedName("app_version")
+    val appVersion: String,
+    @SerializedName("os_version")
+    val osVersion: String
+)
+
+data class DeviceUnregisterRequest(
+    @SerializedName("device_token")
+    val deviceToken: String
+)
+
+data class DeviceRegistration(
+    val id: String,
+    @SerializedName("device_token")
+    val deviceToken: String,
+    val platform: String,
+    @SerializedName("is_active")
+    val isActive: Boolean
+)
+
+data class DeviceRegistrationResponse(
+    val success: Boolean,
+    val data: DeviceRegistration?,
+    val error: ApiError?
+)
+
+data class DevicesResponse(
+    val success: Boolean,
+    val data: List<DeviceRegistration>,
+    val error: ApiError?
 )
 
 // MARK: - API Response Wrapper

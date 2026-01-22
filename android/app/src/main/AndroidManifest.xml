@@ -10,6 +10,9 @@
     
     <!-- Vibration permission for haptic feedback -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Push notifications permission (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
     <!-- Location permissions for button click tracking (optional) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -39,8 +42,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        <!-- Notification channels are created in the Application class -->
+
+        <!-- Firebase Cloud Messaging Service -->
+        <service
+            android:name=".services.ButtonLogFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Default notification channel metadata -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="buttonlog_notifications" />
+
+        <!-- Default notification icon -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
         
     </application>
 

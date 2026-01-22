@@ -382,17 +382,46 @@ class APIService {
     }
 
     // MARK: - Notifications
-    
+
     func getNotifications() async throws -> [AppNotification] {
         return try await makeRequest(endpoint: "/notifications")
     }
-    
+
     func markNotificationAsRead(id: String) async throws {
         try await makeVoidRequest(endpoint: "/notifications/\(id)/read", method: .PUT)
     }
-    
+
     func deleteNotification(id: String) async throws {
         try await makeVoidRequest(endpoint: "/notifications/\(id)", method: .DELETE)
+    }
+
+    // MARK: - Device Registration (Push Notifications)
+
+    func registerDevice(deviceToken: String, platform: String = "iphone") async throws -> DeviceRegistration {
+        let body: [String: Any] = [
+            "device_token": deviceToken,
+            "platform": platform,
+            "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
+            "os_version": UIDevice.current.systemVersion
+        ]
+
+        return try await makeRequest(
+            endpoint: "/devices/register",
+            method: .POST,
+            body: body
+        )
+    }
+
+    func unregisterDevice(deviceToken: String) async throws {
+        let body: [String: Any] = [
+            "device_token": deviceToken
+        ]
+
+        try await makeVoidRequest(
+            endpoint: "/devices/unregister",
+            method: .DELETE,
+            body: body
+        )
     }
     
     // MARK: - Subscriptions

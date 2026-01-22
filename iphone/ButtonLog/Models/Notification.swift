@@ -80,7 +80,7 @@ struct NotificationPreferences: Codable {
     let quietHoursEnabled: Bool
     let quietHoursStart: String?
     let quietHoursEnd: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case buttonClickNotifications = "button_click_notifications"
         case friendRequestNotifications = "friend_request_notifications"
@@ -90,5 +90,20 @@ struct NotificationPreferences: Codable {
         case quietHoursEnabled = "quiet_hours_enabled"
         case quietHoursStart = "quiet_hours_start"
         case quietHoursEnd = "quiet_hours_end"
+    }
+}
+
+// Device registration response
+struct DeviceRegistration: Codable {
+    let id: String
+    let deviceToken: String
+    let platform: String
+    let isActive: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case deviceToken = "device_token"
+        case platform
+        case isActive = "is_active"
     }
 }

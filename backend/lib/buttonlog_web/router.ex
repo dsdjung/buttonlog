@@ -88,6 +88,11 @@ defmodule ButtonLogWeb.Router do
     put "/notifications/:id/read", API.NotificationController, :mark_read
     delete "/notifications/:id", API.ButtonController, :delete
 
+    # Device/Push notification endpoints
+    post "/devices/register", API.MobileController, :register_device
+    delete "/devices/unregister", API.MobileController, :unregister_device
+    get "/devices", API.MobileController, :list_devices
+
     # Subscription endpoints
     get "/subscriptions", API.SubscriptionController, :index
     get "/subscriptions/current", API.SubscriptionController, :show

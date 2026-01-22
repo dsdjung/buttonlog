@@ -41,7 +41,14 @@ config :logger, level: :info
 # Runtime configuration
 config :buttonlog, :env, config_env()
 
-  # OAuth Configuration
+# Push notification configuration (APNs for iOS, FCM for Android)
+# These will be loaded from environment variables in runtime.exs
+config :buttonlog, :apns,
+  topic: System.get_env("APNS_TOPIC", "com.buttonlog.app")
+
+config :buttonlog, :fcm, []
+
+# OAuth Configuration
   config :ueberauth, Ueberauth,
     providers: [
       google: {Ueberauth.Strategy.Google, [

@@ -224,32 +224,26 @@ defmodule ButtonLog.Notifications do
 
   @doc """
   Sends notifications to friends when a button is clicked.
+  Creates in-app notifications and sends push notifications.
   """
   def send_button_click_notifications(button_id, user_id, click_data \\ %{}) do
-    IO.puts "=== SEND BUTTON CLICK NOTIFICATIONS DEBUG ==="
-    IO.puts "button_id: #{button_id}"
-    IO.puts "user_id: #{user_id}"
-    IO.puts "click_data: #{inspect(click_data)}"
+    require Logger
+    Logger.debug("Sending button click notifications: button_id=#{button_id}, user_id=#{user_id}")
 
     # Get all friends who should be notified
     recipients = get_notification_recipients(button_id, user_id)
 
     # Get button details
     button = ButtonLog.Buttons.get_button(button_id, user_id)
-    IO.puts "Button lookup result: #{inspect(button)}"
 
     case button do
       {:ok, button_data} ->
-        IO.puts "Button found: #{button_data.name}"
-
         # Get user details for the button owner
         button_owner = ButtonLog.Accounts.get_user!(button_data.user_id)
-        IO.puts "Button owner: #{button_owner.display_name}"
 
         # Send notifications to each recipient
         results = Enum.map(recipients, fn friend ->
-          IO.puts "Creating notification for friend: #{friend.display_name} (#{friend.id})"
-
+          # Create in-app notification
           notification_result = create_notification(%{
             notification_type: "button_click",
             title: "#{button_data.name} was clicked!",
@@ -258,15 +252,38 @@ defmodule ButtonLog.Notifications do
             metadata: click_data
           }, friend.id, user_id, button_id)
 
-          IO.puts "Notification creation result: #{inspect(notification_result)}"
+          # Send push notification asynchronously
+          Task.start(fn ->
+            ButtonLog.PushNotifications.send_button_click_notification(
+              friend.id,
+              button_owner.display_name,
+              button_data.name,
+              button_id
+            )
+          end)
+
+          # Broadcast via WebSocket for real-time update
+          ButtonLogWeb.Endpoint.broadcast(
+            "user:#{friend.id}",
+            "notification_received",
+            %{
+              type: "button_click",
+              title: "#{button_data.name} was clicked!",
+              message: "#{button_owner.display_name} just clicked their '#{button_data.name}' button",
+              button_id: button_id,
+              sender_id: user_id,
+              sender_name: button_owner.display_name
+            }
+          )
+
           notification_result
         end)
 
-        IO.puts "All notification results: #{inspect(results)}"
+        Logger.info("Button click notifications sent to #{length(recipients)} recipients")
         {:ok, results}
 
       {:error, :not_found} ->
-        IO.puts "Button not found!"
+        Logger.warning("Button not found for notification: #{button_id}")
         {:error, :button_not_found}
     end
   end
