@@ -34,6 +34,7 @@ import com.buttonlog.app.ui.screens.FriendDetailScreen
 import com.buttonlog.app.ui.screens.FriendsScreen
 import com.buttonlog.app.ui.screens.LoginScreen
 import com.buttonlog.app.ui.screens.NotificationsScreen
+import com.buttonlog.app.ui.screens.NotificationNavigation
 import com.buttonlog.app.ui.screens.SupportScreen
 import com.buttonlog.app.ui.screens.SupportTicketScreen
 import com.buttonlog.app.ui.screens.CreateTicketScreen
@@ -193,7 +194,38 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     DiaryScreen(viewModel = buttonsViewModel)
                 }
                 composable("notifications") {
-                    NotificationsScreen()
+                    NotificationsScreen(
+                        onNavigate = { destination ->
+                            when (destination) {
+                                is NotificationNavigation.Button -> {
+                                    // Find the button and show history
+                                    val button = buttonsUiState.buttons.find { it.id == destination.buttonId }
+                                    if (button != null) {
+                                        buttonToViewHistory = button
+                                    }
+                                }
+                                is NotificationNavigation.Friends -> {
+                                    navController.navigate("friends") {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                                is NotificationNavigation.Support -> {
+                                    showSupportScreen = true
+                                }
+                                is NotificationNavigation.SupportTicket -> {
+                                    showSupportScreen = true
+                                    selectedTicketId = destination.ticketId
+                                }
+                                is NotificationNavigation.None -> {
+                                    // No navigation needed
+                                }
+                            }
+                        }
+                    )
                 }
                 composable("account") {
                     AccountScreen(

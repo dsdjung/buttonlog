@@ -66,6 +66,10 @@ struct AppNotification: Identifiable, Codable {
     var friendName: String? {
         data?["friend_name"]
     }
+
+    var ticketId: String? {
+        data?["ticket_id"]
+    }
 }
 
 struct NotificationSender: Codable {
@@ -87,6 +91,12 @@ enum NotificationType: String, Codable {
     case systemAnnouncement = "system_announcement"
     case subscriptionExpiring = "subscription_expiring"
     case subscriptionRenewed = "subscription_renewed"
+    case supportTicketReply = "support_ticket_reply"
+    case supportTicketStatusUpdate = "support_ticket_status_update"
+    case giftButtonReceived = "gift_button_received"
+    case giftButtonClicked = "gift_button_clicked"
+    case giftButtonSent = "gift_button_sent"
+    case giftButtonDeleted = "gift_button_deleted"
     case general = "general"
 
     // Handle unknown types gracefully
@@ -105,6 +115,9 @@ enum NotificationType: String, Codable {
         case .systemAnnouncement: return "Announcement"
         case .subscriptionExpiring: return "Subscription"
         case .subscriptionRenewed: return "Subscription"
+        case .supportTicketReply: return "Support"
+        case .supportTicketStatusUpdate: return "Support"
+        case .giftButtonReceived, .giftButtonClicked, .giftButtonSent, .giftButtonDeleted: return "Gift Button"
         case .general: return "Notification"
         }
     }
@@ -118,6 +131,8 @@ enum NotificationType: String, Codable {
         case .systemAnnouncement: return "megaphone"
         case .subscriptionExpiring: return "exclamationmark.triangle"
         case .subscriptionRenewed: return "checkmark.circle"
+        case .supportTicketReply, .supportTicketStatusUpdate: return "questionmark.circle"
+        case .giftButtonReceived, .giftButtonClicked, .giftButtonSent, .giftButtonDeleted: return "gift"
         case .general: return "bell"
         }
     }

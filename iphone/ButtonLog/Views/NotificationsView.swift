@@ -1,9 +1,22 @@
 import SwiftUI
 
+// Navigation destination enum for notifications
+enum NotificationDestination {
+    case button(String)
+    case friends
+    case support
+    case supportTicket(String)
+    case none
+}
+
 struct NotificationsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var showingUnreadOnly = false
-    
+    @State private var selectedButtonId: String?
+    @State private var selectedTicketId: String?
+    @State private var navigateToFriends = false
+    @State private var navigateToSupport = false
+
     var filteredNotifications: [AppNotification] {
         if showingUnreadOnly {
             return appState.notifications.filter { !$0.isRead }
@@ -11,7 +24,7 @@ struct NotificationsView: View {
             return appState.notifications
         }
     }
-    
+
     var body: some View {
         VStack {
             if appState.isLoadingNotifications && appState.notifications.isEmpty {
@@ -24,18 +37,18 @@ struct NotificationsView: View {
                         .padding(.top, 8)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
+
             } else if filteredNotifications.isEmpty {
                 // Empty state
                 VStack(spacing: 20) {
                     Image(systemName: "bell.slash")
                         .font(.system(size: 60))
                         .foregroundColor(.secondary)
-                    
+
                     Text(showingUnreadOnly ? "No unread notifications" : "No notifications yet")
                         .font(.title3)
                         .fontWeight(.semibold)
-                    
+
                     Text(showingUnreadOnly ? "All caught up!" : "You'll see notifications here when you have activity from friends or system updates")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -43,7 +56,7 @@ struct NotificationsView: View {
                         .padding(.horizontal)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
+
             } else {
                 // Notifications list
                 List {
@@ -59,6 +72,9 @@ struct NotificationsView: View {
                                 Task {
                                     await appState.deleteNotification(id: notification.id)
                                 }
+                            },
+                            onNavigate: { destination in
+                                handleNavigation(destination)
                             }
                         )
                     }
@@ -74,9 +90,9 @@ struct NotificationsView: View {
                     SwiftUI.Button(showingUnreadOnly ? "Show All" : "Show Unread Only") {
                         showingUnreadOnly.toggle()
                     }
-                    
+
                     Divider()
-                    
+
                     SwiftUI.Button("Mark All as Read") {
                         markAllAsRead()
                     }
@@ -89,8 +105,56 @@ struct NotificationsView: View {
         .refreshable {
             await appState.loadNotifications()
         }
+        .background(
+            Group {
+                NavigationLink(destination: FriendsView(), isActive: $navigateToFriends) {
+                    EmptyView()
+                }
+                NavigationLink(destination: SupportView(), isActive: $navigateToSupport) {
+                    EmptyView()
+                }
+                if let buttonId = selectedButtonId,
+                   let button = appState.buttons.first(where: { $0.id == buttonId }) {
+                    NavigationLink(
+                        destination: ButtonHistoryView(button: button),
+                        isActive: Binding(
+                            get: { selectedButtonId != nil },
+                            set: { if !$0 { selectedButtonId = nil } }
+                        )
+                    ) {
+                        EmptyView()
+                    }
+                }
+                if let ticketId = selectedTicketId {
+                    NavigationLink(
+                        destination: SupportTicketView(ticketId: ticketId),
+                        isActive: Binding(
+                            get: { selectedTicketId != nil },
+                            set: { if !$0 { selectedTicketId = nil } }
+                        )
+                    ) {
+                        EmptyView()
+                    }
+                }
+            }
+        )
     }
-    
+
+    private func handleNavigation(_ destination: NotificationDestination) {
+        switch destination {
+        case .button(let buttonId):
+            selectedButtonId = buttonId
+        case .friends:
+            navigateToFriends = true
+        case .support:
+            navigateToSupport = true
+        case .supportTicket(let ticketId):
+            selectedTicketId = ticketId
+        case .none:
+            break
+        }
+    }
+
     private func deleteNotifications(offsets: IndexSet) {
         Task {
             for index in offsets {
@@ -99,7 +163,7 @@ struct NotificationsView: View {
             }
         }
     }
-    
+
     private func markAllAsRead() {
         Task {
             for notification in appState.notifications.filter({ !$0.isRead }) {
@@ -113,7 +177,8 @@ struct NotificationRow: View {
     let notification: AppNotification
     let onMarkRead: () -> Void
     let onDelete: () -> Void
-    
+    let onNavigate: (NotificationDestination) -> Void
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             // Notification icon
@@ -121,7 +186,7 @@ struct NotificationRow: View {
                 .font(.title3)
                 .foregroundColor(notification.isRead ? .secondary : .blue)
                 .frame(width: 24)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 // Title and category
                 HStack {
@@ -132,26 +197,26 @@ struct NotificationRow: View {
                         .padding(.vertical, 2)
                         .background(Color.blue.opacity(0.1))
                         .cornerRadius(4)
-                    
+
                     Spacer()
-                    
+
                     Text(notification.createdAt, style: .relative)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 // Title
                 Text(notification.title)
                     .font(.headline)
                     .fontWeight(notification.isRead ? .regular : .semibold)
                     .foregroundColor(notification.isRead ? .secondary : .primary)
-                
+
                 // Message
                 Text(notification.message)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(3)
-                
+
                 // Action buttons (if unread)
                 if !notification.isRead {
                     HStack(spacing: 12) {
@@ -160,19 +225,19 @@ struct NotificationRow: View {
                         }
                         .font(.caption)
                         .foregroundColor(.blue)
-                        
+
                         SwiftUI.Button("Delete") {
                             onDelete()
                         }
                         .font(.caption)
                         .foregroundColor(.red)
-                        
+
                         Spacer()
                     }
                     .padding(.top, 4)
                 }
             }
-            
+
             // Unread indicator
             if !notification.isRead {
                 Circle()
@@ -187,15 +252,16 @@ struct NotificationRow: View {
             if !notification.isRead {
                 onMarkRead()
             }
-            
+
             // Handle notification tap action based on type
-            handleNotificationTap()
+            let destination = getNavigationDestination()
+            onNavigate(destination)
         }
         .swipeActions(edge: .trailing) {
             SwiftUI.Button("Delete", role: .destructive) {
                 onDelete()
             }
-            
+
             if !notification.isRead {
                 SwiftUI.Button("Mark Read") {
                     onMarkRead()
@@ -204,25 +270,25 @@ struct NotificationRow: View {
             }
         }
     }
-    
-    private func handleNotificationTap() {
-        // Handle different notification types
+
+    private func getNavigationDestination() -> NotificationDestination {
         switch notification.type {
-        case .buttonClick:
-            // Navigate to button or activity view
-            break
+        case .buttonClick, .buttonShared, .giftButtonReceived, .giftButtonClicked, .giftButtonSent:
+            if let buttonId = notification.buttonId {
+                return .button(buttonId)
+            }
+            return .none
+        case .giftButtonDeleted:
+            return .none  // Button no longer exists
         case .friendRequest, .friendAccepted:
-            // Navigate to friends view
-            break
-        case .buttonShared:
-            // Navigate to shared button
-            break
-        case .systemAnnouncement, .general:
-            // Show announcement detail
-            break
-        case .subscriptionExpiring, .subscriptionRenewed:
-            // Navigate to subscription view
-            break
+            return .friends
+        case .supportTicketReply, .supportTicketStatusUpdate:
+            if let ticketId = notification.ticketId {
+                return .supportTicket(ticketId)
+            }
+            return .support
+        case .systemAnnouncement, .subscriptionExpiring, .subscriptionRenewed, .general:
+            return .none
         }
     }
 }

@@ -20,10 +20,20 @@ import com.buttonlog.app.ui.viewmodels.NotificationsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Navigation destination types for notifications
+sealed class NotificationNavigation {
+    data class Button(val buttonId: String) : NotificationNavigation()
+    object Friends : NotificationNavigation()
+    object Support : NotificationNavigation()
+    data class SupportTicket(val ticketId: String) : NotificationNavigation()
+    object None : NotificationNavigation()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
-    viewModel: NotificationsViewModel = hiltViewModel()
+    viewModel: NotificationsViewModel = hiltViewModel(),
+    onNavigate: (NotificationNavigation) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showMenu by remember { mutableStateOf(false) }
@@ -164,7 +174,14 @@ fun NotificationsScreen(
                             NotificationItem(
                                 notification = notification,
                                 onMarkRead = { viewModel.markAsRead(notification.id) },
-                                onDelete = { viewModel.deleteNotification(notification.id) }
+                                onDelete = { viewModel.deleteNotification(notification.id) },
+                                onNavigate = { destination ->
+                                    // Mark as read when navigating
+                                    if (!notification.isRead) {
+                                        viewModel.markAsRead(notification.id)
+                                    }
+                                    onNavigate(destination)
+                                }
                             )
                         }
                     }
@@ -196,7 +213,8 @@ fun NotificationsScreen(
 fun NotificationItem(
     notification: Notification,
     onMarkRead: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onNavigate: (NotificationNavigation) -> Unit = {}
 ) {
     val backgroundColor = if (!notification.isRead) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
@@ -212,6 +230,9 @@ fun NotificationItem(
                 if (!notification.isRead) {
                     onMarkRead()
                 }
+                // Navigate based on notification type
+                val destination = getNavigationDestination(notification)
+                onNavigate(destination)
             }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -331,6 +352,8 @@ fun getNotificationIcon(type: String): androidx.compose.ui.graphics.vector.Image
         "button_shared" -> Icons.Default.Share
         "system_announcement" -> Icons.Default.Campaign
         "subscription_expiring", "subscription_renewed" -> Icons.Default.CreditCard
+        "support_ticket_reply", "support_ticket_status_update" -> Icons.Default.HelpOutline
+        "gift_button_received", "gift_button_clicked", "gift_button_sent", "gift_button_deleted" -> Icons.Default.CardGiftcard
         else -> Icons.Default.Notifications
     }
 }
@@ -344,8 +367,44 @@ fun getNotificationTypeDisplayName(type: String): String {
         "system_announcement" -> "Announcement"
         "subscription_expiring" -> "Subscription"
         "subscription_renewed" -> "Subscription"
+        "support_ticket_reply" -> "Support Reply"
+        "support_ticket_status_update" -> "Ticket Status"
+        "gift_button_received" -> "Gift Received"
+        "gift_button_clicked" -> "Gift Button"
+        "gift_button_sent" -> "Gift Sent"
+        "gift_button_deleted" -> "Gift Deleted"
         "general" -> "Notification"
         else -> "Notification"
+    }
+}
+
+fun getNavigationDestination(notification: Notification): NotificationNavigation {
+    return when (notification.type) {
+        "button_click", "button_shared", "gift_button_received", "gift_button_clicked", "gift_button_sent" -> {
+            // Try to get button_id from the data map
+            val buttonId = notification.data?.get("button_id")?.toString()
+            if (buttonId != null) {
+                NotificationNavigation.Button(buttonId)
+            } else {
+                NotificationNavigation.None
+            }
+        }
+        "gift_button_deleted" -> {
+            // Button no longer exists
+            NotificationNavigation.None
+        }
+        "friend_request", "friend_accepted" -> {
+            NotificationNavigation.Friends
+        }
+        "support_ticket_reply", "support_ticket_status_update" -> {
+            val ticketId = notification.data?.get("ticket_id")?.toString()
+            if (ticketId != null) {
+                NotificationNavigation.SupportTicket(ticketId)
+            } else {
+                NotificationNavigation.Support
+            }
+        }
+        else -> NotificationNavigation.None
     }
 }
 
