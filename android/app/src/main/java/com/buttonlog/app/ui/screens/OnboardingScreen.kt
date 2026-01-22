@@ -284,25 +284,34 @@ private fun ButtonTypesPage(onNext: () -> Unit) {
             icon = Icons.Default.FlashOn,
             color = Color(0xFFFF9800),
             title = "Instant",
-            description = "One-tap tracking for simple events"
+            description = "Single click actions for quick tracking"
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         ButtonTypeCard(
-            icon = Icons.Default.Timer,
+            icon = Icons.Default.PowerSettingsNew,
             color = Color(0xFF4CAF50),
-            title = "Timed",
-            description = "Track duration with start/stop"
+            title = "Toggle",
+            description = "Start/stop with duration tracking"
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         ButtonTypeCard(
-            icon = Icons.Default.SwapHoriz,
+            icon = Icons.Default.LooksOne,
+            color = Color(0xFF2196F3),
+            title = "One-Time",
+            description = "Use once, then archived"
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ButtonTypeCard(
+            icon = Icons.Default.List,
             color = Color(0xFF9C27B0),
-            title = "State",
-            description = "Toggle between states (on/off, etc.)"
+            title = "Workflow",
+            description = "Predefined sequence of states"
         )
 
         Spacer(modifier = Modifier.weight(1f))

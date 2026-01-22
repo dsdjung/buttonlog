@@ -194,21 +194,28 @@ struct ButtonTypesPage: View {
                     icon: "bolt.fill",
                     color: .orange,
                     title: "Instant",
-                    description: "One-tap tracking for simple events"
+                    description: "Single click actions for quick tracking"
                 )
 
                 ButtonTypeCard(
-                    icon: "timer",
+                    icon: "power",
                     color: .green,
-                    title: "Timed",
-                    description: "Track duration with start/stop"
+                    title: "Toggle",
+                    description: "Start/stop with duration tracking"
                 )
 
                 ButtonTypeCard(
-                    icon: "arrow.left.arrow.right",
+                    icon: "1.circle.fill",
+                    color: .blue,
+                    title: "One-Time",
+                    description: "Use once, then archived"
+                )
+
+                ButtonTypeCard(
+                    icon: "list.bullet",
                     color: .purple,
-                    title: "State",
-                    description: "Toggle between states (on/off, etc.)"
+                    title: "Workflow",
+                    description: "Predefined sequence of states"
                 )
             }
             .padding(.horizontal, 32)
