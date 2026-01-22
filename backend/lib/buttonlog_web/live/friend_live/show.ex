@@ -43,7 +43,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
            |> assign(:can_view_history, can_view_history)
            |> assign(:show_gift_button_form, false)
            |> assign(:gift_button_name, "")
-           |> assign(:gift_button_type, "instant")
+           |> assign(:gift_button_type, "one-time")
            |> assign(:gift_button_icon, "star")
            |> assign(:gift_button_color, "#007AFF")
            |> assign(:gift_button_message, "")
@@ -93,7 +93,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
      socket
      |> assign(:show_gift_button_form, false)
      |> assign(:gift_button_name, "")
-     |> assign(:gift_button_type, "instant")
+     |> assign(:gift_button_type, "one-time")
      |> assign(:gift_button_icon, "star")
      |> assign(:gift_button_color, "#007AFF")
      |> assign(:gift_button_message, "")}
@@ -147,7 +147,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
          |> assign(:gift_buttons, gift_buttons)
          |> assign(:show_gift_button_form, false)
          |> assign(:gift_button_name, "")
-         |> assign(:gift_button_type, "instant")
+         |> assign(:gift_button_type, "one-time")
          |> assign(:gift_button_icon, "star")
          |> assign(:gift_button_color, "#007AFF")
          |> assign(:gift_button_message, "")}

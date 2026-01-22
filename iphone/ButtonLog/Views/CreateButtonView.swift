@@ -433,7 +433,7 @@ struct CreateGiftButtonView: View {
 
     let friend: Friend
 
-    @State private var formData = ButtonFormData()
+    @State private var formData = ButtonFormData(type: .oneTime)
     @State private var giftMessage: String = ""
     @State private var isLoading = false
 

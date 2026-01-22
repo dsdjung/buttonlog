@@ -356,7 +356,7 @@ fun CreateGiftButtonScreen(
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(ButtonType.INSTANT) }
+    var selectedType by remember { mutableStateOf(ButtonType.ONE_TIME) }
     var selectedIcon by remember { mutableStateOf("star") }
     var selectedColor by remember { mutableStateOf("#007AFF") }
     var giftMessage by remember { mutableStateOf("") }
