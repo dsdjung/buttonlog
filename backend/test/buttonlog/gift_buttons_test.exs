@@ -293,7 +293,7 @@ defmodule ButtonLog.GiftButtonsTest do
       assert completion_notification.recipient_id == user.id
     end
 
-    test "gift one-time button notifies creator on click before archiving" do
+    test "gift one-time button notifies both owner and creator on click" do
       creator = insert_user(%{email: "creator_onetime@test.com", username: "creator_onetime"})
       friend = insert_user(%{email: "friend_onetime@test.com", username: "friend_onetime", display_name: "One Time Friend"})
       create_friendship(creator.id, friend.id)
@@ -308,13 +308,24 @@ defmodule ButtonLog.GiftButtonsTest do
       # Click the button
       {:ok, _click} = Buttons.click_button(button.id, friend.id)
 
-      # Check notification was sent to creator
-      notifications = Notifications.get_user_notifications(creator.id)
-      click_notification = Enum.find(notifications, &(&1.notification_type == "gift_button_clicked"))
+      # Check notification was sent to creator (gift_button_clicked)
+      creator_notifications = Notifications.get_user_notifications(creator.id)
+      creator_notification = Enum.find(creator_notifications, &(&1.notification_type == "gift_button_clicked"))
 
-      assert click_notification != nil
-      assert click_notification.message =~ "One Time Friend"
-      assert click_notification.message =~ "One-Time Gift"
+      assert creator_notification != nil
+      assert creator_notification.title =~ "completed"
+      assert creator_notification.message =~ "One Time Friend"
+      assert creator_notification.message =~ "One-Time Gift"
+      assert creator_notification.message =~ "completed"
+
+      # Check notification was sent to owner (one_time_button_completed)
+      owner_notifications = Notifications.get_user_notifications(friend.id)
+      owner_notification = Enum.find(owner_notifications, &(&1.notification_type == "one_time_button_completed"))
+
+      assert owner_notification != nil
+      assert owner_notification.title == "Task Completed!"
+      assert owner_notification.message =~ "One-Time Gift"
+      assert owner_notification.message =~ "completed and archived"
 
       # Verify button is archived
       {:ok, updated_button} = Buttons.get_button(button.id, friend.id)

@@ -270,8 +270,8 @@ defmodule ButtonLog.Buttons do
 
     # Send notifications (outside transaction)
     if match?({:ok, _}, result) do
-      # Notify gift creator if this is a gift button
-      notify_gift_creator_of_click(button, "click")
+      # Notify gift creator if this is a gift button (use "complete" action for one-time buttons)
+      notify_gift_creator_of_click(button, "complete")
       # Notify the button owner that their one-time button was completed
       notify_one_time_button_completed(button, user_id)
     end
@@ -651,6 +651,7 @@ defmodule ButtonLog.Buttons do
         "start" -> "started"
         "end" -> "stopped"
         "stop" -> "stopped"
+        "complete" -> "completed"
         _ -> "clicked"
       end
 
