@@ -2,6 +2,7 @@ package com.buttonlog.app.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.buttonlog.app.data.api.ButtonAlertPreference
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonSharingSetting
@@ -148,6 +149,106 @@ class ButtonsViewModel @Inject constructor(
             )
         }
     }
+
+    // MARK: - Button Alert Preferences
+
+    fun loadButtonAlertPreferences(buttonId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingAlertPreferences = true, alertPreferencesError = null) }
+            val result = buttonRepository.getButtonAlertPreferences(buttonId)
+            result.fold(
+                onSuccess = { preferences ->
+                    _uiState.update {
+                        it.copy(
+                            buttonAlertPreferences = preferences,
+                            isLoadingAlertPreferences = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            alertPreferencesError = error.message,
+                            isLoadingAlertPreferences = false
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun toggleAlertPreference(buttonId: String, friendId: String, enabled: Boolean) {
+        viewModelScope.launch {
+            // Optimistically update UI
+            _uiState.update { state ->
+                val updatedPreferences = state.buttonAlertPreferences.map { pref ->
+                    if (pref.friendId == friendId) {
+                        pref.copy(enabled = enabled)
+                    } else {
+                        pref
+                    }
+                }
+                state.copy(buttonAlertPreferences = updatedPreferences)
+            }
+
+            // Make API call
+            val result = buttonRepository.setButtonAlertPreference(buttonId, friendId, enabled)
+            result.onFailure { error ->
+                // Revert on failure
+                _uiState.update { state ->
+                    val revertedPreferences = state.buttonAlertPreferences.map { pref ->
+                        if (pref.friendId == friendId) {
+                            pref.copy(enabled = !enabled)
+                        } else {
+                            pref
+                        }
+                    }
+                    state.copy(
+                        buttonAlertPreferences = revertedPreferences,
+                        alertPreferencesError = error.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun selectAllAlerts(buttonId: String) {
+        viewModelScope.launch {
+            // Optimistically update UI
+            _uiState.update { state ->
+                val updatedPreferences = state.buttonAlertPreferences.map { it.copy(enabled = true) }
+                state.copy(buttonAlertPreferences = updatedPreferences)
+            }
+
+            val result = buttonRepository.selectAllButtonAlerts(buttonId)
+            result.onFailure { error ->
+                // Reload on failure
+                loadButtonAlertPreferences(buttonId)
+                _uiState.update { it.copy(alertPreferencesError = error.message) }
+            }
+        }
+    }
+
+    fun deselectAllAlerts(buttonId: String) {
+        viewModelScope.launch {
+            // Optimistically update UI
+            _uiState.update { state ->
+                val updatedPreferences = state.buttonAlertPreferences.map { it.copy(enabled = false) }
+                state.copy(buttonAlertPreferences = updatedPreferences)
+            }
+
+            val result = buttonRepository.deselectAllButtonAlerts(buttonId)
+            result.onFailure { error ->
+                // Reload on failure
+                loadButtonAlertPreferences(buttonId)
+                _uiState.update { it.copy(alertPreferencesError = error.message) }
+            }
+        }
+    }
+
+    fun clearAlertPreferences() {
+        _uiState.update { it.copy(buttonAlertPreferences = emptyList(), alertPreferencesError = null) }
+    }
 }
 
 data class ButtonsUiState(
@@ -157,6 +258,10 @@ data class ButtonsUiState(
     val isLoading: Boolean = false,
     val isLoadingSharing: Boolean = false,
     val buttonSharingSettings: List<ButtonSharingSetting> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    // Alert preferences
+    val buttonAlertPreferences: List<ButtonAlertPreference> = emptyList(),
+    val isLoadingAlertPreferences: Boolean = false,
+    val alertPreferencesError: String? = null
 )
 

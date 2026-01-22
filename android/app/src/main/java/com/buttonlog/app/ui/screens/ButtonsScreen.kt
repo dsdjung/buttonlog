@@ -25,9 +25,17 @@ fun ButtonsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var buttonToDelete by remember { mutableStateOf<com.buttonlog.app.data.model.Button?>(null) }
+    var buttonForAlertSettings by remember { mutableStateOf<com.buttonlog.app.data.model.Button?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.fetchButtons()
+    }
+
+    // Load alert preferences when a button is selected for alert settings
+    LaunchedEffect(buttonForAlertSettings) {
+        buttonForAlertSettings?.let { button ->
+            viewModel.loadButtonAlertPreferences(button.id)
+        }
     }
 
     Column(
@@ -65,6 +73,9 @@ fun ButtonsScreen(
                     },
                     onHistoryClick = { button ->
                         onViewHistory(button)
+                    },
+                    onAlertSettingsClick = { button ->
+                        buttonForAlertSettings = button
                     },
                     onDeleteClick = { button ->
                         buttonToDelete = button
@@ -112,6 +123,41 @@ fun ButtonsScreen(
     uiState.error?.let { error ->
         LaunchedEffect(error) {
             // Show error message (could be a snackbar or toast)
+        }
+    }
+
+    // Alert settings dialog
+    buttonForAlertSettings?.let { button ->
+        AlertDialog(
+            onDismissRequest = {
+                buttonForAlertSettings = null
+                viewModel.clearAlertPreferences()
+            }
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large
+            ) {
+                ButtonAlertSettingsScreen(
+                    button = button,
+                    alertPreferences = uiState.buttonAlertPreferences,
+                    isLoading = uiState.isLoadingAlertPreferences,
+                    error = uiState.alertPreferencesError,
+                    onTogglePreference = { friendId, enabled ->
+                        viewModel.toggleAlertPreference(button.id, friendId, enabled)
+                    },
+                    onSelectAll = {
+                        viewModel.selectAllAlerts(button.id)
+                    },
+                    onDeselectAll = {
+                        viewModel.deselectAllAlerts(button.id)
+                    },
+                    onDismiss = {
+                        buttonForAlertSettings = null
+                        viewModel.clearAlertPreferences()
+                    }
+                )
+            }
         }
     }
 }
@@ -166,6 +212,7 @@ private fun ButtonsList(
     onButtonClick: (String) -> Unit,
     onEditClick: (com.buttonlog.app.data.model.Button) -> Unit,
     onHistoryClick: (com.buttonlog.app.data.model.Button) -> Unit,
+    onAlertSettingsClick: (com.buttonlog.app.data.model.Button) -> Unit,
     onDeleteClick: (com.buttonlog.app.data.model.Button) -> Unit
 ) {
     LazyColumn(
@@ -179,6 +226,7 @@ private fun ButtonsList(
                 onClick = { onButtonClick(button.id) },
                 onEditClick = { onEditClick(button) },
                 onHistoryClick = { onHistoryClick(button) },
+                onAlertSettingsClick = if (button.isOwner) {{ onAlertSettingsClick(button) }} else null,
                 onDeleteClick = { onDeleteClick(button) }
             )
         }

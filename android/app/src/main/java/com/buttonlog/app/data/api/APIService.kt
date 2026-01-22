@@ -70,6 +70,29 @@ interface APIService {
     @POST("buttons/gift")
     suspend fun createButtonForFriend(@Body request: CreateGiftButtonRequest): ButtonResponse
 
+    // Button alert preferences
+    @GET("buttons/{id}/alerts")
+    suspend fun getButtonAlertPreferences(@Path("id") buttonId: String): ApiResponse<List<ButtonAlertPreference>>
+
+    @POST("buttons/{id}/alerts/{friendId}/toggle")
+    suspend fun toggleButtonAlertPreference(
+        @Path("id") buttonId: String,
+        @Path("friendId") friendId: String
+    ): ApiResponse<ButtonAlertPreferenceResponse>
+
+    @PUT("buttons/{id}/alerts/{friendId}")
+    suspend fun setButtonAlertPreference(
+        @Path("id") buttonId: String,
+        @Path("friendId") friendId: String,
+        @Body request: SetAlertPreferenceRequest
+    ): ApiResponse<ButtonAlertPreferenceResponse>
+
+    @POST("buttons/{id}/alerts/select-all")
+    suspend fun selectAllButtonAlerts(@Path("id") buttonId: String): ApiResponse<SelectAllAlertsResponse>
+
+    @POST("buttons/{id}/alerts/deselect-all")
+    suspend fun deselectAllButtonAlerts(@Path("id") buttonId: String): ApiResponse<SelectAllAlertsResponse>
+
     // MARK: - User Endpoints
 
     @GET("users/profile")
@@ -427,17 +450,53 @@ sealed class ApiException(message: String) : Exception(message) {
     data class DecodingError(override val message: String) : ApiException(message)
 }
 
+// MARK: - Button Alert Preferences Models
+
+data class ButtonAlertPreference(
+    @SerializedName("friend_id")
+    val friendId: String,
+    @SerializedName("friend_username")
+    val friendUsername: String,
+    @SerializedName("friend_display_name")
+    val friendDisplayName: String?,
+    val enabled: Boolean,
+    @SerializedName("alert_type")
+    val alertType: String
+) {
+    val displayName: String
+        get() = friendDisplayName ?: friendUsername
+}
+
+data class ButtonAlertPreferenceResponse(
+    @SerializedName("friend_id")
+    val friendId: String,
+    val enabled: Boolean,
+    @SerializedName("alert_type")
+    val alertType: String
+)
+
+data class SetAlertPreferenceRequest(
+    val enabled: Boolean,
+    @SerializedName("alert_type")
+    val alertType: String = "click"
+)
+
+data class SelectAllAlertsResponse(
+    val message: String,
+    val count: Int
+)
+
 // MARK: - API Configuration
 
 object ApiConfig {
     const val BASE_URL = "http://10.0.2.2:14015/api/" // Android emulator localhost (port 14015)
     const val TIMEOUT_SECONDS = 30L
-    
+
     // Headers
     const val HEADER_AUTHORIZATION = "Authorization"
     const val HEADER_CONTENT_TYPE = "Content-Type"
     const val HEADER_ACCEPT = "Accept"
-    
+
     // Content types
     const val CONTENT_TYPE_JSON = "application/json"
     const val CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"

@@ -31,6 +31,7 @@ fun ButtonCard(
     onEditClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onSharingClick: (() -> Unit)? = null,
+    onAlertSettingsClick: (() -> Unit)? = null,
     onDeleteClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -68,6 +69,7 @@ fun ButtonCard(
                 onEditClick = onEditClick,
                 onHistoryClick = onHistoryClick,
                 onSharingClick = onSharingClick,
+                onAlertSettingsClick = onAlertSettingsClick,
                 onDeleteClick = onDeleteClick
             )
 
@@ -89,6 +91,7 @@ private fun ButtonHeader(
     onEditClick: () -> Unit,
     onHistoryClick: () -> Unit,
     onSharingClick: (() -> Unit)?,
+    onAlertSettingsClick: (() -> Unit)?,
     onDeleteClick: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -204,6 +207,19 @@ private fun ButtonHeader(
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.People, contentDescription = null)
+                            }
+                        )
+                    }
+
+                    if (onAlertSettingsClick != null) {
+                        DropdownMenuItem(
+                            text = { Text("Alert Settings") },
+                            onClick = {
+                                showMenu = false
+                                onAlertSettingsClick()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Notifications, contentDescription = null)
                             }
                         )
                     }

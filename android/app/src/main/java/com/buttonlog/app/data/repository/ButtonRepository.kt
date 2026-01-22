@@ -1,9 +1,11 @@
 package com.buttonlog.app.data.repository
 
 import com.buttonlog.app.data.api.APIService
+import com.buttonlog.app.data.api.ButtonAlertPreference
 import com.buttonlog.app.data.api.ButtonUpdateData
 import com.buttonlog.app.data.api.CreateButtonRequest
 import com.buttonlog.app.data.api.CreateGiftButtonRequest
+import com.buttonlog.app.data.api.SetAlertPreferenceRequest
 import com.buttonlog.app.data.api.UpdateButtonRequest
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
@@ -258,6 +260,84 @@ class ButtonRepository @Inject constructor(
             Result.failure(e)
         } finally {
             _isLoading.value = false
+        }
+    }
+
+    // MARK: - Button Alert Preferences
+
+    suspend fun getButtonAlertPreferences(buttonId: String): Result<List<ButtonAlertPreference>> {
+        return try {
+            val response = apiService.getButtonAlertPreferences(buttonId)
+            if (response.success) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to fetch alert preferences"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun toggleButtonAlertPreference(buttonId: String, friendId: String): Result<Boolean> {
+        return try {
+            val response = apiService.toggleButtonAlertPreference(buttonId, friendId)
+            if (response.success) {
+                Result.success(response.data.enabled)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to toggle alert preference"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun setButtonAlertPreference(
+        buttonId: String,
+        friendId: String,
+        enabled: Boolean,
+        alertType: String = "click"
+    ): Result<Boolean> {
+        return try {
+            val request = SetAlertPreferenceRequest(enabled = enabled, alertType = alertType)
+            val response = apiService.setButtonAlertPreference(buttonId, friendId, request)
+            if (response.success) {
+                Result.success(response.data.enabled)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to set alert preference"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun selectAllButtonAlerts(buttonId: String): Result<Int> {
+        return try {
+            val response = apiService.selectAllButtonAlerts(buttonId)
+            if (response.success) {
+                Result.success(response.data.count)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to select all alerts"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deselectAllButtonAlerts(buttonId: String): Result<Int> {
+        return try {
+            val response = apiService.deselectAllButtonAlerts(buttonId)
+            if (response.success) {
+                Result.success(response.data.count)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to deselect all alerts"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
