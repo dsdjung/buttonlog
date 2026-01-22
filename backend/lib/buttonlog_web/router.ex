@@ -60,6 +60,7 @@ defmodule ButtonLogWeb.Router do
     # Button endpoints
     get "/buttons", API.ButtonController, :index
     post "/buttons", API.ButtonController, :create
+    post "/buttons/gift", API.ButtonController, :create_for_friend
     get "/buttons/:id", API.ButtonController, :show
     put "/buttons/:id", API.ButtonController, :update
     delete "/buttons/:id", API.ButtonController, :delete

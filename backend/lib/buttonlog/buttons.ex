@@ -78,6 +78,9 @@ defmodule ButtonLog.Buttons do
   def delete_button(id, user_id) do
     case get_button(id, user_id) do
       {:ok, button} ->
+        # Notify gift creator before deletion (if this is a gift button)
+        notify_gift_creator_of_deletion(button)
+
         Repo.delete(button)
 
       error -> error
@@ -91,7 +94,7 @@ defmodule ButtonLog.Buttons do
     # First verify the button exists and belongs to the user
     case get_button(button_id, user_id) do
       {:ok, button} ->
-        case button.type do
+        result = case button.type do
           "timed" ->
             handle_timed_button_click(button, user_id)
 
@@ -100,14 +103,21 @@ defmodule ButtonLog.Buttons do
 
           _other_type ->
             # For instant buttons, just record a click
-            %ButtonClick{}
+            click_result = %ButtonClick{}
             |> ButtonClick.create_changeset(%{
               device: "web",
               platform: "web",
               action: "click"
             }, button_id, user_id)
             |> Repo.insert()
+
+            # Notify gift creator if this is a gift button
+            if match?({:ok, _}, click_result), do: notify_gift_creator_of_click(button, "click")
+
+            click_result
         end
+
+        result
 
       error -> error
     end
@@ -122,7 +132,7 @@ defmodule ButtonLog.Buttons do
         _ -> {"active", "start"}
       end
 
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
       # Update button state
       button
       |> Button.changeset(%{
@@ -140,6 +150,11 @@ defmodule ButtonLog.Buttons do
       }, button.id, user_id)
       |> Repo.insert!()
     end)
+
+    # Notify gift creator if this is a gift button (outside transaction)
+    if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, action)
+
+    result
   end
 
   defp handle_timed_button_click(button, user_id) do
@@ -152,7 +167,7 @@ defmodule ButtonLog.Buttons do
       end
 
     # Use a transaction to ensure consistency
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
       # Update button state
       button
       |> Button.changeset(%{
@@ -172,6 +187,11 @@ defmodule ButtonLog.Buttons do
 
       click_result
     end)
+
+    # Notify gift creator if this is a gift button (outside transaction)
+    if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, action)
+
+    result
   end
 
   @doc """
@@ -481,5 +501,102 @@ defmodule ButtonLog.Buttons do
     Enum.reject(buttons, fn button ->
       button.id in unshared_button_ids
     end)
+  end
+
+  # =============================================================================
+  # Gift Button Functions
+  # =============================================================================
+
+  @doc """
+  Creates a button for a friend (gift button).
+  The button will be owned by the friend but marked as created by the current user.
+
+  Returns {:error, :not_friends} if the users are not friends.
+  """
+  def create_button_for_friend(attrs, friend_id, creator_id, message \\ nil) do
+    alias ButtonLog.Social
+    alias ButtonLog.Notifications
+
+    if Social.are_friends?(creator_id, friend_id) do
+      # Create the button owned by the friend
+      result = %Button{}
+      |> Button.create_gift_changeset(attrs, friend_id, creator_id, message)
+      |> Repo.insert()
+
+      case result do
+        {:ok, button} ->
+          # Send notification to the friend about their new button
+          creator = ButtonLog.Accounts.get_user!(creator_id)
+          Notifications.create_notification(%{
+            notification_type: "gift_button_received",
+            title: "New Button Gift!",
+            message: "#{creator.display_name || creator.username} created a button for you: #{button.name}",
+            metadata: %{
+              button_id: button.id,
+              button_name: button.name,
+              creator_id: creator_id
+            }
+          }, friend_id, creator_id, button.id)
+
+          # Preload the creator for the response
+          button = Repo.preload(button, [:created_by_friend])
+          {:ok, button}
+
+        error ->
+          error
+      end
+    else
+      {:error, :not_friends}
+    end
+  end
+
+  @doc """
+  Sends a notification to the gift creator when a gift button is clicked.
+  Called from click_button when the button has a created_by_friend_id.
+  """
+  def notify_gift_creator_of_click(button, action) do
+    if button.created_by_friend_id do
+      alias ButtonLog.Notifications
+
+      owner = ButtonLog.Accounts.get_user!(button.user_id)
+      action_past = case action do
+        "start" -> "started"
+        "end" -> "stopped"
+        "stop" -> "stopped"
+        _ -> "clicked"
+      end
+
+      Notifications.create_notification(%{
+        notification_type: "gift_button_clicked",
+        title: "#{button.name} was #{action_past}!",
+        message: "#{owner.display_name || owner.username} #{action_past} the '#{button.name}' button you created for them",
+        metadata: %{
+          button_id: button.id,
+          button_name: button.name,
+          action: action
+        }
+      }, button.created_by_friend_id, button.user_id, button.id)
+    end
+  end
+
+  @doc """
+  Sends a notification to the gift creator when a gift button is deleted.
+  Called from delete_button when the button has a created_by_friend_id.
+  """
+  def notify_gift_creator_of_deletion(button) do
+    if button.created_by_friend_id do
+      alias ButtonLog.Notifications
+
+      owner = ButtonLog.Accounts.get_user!(button.user_id)
+
+      Notifications.create_notification(%{
+        notification_type: "gift_button_deleted",
+        title: "Button Removed",
+        message: "#{owner.display_name || owner.username} deleted the '#{button.name}' button you created for them",
+        metadata: %{
+          button_name: button.name
+        }
+      }, button.created_by_friend_id, button.user_id, nil)
+    end
   end
 end

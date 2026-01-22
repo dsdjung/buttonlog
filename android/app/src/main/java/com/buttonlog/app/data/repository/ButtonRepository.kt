@@ -3,6 +3,7 @@ package com.buttonlog.app.data.repository
 import com.buttonlog.app.data.api.APIService
 import com.buttonlog.app.data.api.ButtonUpdateData
 import com.buttonlog.app.data.api.CreateButtonRequest
+import com.buttonlog.app.data.api.CreateGiftButtonRequest
 import com.buttonlog.app.data.api.UpdateButtonRequest
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
@@ -220,6 +221,43 @@ class ButtonRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    /**
+     * Create a button for a friend (gift button).
+     * The button will appear in the friend's button list and
+     * the creator will be notified when the friend uses it.
+     */
+    suspend fun createButtonForFriend(
+        friendId: String,
+        buttonData: ButtonFormData,
+        message: String? = null
+    ): Result<Button> {
+        return try {
+            _isLoading.value = true
+            _error.value = null
+
+            val request = CreateGiftButtonRequest(
+                friendId = friendId,
+                button = buttonData,
+                message = message
+            )
+            val response = apiService.createButtonForFriend(request)
+            if (response.success && response.data != null) {
+                // Note: The created button belongs to the friend, not the creator,
+                // so we don't add it to our local buttons list
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to create gift button"
+                _error.value = errorMessage
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            _error.value = e.message ?: "Failed to create gift button"
+            Result.failure(e)
+        } finally {
+            _isLoading.value = false
         }
     }
 }

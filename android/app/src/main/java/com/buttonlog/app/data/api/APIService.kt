@@ -43,6 +43,9 @@ interface APIService {
     @PUT("buttons/{id}/sharing")
     suspend fun updateButtonSharing(@Path("id") id: String, @Body request: ButtonSharingUpdateRequest): ButtonSharingResponse
 
+    @POST("buttons/gift")
+    suspend fun createButtonForFriend(@Body request: CreateGiftButtonRequest): ButtonResponse
+
     // MARK: - User Endpoints
     
     @GET("users/profile")
@@ -150,6 +153,13 @@ data class CreateButtonRequest(
 
 data class UpdateButtonRequest(
     val button: ButtonUpdateData
+)
+
+data class CreateGiftButtonRequest(
+    @SerializedName("friend_id")
+    val friendId: String,
+    val button: ButtonFormData,
+    val message: String? = null
 )
 
 data class ButtonUpdateData(

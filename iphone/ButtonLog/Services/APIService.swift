@@ -288,7 +288,24 @@ class APIService {
             body: ["button": formData.toRequestBody()]
         )
     }
-    
+
+    /// Create a button for a friend (gift button)
+    func createButtonForFriend(friendId: String, formData: ButtonFormData, message: String? = nil) async throws -> Button {
+        var body: [String: Any] = [
+            "friend_id": friendId,
+            "button": formData.toRequestBody()
+        ]
+        if let message = message, !message.isEmpty {
+            body["message"] = message
+        }
+
+        return try await makeRequest(
+            endpoint: "/buttons/gift",
+            method: .POST,
+            body: body
+        )
+    }
+
     func updateButton(id: String, formData: ButtonFormData) async throws -> Button {
         return try await makeRequest(
             endpoint: "/buttons/\(id)",

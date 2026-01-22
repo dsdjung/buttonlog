@@ -274,7 +274,7 @@ defmodule ButtonLogWeb.API.ButtonController do
   end
 
   defp serialize_button(button) do
-    %{
+    base = %{
       id: button.id,
       name: button.name,
       description: button.description,
@@ -289,8 +289,21 @@ defmodule ButtonLogWeb.API.ButtonController do
       calendar_sync_enabled: button.calendar_sync_enabled,
       user_id: button.user_id,
       created_at: format_datetime(button.inserted_at),
-      updated_at: format_datetime(button.updated_at)
+      updated_at: format_datetime(button.updated_at),
+      created_by_friend_id: button.created_by_friend_id,
+      gift_message: button.gift_message
     }
+
+    # Add created_by_friend info if preloaded and present
+    if button.created_by_friend_id && Ecto.assoc_loaded?(button.created_by_friend) && button.created_by_friend do
+      Map.put(base, :created_by_friend, %{
+        id: button.created_by_friend.id,
+        username: button.created_by_friend.username,
+        display_name: button.created_by_friend.display_name
+      })
+    else
+      base
+    end
   end
 
   defp serialize_click(click) do
@@ -405,6 +418,60 @@ defmodule ButtonLogWeb.API.ButtonController do
           error: %{
             code: "NOT_FOUND",
             message: "Button not found"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+    end
+  end
+
+  @doc """
+  Creates a button for a friend (gift button).
+  POST /api/buttons/gift
+  """
+  def create_for_friend(conn, %{"friend_id" => friend_id, "button" => button_params} = params) do
+    user = conn.assigns.current_user
+    message = Map.get(params, "message")
+
+    case Buttons.create_button_for_friend(button_params, friend_id, user.id, message) do
+      {:ok, button} ->
+        conn
+        |> put_status(:created)
+        |> json(%{
+          success: true,
+          data: serialize_button(button),
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
+      {:error, :not_friends} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "NOT_FRIENDS",
+            message: "You can only create buttons for your friends"
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "VALIDATION_ERROR",
+            message: "Invalid input data",
+            details: format_changeset_errors(changeset)
           },
           meta: %{
             timestamp: DateTime.utc_now(),

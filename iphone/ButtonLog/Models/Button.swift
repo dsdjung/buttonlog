@@ -17,16 +17,31 @@ struct Button: Identifiable, Codable, Equatable {
     let userId: String
     let createdAt: Date
     let updatedAt: Date
-    
+
+    // Gift button fields
+    let createdByFriendId: String?
+    let createdByFriend: GiftCreator?
+    let giftMessage: String?
+
     // Computed properties
     var hexColor: String {
         return color.hasPrefix("#") ? color : "#\(color)"
     }
-    
+
     var uiColor: Color {
         return Color(hex: hexColor)
     }
-    
+
+    /// True if this button was created by a friend as a gift
+    var isGift: Bool {
+        return createdByFriendId != nil
+    }
+
+    /// Display name of the friend who created this button as a gift
+    var giftFromName: String? {
+        return createdByFriend?.displayName ?? createdByFriend?.username
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, name, description, type, icon, color
         case isActive = "is_active"
@@ -38,6 +53,21 @@ struct Button: Identifiable, Codable, Equatable {
         case userId = "user_id"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case createdByFriendId = "created_by_friend_id"
+        case createdByFriend = "created_by_friend"
+        case giftMessage = "gift_message"
+    }
+}
+
+/// Minimal user info for gift button creator
+struct GiftCreator: Codable, Equatable {
+    let id: String
+    let username: String?
+    let displayName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, username
+        case displayName = "display_name"
     }
 }
 

@@ -25,7 +25,10 @@ defmodule ButtonLog.Notifications.Notification do
     notification
     |> cast(attrs, [:notification_type, :title, :message, :read, :clicked_at, :metadata])
     |> validate_required([:notification_type, :title, :message])
-    |> validate_inclusion(:notification_type, ["button_click", "friend_request", "general"])
+    |> validate_inclusion(:notification_type, [
+      "button_click", "friend_request", "general",
+      "gift_button_received", "gift_button_clicked", "gift_button_deleted"
+    ])
   end
 
   def create_changeset(notification, attrs, recipient_id, sender_id, button_id) do

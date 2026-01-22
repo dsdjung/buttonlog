@@ -28,6 +28,7 @@ import com.buttonlog.app.ui.screens.AccountScreen
 import com.buttonlog.app.ui.screens.ButtonHistoryScreen
 import com.buttonlog.app.ui.screens.ButtonsScreen
 import com.buttonlog.app.ui.screens.DiaryScreen
+import com.buttonlog.app.ui.screens.CreateGiftButtonScreen
 import com.buttonlog.app.ui.screens.EditButtonScreen
 import com.buttonlog.app.ui.screens.FriendDetailScreen
 import com.buttonlog.app.ui.screens.FriendsScreen
@@ -68,9 +69,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var buttonToEdit by remember { mutableStateOf<Button?>(null) }
     var buttonToViewHistory by remember { mutableStateOf<Button?>(null) }
     var selectedFriend by remember { mutableStateOf<Friend?>(null) }
+    var friendForGiftButton by remember { mutableStateOf<Friend?>(null) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
     val friendsUiState by friendsViewModel.uiState.collectAsState()
+    val buttonsUiState by buttonsViewModel.uiState.collectAsState()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -250,6 +253,25 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             },
             onLoadMoreActivity = {
                 friendsViewModel.loadMoreActivity(friend.friendId)
+            },
+            onCreateGiftButton = { friendToGift ->
+                friendForGiftButton = friendToGift
+            }
+        )
+    }
+
+    // Create Gift Button Screen
+    friendForGiftButton?.let { friend ->
+        CreateGiftButtonScreen(
+            friend = friend,
+            isLoading = buttonsUiState.isLoading,
+            error = buttonsUiState.error,
+            onCreateButton = { formData, message ->
+                buttonsViewModel.createButtonForFriend(friend.friendId, formData, message)
+                friendForGiftButton = null
+            },
+            onNavigateBack = {
+                friendForGiftButton = null
             }
         )
     }

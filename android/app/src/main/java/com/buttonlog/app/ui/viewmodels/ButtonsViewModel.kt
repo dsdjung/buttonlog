@@ -132,6 +132,22 @@ class ButtonsViewModel @Inject constructor(
     fun clearButtonSharing() {
         _uiState.update { it.copy(buttonSharingSettings = emptyList()) }
     }
+
+    fun createButtonForFriend(friendId: String, buttonData: ButtonFormData, message: String? = null) {
+        viewModelScope.launch {
+            val result = buttonRepository.createButtonForFriend(friendId, buttonData, message)
+            result.fold(
+                onSuccess = {
+                    // Button created successfully - no need to update local list
+                    // since it belongs to the friend, not the current user
+                    _uiState.update { it.copy(error = null) }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(error = error.message) }
+                }
+            )
+        }
+    }
 }
 
 data class ButtonsUiState(

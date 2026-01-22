@@ -28,14 +28,37 @@ data class Button(
     @SerializedName("created_at")
     val createdAt: Date,
     @SerializedName("updated_at")
-    val updatedAt: Date
+    val updatedAt: Date,
+    // Gift button fields
+    @SerializedName("created_by_friend_id")
+    val createdByFriendId: String? = null,
+    @SerializedName("created_by_friend")
+    val createdByFriend: GiftCreator? = null,
+    @SerializedName("gift_message")
+    val giftMessage: String? = null
 ) {
     val hexColor: String
         get() = if (color.startsWith("#")) color else "#$color"
-    
+
     val uiColor: Color
         get() = Color(android.graphics.Color.parseColor(hexColor))
+
+    /** True if this button was created by a friend as a gift */
+    val isGift: Boolean
+        get() = createdByFriendId != null
+
+    /** Display name of the friend who created this button as a gift */
+    val giftFromName: String?
+        get() = createdByFriend?.displayName ?: createdByFriend?.username
 }
+
+/** Minimal user info for gift button creator */
+data class GiftCreator(
+    val id: String,
+    val username: String?,
+    @SerializedName("display_name")
+    val displayName: String?
+)
 
 enum class ButtonType(val displayName: String, val icon: String) {
     @SerializedName("instant")

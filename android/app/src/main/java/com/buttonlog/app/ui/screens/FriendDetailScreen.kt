@@ -36,7 +36,8 @@ fun FriendDetailScreen(
     onNavigateBack: () -> Unit,
     onRemoveFriend: (String) -> Unit,
     onUpdatePermissions: (String, FriendPermissionUpdate) -> Unit,
-    onLoadMoreActivity: () -> Unit = {}
+    onLoadMoreActivity: () -> Unit = {},
+    onCreateGiftButton: (Friend) -> Unit = {}
 ) {
     var showRemoveDialog by remember { mutableStateOf(false) }
     var canSeeButtons by remember { mutableStateOf(friend.permissions.canSeeButtons) }
@@ -79,6 +80,25 @@ fun FriendDetailScreen(
             // Friend info card
             item {
                 FriendInfoCard(friend = friend)
+            }
+
+            // Actions section
+            item {
+                Button(
+                    onClick = { onCreateGiftButton(friend) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF9C27B0) // Purple for gift
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CardGiftcard,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Create Button for ${friend.friendUser.displayNameOrUsername}")
+                }
             }
 
             // Friend's buttons section

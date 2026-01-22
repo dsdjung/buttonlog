@@ -143,6 +143,9 @@ private fun ButtonHeader(
                 if (button.currentState == ButtonState.ACTIVE) {
                     ButtonStateTag(button.currentState)
                 }
+                if (button.isGift) {
+                    GiftBadge(fromName = button.giftFromName ?: "a friend")
+                }
             }
         }
 
@@ -275,6 +278,33 @@ private fun ButtonStateTag(buttonState: ButtonState) {
             color = buttonState.color,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
+    }
+}
+
+@Composable
+private fun GiftBadge(fromName: String) {
+    val purple = Color(0xFF9C27B0)
+    Surface(
+        color = purple.copy(alpha = 0.2f),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.CardGiftcard,
+                contentDescription = null,
+                tint = purple,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(
+                text = "From $fromName",
+                style = MaterialTheme.typography.labelSmall,
+                color = purple
+            )
+        }
     }
 }
 

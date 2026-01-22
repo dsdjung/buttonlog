@@ -427,6 +427,236 @@ struct EditButtonView: View {
     }
 }
 
+struct CreateGiftButtonView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject private var appState: AppState
+
+    let friend: Friend
+
+    @State private var formData = ButtonFormData()
+    @State private var giftMessage: String = ""
+    @State private var isLoading = false
+
+    let buttonColors = [
+        "#007AFF", "#FF3B30", "#FF9500", "#FFCC00",
+        "#34C759", "#00C7BE", "#5AC8FA", "#AF52DE",
+        "#FF2D92", "#8E8E93", "#000000", "#6D6D6D"
+    ]
+
+    let buttonIcons = [
+        "star.fill", "heart.fill", "bolt.fill", "flame.fill",
+        "leaf.fill", "drop.fill", "sun.max.fill", "moon.fill",
+        "cloud.fill", "snowflake", "car.fill", "airplane",
+        "gamecontroller.fill", "book.fill", "pencil", "scissors",
+        "wrench.fill", "hammer.fill", "gear", "house.fill"
+    ]
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Creating Button for \(friend.friendUser.displayNameOrUsername)")) {
+                    Text("This button will appear in \(friend.friendUser.displayNameOrUsername)'s button list. You'll be notified when they use it.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Section(header: Text("Basic Information")) {
+                    TextField("Button Name", text: $formData.name)
+
+                    TextField("Description (optional)", text: $formData.description, axis: .vertical)
+                        .lineLimit(3)
+                }
+
+                Section(header: Text("Button Type")) {
+                    Picker("Type", selection: $formData.type) {
+                        ForEach(ButtonType.allCases, id: \.self) { type in
+                            VStack(alignment: .leading) {
+                                Text(type.displayName)
+                                    .font(.headline)
+                                Text(type.description)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .tag(type)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
+                Section(header: Text("Appearance")) {
+                    // Icon Selection
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 16) {
+                        ForEach(buttonIcons, id: \.self) { icon in
+                            SwiftUI.Button(action: {
+                                formData.icon = icon
+                            }) {
+                                Image(systemName: icon)
+                                    .font(.title3)
+                                    .foregroundColor(formData.icon == icon ? .white : .primary)
+                                    .frame(width: 44, height: 44)
+                                    .background(
+                                        Circle()
+                                            .fill(formData.icon == icon ? Color(hex: formData.color) : Color(.systemGray5))
+                                    )
+                            }
+                        }
+                    }
+
+                    // Color Selection
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 16) {
+                        ForEach(buttonColors, id: \.self) { color in
+                            SwiftUI.Button(action: {
+                                formData.color = color
+                            }) {
+                                Circle()
+                                    .fill(Color(hex: color))
+                                    .frame(width: 32, height: 32)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.white, lineWidth: 2)
+                                            .opacity(formData.color == color ? 1 : 0)
+                                    )
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text("Gift Message (Optional)")) {
+                    TextField("Add a message for your friend", text: $giftMessage, axis: .vertical)
+                        .lineLimit(3)
+                }
+
+                Section {
+                    // Preview
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Preview")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+
+                        GiftButtonPreview(formData: formData, friendName: friend.friendUser.displayNameOrUsername)
+                    }
+                }
+            }
+            .navigationTitle("Create Gift Button")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    SwiftUI.Button("Cancel") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    SwiftUI.Button("Create") {
+                        createGiftButton()
+                    }
+                    .disabled(!formData.isValid || isLoading)
+                }
+            }
+        }
+        .disabled(isLoading)
+    }
+
+    private func createGiftButton() {
+        isLoading = true
+
+        Task {
+            do {
+                let _ = try await APIService.shared.createButtonForFriend(
+                    friendId: friend.friendId,
+                    formData: formData,
+                    message: giftMessage.isEmpty ? nil : giftMessage
+                )
+
+                await MainActor.run {
+                    isLoading = false
+                    presentationMode.wrappedValue.dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    appState.errorMessage = "Failed to create button: \(error.localizedDescription)"
+                    isLoading = false
+                }
+            }
+        }
+    }
+}
+
+struct GiftButtonPreview: View {
+    let formData: ButtonFormData
+    let friendName: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: formData.color))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: formData.icon)
+                        .foregroundColor(.white)
+                        .font(.title3)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(formData.name.isEmpty ? "Button Name" : formData.name)
+                        .font(.headline)
+
+                    if !formData.description.isEmpty {
+                        Text(formData.description)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+
+                    HStack(spacing: 8) {
+                        Text(formData.type.displayName)
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(.systemGray5))
+                            .cornerRadius(8)
+
+                        // Gift badge
+                        HStack(spacing: 4) {
+                            Image(systemName: "gift.fill")
+                                .font(.caption2)
+                            Text("Gift for \(friendName)")
+                                .font(.caption)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.purple.opacity(0.2))
+                        .foregroundColor(.purple)
+                        .cornerRadius(8)
+                    }
+                }
+
+                Spacer()
+            }
+
+            SwiftUI.Button("Click!") {
+                // Preview button - no action
+            }
+            .font(.headline)
+            .fontWeight(.semibold)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(hex: formData.color))
+            )
+            .disabled(true)
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+    }
+}
+
 #Preview {
     CreateButtonView()
         .environmentObject(AppState())

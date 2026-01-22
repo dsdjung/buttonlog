@@ -46,3 +46,6 @@ DerivedData/
 *.pem
 *.key
 credentials.json
+
+# Firebase config (contains project-specific keys)
+android/app/google-services.json

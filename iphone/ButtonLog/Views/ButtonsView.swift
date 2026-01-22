@@ -129,15 +129,19 @@ struct ButtonCard: View {
                     
                     HStack(spacing: 8) {
                         ButtonTypeTag(type: button.type)
-                        
+
                         if button.currentState == .active {
                             ButtonStateTag(state: button.currentState)
                         }
+
+                        if button.isGift, let fromName = button.giftFromName {
+                            GiftBadge(fromName: fromName)
+                        }
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Settings menu
                 Menu {
                     SwiftUI.Button(action: onHistory) {
@@ -252,7 +256,7 @@ struct ButtonTypeTag: View {
 
 struct ButtonStateTag: View {
     let state: ButtonState
-    
+
     var body: some View {
         Text(state.displayName)
             .font(.caption)
@@ -261,6 +265,24 @@ struct ButtonStateTag: View {
             .background(state.color.opacity(0.2))
             .foregroundColor(state.color)
             .cornerRadius(8)
+    }
+}
+
+struct GiftBadge: View {
+    let fromName: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "gift.fill")
+                .font(.caption2)
+            Text("From \(fromName)")
+                .font(.caption)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.purple.opacity(0.2))
+        .foregroundColor(.purple)
+        .cornerRadius(8)
     }
 }
 

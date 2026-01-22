@@ -80,27 +80,14 @@ defmodule ButtonLog.Notifications do
   Gets all friends who should be notified for a specific button click.
   """
   def get_notification_recipients(button_id, user_id) do
-    IO.puts "=== GET NOTIFICATION RECIPIENTS DEBUG ==="
-    IO.puts "button_id: #{button_id}"
-    IO.puts "user_id: #{user_id}"
-
-    # For now, just get enabled notification preferences without permission checks
-    # We'll add permission checks later when the system is working
+    # Get enabled notification preferences for friends who should be notified
     preferences = Repo.all(
       from p in ButtonNotificationPreference,
       where: p.button_id == ^button_id and p.user_id == ^user_id and p.enabled == true,
       preload: [:friend]
     )
 
-    IO.puts "Found #{length(preferences)} enabled notification preferences"
-
-    recipients = Enum.map(preferences, fn preference ->
-      IO.puts "Friend #{preference.friend.display_name} (#{preference.friend.id}) will be notified"
-      preference.friend
-    end)
-
-    IO.puts "Total recipients: #{length(recipients)}"
-    recipients
+    Enum.map(preferences, fn preference -> preference.friend end)
   end
 
   # Notification History
@@ -109,23 +96,9 @@ defmodule ButtonLog.Notifications do
   Creates a new notification.
   """
   def create_notification(attrs, recipient_id, sender_id, button_id) do
-    IO.puts "=== CREATE NOTIFICATION DEBUG ==="
-    IO.puts "attrs: #{inspect(attrs)}"
-    IO.puts "recipient_id: #{recipient_id}"
-    IO.puts "sender_id: #{sender_id}"
-    IO.puts "button_id: #{button_id}"
-
-    changeset = %Notification{}
+    %Notification{}
     |> Notification.create_changeset(attrs, recipient_id, sender_id, button_id)
-
-    IO.puts "Changeset valid?: #{changeset.valid?}"
-    if not changeset.valid? do
-      IO.puts "Changeset errors: #{inspect(changeset.errors)}"
-    end
-
-    result = Repo.insert(changeset)
-    IO.puts "Insert result: #{inspect(result)}"
-    result
+    |> Repo.insert()
   end
 
   @doc """

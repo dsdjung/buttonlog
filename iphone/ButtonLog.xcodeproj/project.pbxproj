@@ -31,6 +31,7 @@
 		CD11234567890035 /* ButtonHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890034 /* ButtonHistoryView.swift */; };
 		CD11234567890037 /* FriendButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890036 /* FriendButtonsView.swift */; };
 		CD11234567890039 /* FriendActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890038 /* FriendActivityView.swift */; };
+		CD11234567890041 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890040 /* PushNotificationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -59,6 +60,7 @@
 		CD11234567890034 /* ButtonHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonHistoryView.swift; sourceTree = "<group>"; };
 		CD11234567890036 /* FriendButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendButtonsView.swift; sourceTree = "<group>"; };
 		CD11234567890038 /* FriendActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendActivityView.swift; sourceTree = "<group>"; };
+		CD11234567890040 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +131,7 @@
 				CD11234567890010 /* APIService.swift */,
 				CD11234567890012 /* AuthenticationManager.swift */,
 				CD11234567890014 /* KeychainManager.swift */,
+				CD11234567890040 /* PushNotificationManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -251,6 +254,7 @@
 				CD11234567890035 /* ButtonHistoryView.swift in Sources */,
 				CD11234567890037 /* FriendButtonsView.swift in Sources */,
 				CD11234567890039 /* FriendActivityView.swift in Sources */,
+				CD11234567890041 /* PushNotificationManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

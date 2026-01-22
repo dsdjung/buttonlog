@@ -214,6 +214,7 @@ struct FriendDetailView: View {
     @State private var isLoading = false
     @State private var showingRemoveAlert = false
     @State private var showingFriendButtons = false
+    @State private var showingCreateGiftButton = false
 
     var body: some View {
         NavigationView {
@@ -235,6 +236,19 @@ struct FriendDetailView: View {
                             .foregroundColor(.secondary)
                     }
                     .padding(.vertical, 8)
+                }
+
+                Section("Actions") {
+                    SwiftUI.Button(action: {
+                        showingCreateGiftButton = true
+                    }) {
+                        HStack {
+                            Image(systemName: "gift.fill")
+                                .foregroundColor(.purple)
+                            Text("Create Button for \(friend.friendUser.displayNameOrUsername)")
+                                .foregroundColor(.primary)
+                        }
+                    }
                 }
 
                 Section("Activity") {
@@ -296,6 +310,9 @@ struct FriendDetailView: View {
             }
         } message: {
             Text("Are you sure you want to remove \(friend.friendUser.displayNameOrUsername) as a friend?")
+        }
+        .sheet(isPresented: $showingCreateGiftButton) {
+            CreateGiftButtonView(friend: friend)
         }
         .disabled(isLoading)
     }

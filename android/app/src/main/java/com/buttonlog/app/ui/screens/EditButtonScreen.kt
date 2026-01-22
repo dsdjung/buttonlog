@@ -21,7 +21,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.buttonlog.app.data.model.Button
+import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonSharingSetting
+import com.buttonlog.app.data.model.ButtonType
+import com.buttonlog.app.data.model.Friend
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -338,6 +341,240 @@ private fun ColorOption(
                 contentDescription = null,
                 tint = Color.White
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateGiftButtonScreen(
+    friend: Friend,
+    isLoading: Boolean,
+    error: String?,
+    onCreateButton: (ButtonFormData, String?) -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(ButtonType.INSTANT) }
+    var selectedIcon by remember { mutableStateOf("star") }
+    var selectedColor by remember { mutableStateOf("#007AFF") }
+    var giftMessage by remember { mutableStateOf("") }
+
+    val scrollState = rememberScrollState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Gift Button") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = {
+                            val formData = ButtonFormData(
+                                name = name,
+                                description = description,
+                                type = selectedType,
+                                icon = selectedIcon,
+                                color = selectedColor,
+                                notificationsEnabled = true,
+                                autoStopEnabled = false,
+                                calendarSyncEnabled = false
+                            )
+                            onCreateButton(formData, giftMessage.ifEmpty { null })
+                        },
+                        enabled = name.isNotBlank() && !isLoading
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Create")
+                        }
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Info card about gift button
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF9C27B0).copy(alpha = 0.1f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CardGiftcard,
+                            contentDescription = null,
+                            tint = Color(0xFF9C27B0)
+                        )
+                        Text(
+                            text = "Creating button for ${friend.friendUser.displayNameOrUsername}",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color(0xFF9C27B0)
+                        )
+                    }
+                    Text(
+                        text = "This button will appear in ${friend.friendUser.displayNameOrUsername}'s button list. You'll be notified when they use it.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Error message
+            error?.let { errorMessage ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = errorMessage,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+
+            // Name field
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Button Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            // Description field
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description (optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4
+            )
+
+            // Button type selector
+            Text(
+                text = "Button Type",
+                style = MaterialTheme.typography.titleMedium
+            )
+            ButtonTypeSelector(
+                selectedType = selectedType,
+                onTypeSelected = { selectedType = it }
+            )
+
+            // Icon selector
+            Text(
+                text = "Icon",
+                style = MaterialTheme.typography.titleMedium
+            )
+            IconSelector(
+                selectedIcon = selectedIcon,
+                onIconSelected = { selectedIcon = it }
+            )
+
+            // Color selector
+            Text(
+                text = "Color",
+                style = MaterialTheme.typography.titleMedium
+            )
+            ColorSelector(
+                selectedColor = selectedColor,
+                onColorSelected = { selectedColor = it }
+            )
+
+            // Gift message
+            Text(
+                text = "Gift Message (optional)",
+                style = MaterialTheme.typography.titleMedium
+            )
+            OutlinedTextField(
+                value = giftMessage,
+                onValueChange = { giftMessage = it },
+                label = { Text("Add a message for your friend") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4
+            )
+        }
+    }
+}
+
+@Composable
+private fun ButtonTypeSelector(
+    selectedType: ButtonType,
+    onTypeSelected: (ButtonType) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ButtonType.values().forEach { type ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onTypeSelected(type) },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selectedType == type)
+                        MaterialTheme.colorScheme.primaryContainer
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = type.displayName,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = when (type) {
+                                ButtonType.INSTANT -> "Click once to record"
+                                ButtonType.TIMED -> "Track duration with start/stop"
+                                ButtonType.STATE -> "Toggle on/off state"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (selectedType == type) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
         }
     }
 }

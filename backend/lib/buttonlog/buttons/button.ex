@@ -22,7 +22,11 @@ defmodule ButtonLog.Buttons.Button do
 
     # Relationships
     belongs_to :user, ButtonLog.Accounts.User
+    belongs_to :created_by_friend, ButtonLog.Accounts.User
     has_many :button_clicks, ButtonLog.Buttons.ButtonClick
+
+    # Gift button fields
+    field :gift_message, :string
 
     timestamps()
   end
@@ -49,5 +53,15 @@ defmodule ButtonLog.Buttons.Button do
     |> put_change(:notifications_enabled, true)
     |> put_change(:auto_stop_enabled, false)
     |> put_change(:calendar_sync_enabled, false)
+  end
+
+  @doc """
+  Creates a changeset for a gift button (created by a friend for the user).
+  """
+  def create_gift_changeset(button, attrs, owner_id, gifter_id, message) do
+    button
+    |> create_changeset(attrs, owner_id)
+    |> put_change(:created_by_friend_id, gifter_id)
+    |> put_change(:gift_message, message)
   end
 end
