@@ -172,7 +172,7 @@ struct SubscriptionStats: Codable {
     let averageClicksPerDay: Double
     let mostActiveButton: String?
     let streakDays: Int
-    
+
     enum CodingKeys: String, CodingKey {
         case totalButtons = "total_buttons"
         case totalFriends = "total_friends"
@@ -184,4 +184,229 @@ struct SubscriptionStats: Codable {
         case mostActiveButton = "most_active_button"
         case streakDays = "streak_days"
     }
+}
+
+// MARK: - Stripe Integration Models
+
+/// Response from creating a Stripe Checkout session
+struct CheckoutSession: Codable {
+    let checkoutUrl: String
+    let sessionId: String
+
+    enum CodingKeys: String, CodingKey {
+        case checkoutUrl = "checkout_url"
+        case sessionId = "session_id"
+    }
+}
+
+/// Response from creating a Stripe Customer Portal session
+struct PortalSession: Codable {
+    let portalUrl: String
+
+    enum CodingKeys: String, CodingKey {
+        case portalUrl = "portal_url"
+    }
+}
+
+/// Response from creating a Stripe Setup Intent (for adding payment methods)
+struct SetupIntent: Codable {
+    let clientSecret: String
+    let setupIntentId: String
+
+    enum CodingKeys: String, CodingKey {
+        case clientSecret = "client_secret"
+        case setupIntentId = "setup_intent_id"
+    }
+}
+
+/// User's saved payment method
+struct PaymentMethod: Identifiable, Codable {
+    let id: String
+    let userId: String
+    let paymentProvider: String
+    let cardBrand: String?
+    let cardLastFour: String?
+    let cardExpMonth: Int?
+    let cardExpYear: Int?
+    let isDefault: Bool
+    let isActive: Bool
+    let createdAt: Date
+    let updatedAt: Date
+
+    var displayString: String {
+        guard let brand = cardBrand, let last4 = cardLastFour else {
+            return "Unknown card"
+        }
+        return "\(brand.capitalized) •••• \(last4)"
+    }
+
+    var expirationString: String? {
+        guard let month = cardExpMonth, let year = cardExpYear else { return nil }
+        return String(format: "%02d/%02d", month, year % 100)
+    }
+
+    var isExpired: Bool {
+        guard let month = cardExpMonth, let year = cardExpYear else { return false }
+        let now = Date()
+        let calendar = Calendar.current
+        let currentYear = calendar.component(.year, from: now)
+        let currentMonth = calendar.component(.month, from: now)
+
+        if year < currentYear {
+            return true
+        } else if year == currentYear && month < currentMonth {
+            return true
+        }
+        return false
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case paymentProvider = "payment_provider"
+        case cardBrand = "card_brand"
+        case cardLastFour = "card_last_four"
+        case cardExpMonth = "card_exp_month"
+        case cardExpYear = "card_exp_year"
+        case isDefault = "is_default"
+        case isActive = "is_active"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// Invoice for billing
+struct Invoice: Identifiable, Codable {
+    let id: String
+    let userId: String
+    let invoiceNumber: String?
+    let status: InvoiceStatus
+    let amountDue: Double
+    let amountPaid: Double
+    let currency: String
+    let invoiceDate: Date
+    let dueDate: Date?
+    let paidAt: Date?
+    let hostedInvoiceUrl: String?
+    let pdfUrl: String?
+    let createdAt: Date
+    let updatedAt: Date
+
+    var formattedAmountDue: String {
+        return String(format: "$%.2f", amountDue)
+    }
+
+    var formattedAmountPaid: String {
+        return String(format: "$%.2f", amountPaid)
+    }
+
+    var balance: Double {
+        return amountDue - amountPaid
+    }
+
+    var isPaid: Bool {
+        return status == .paid
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case invoiceNumber = "invoice_number"
+        case status
+        case amountDue = "amount_due"
+        case amountPaid = "amount_paid"
+        case currency
+        case invoiceDate = "invoice_date"
+        case dueDate = "due_date"
+        case paidAt = "paid_at"
+        case hostedInvoiceUrl = "hosted_invoice_url"
+        case pdfUrl = "pdf_url"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+enum InvoiceStatus: String, Codable {
+    case draft = "draft"
+    case open = "open"
+    case paid = "paid"
+    case uncollectible = "uncollectible"
+    case void = "void"
+
+    var displayName: String {
+        switch self {
+        case .draft: return "Draft"
+        case .open: return "Open"
+        case .paid: return "Paid"
+        case .uncollectible: return "Uncollectible"
+        case .void: return "Void"
+        }
+    }
+}
+
+/// Coupon code for discounts
+struct CouponCode: Identifiable, Codable {
+    let id: String
+    let code: String
+    let name: String?
+    let description: String?
+    let discountType: DiscountType
+    let discountValue: Double
+    let duration: CouponDuration
+    let durationMonths: Int?
+    let maxRedemptions: Int?
+    let timesRedeemed: Int
+    let validFrom: Date?
+    let validUntil: Date?
+    let isActive: Bool
+    let createdAt: Date
+
+    var discountDisplay: String {
+        switch discountType {
+        case .percentage:
+            return "\(Int(discountValue))% off"
+        case .fixedAmount:
+            return String(format: "$%.2f off", discountValue)
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, code, name, description
+        case discountType = "discount_type"
+        case discountValue = "discount_value"
+        case duration
+        case durationMonths = "duration_months"
+        case maxRedemptions = "max_redemptions"
+        case timesRedeemed = "times_redeemed"
+        case validFrom = "valid_from"
+        case validUntil = "valid_until"
+        case isActive = "is_active"
+        case createdAt = "created_at"
+    }
+}
+
+enum DiscountType: String, Codable {
+    case percentage = "percentage"
+    case fixedAmount = "fixed_amount"
+}
+
+enum CouponDuration: String, Codable {
+    case once = "once"
+    case repeating = "repeating"
+    case forever = "forever"
+
+    var displayName: String {
+        switch self {
+        case .once: return "One time"
+        case .repeating: return "Limited time"
+        case .forever: return "Forever"
+        }
+    }
+}
+
+/// Response from applying a coupon
+struct ApplyCouponResponse: Codable {
+    let success: Bool
+    let coupon: CouponCode?
+    let message: String?
 }

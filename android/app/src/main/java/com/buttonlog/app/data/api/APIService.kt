@@ -202,6 +202,70 @@ interface APIService {
 
     @POST("organizations/invitations/{id}/decline")
     suspend fun declineOrganizationInvitation(@Path("id") id: String): ApiResponse<Unit>
+
+    // MARK: - Subscription Endpoints
+
+    @GET("subscriptions")
+    suspend fun getSubscriptionPlans(): SubscriptionPlansResponse
+
+    @GET("subscriptions/current")
+    suspend fun getCurrentSubscription(): UserSubscriptionResponse
+
+    @POST("subscriptions")
+    suspend fun createSubscription(@Body request: CreateSubscriptionRequest): UserSubscriptionResponse
+
+    @DELETE("subscriptions")
+    suspend fun cancelSubscription(): GenericResponse
+
+    @POST("subscriptions/pause")
+    suspend fun pauseSubscription(): GenericResponse
+
+    @POST("subscriptions/resume")
+    suspend fun resumeSubscription(): GenericResponse
+
+    @GET("subscriptions/stats")
+    suspend fun getSubscriptionStats(): SubscriptionStatsResponse
+
+    @POST("subscriptions/check-permission")
+    suspend fun checkPermission(@Body request: PermissionCheckRequest): PermissionCheckResponse
+
+    // MARK: - Stripe Payment Integration
+
+    @POST("subscriptions/checkout")
+    suspend fun createCheckoutSession(@Body request: CreateCheckoutSessionRequest): CheckoutSessionResponse
+
+    @POST("subscriptions/portal")
+    suspend fun createPortalSession(): PortalSessionResponse
+
+    @POST("subscriptions/setup-intent")
+    suspend fun createSetupIntent(): SetupIntentResponse
+
+    // MARK: - Payment Method Endpoints
+
+    @GET("payment-methods")
+    suspend fun getPaymentMethods(): PaymentMethodsResponse
+
+    @POST("payment-methods")
+    suspend fun addPaymentMethod(@Body request: AddPaymentMethodRequest): PaymentMethodResponse
+
+    @DELETE("payment-methods/{id}")
+    suspend fun removePaymentMethod(@Path("id") id: String): GenericResponse
+
+    @PUT("payment-methods/{id}/default")
+    suspend fun setDefaultPaymentMethod(@Path("id") id: String): GenericResponse
+
+    // MARK: - Invoice Endpoints
+
+    @GET("invoices")
+    suspend fun getInvoices(): InvoicesResponse
+
+    @GET("invoices/{id}")
+    suspend fun getInvoice(@Path("id") id: String): InvoiceResponse
+
+    // MARK: - Coupon Endpoints
+
+    @POST("coupons/apply")
+    suspend fun applyCoupon(@Body request: ApplyCouponRequest): ApplyCouponApiResponse
 }
 
 // MARK: - Request/Response Models

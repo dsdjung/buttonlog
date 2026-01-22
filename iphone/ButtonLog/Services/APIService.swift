@@ -560,6 +560,98 @@ class APIService {
         return response.allowed
     }
 
+    // MARK: - Stripe Payment Integration
+
+    /// Create a Stripe Checkout session to subscribe to a plan
+    /// Returns a URL that should be opened in a browser/WebView
+    func createCheckoutSession(planId: String, billingCycle: BillingCycle, couponCode: String? = nil) async throws -> CheckoutSession {
+        var body: [String: Any] = [
+            "plan_id": planId,
+            "billing_cycle": billingCycle.rawValue
+        ]
+        if let coupon = couponCode {
+            body["coupon_code"] = coupon
+        }
+
+        return try await makeRequest(
+            endpoint: "/subscriptions/checkout",
+            method: .POST,
+            body: body
+        )
+    }
+
+    /// Create a Stripe Customer Portal session to manage subscription
+    /// Returns a URL that should be opened in a browser/WebView
+    func createPortalSession() async throws -> PortalSession {
+        return try await makeRequest(
+            endpoint: "/subscriptions/portal",
+            method: .POST
+        )
+    }
+
+    /// Create a Setup Intent for adding a new payment method
+    func createSetupIntent() async throws -> SetupIntent {
+        return try await makeRequest(
+            endpoint: "/subscriptions/setup-intent",
+            method: .POST
+        )
+    }
+
+    // MARK: - Payment Methods
+
+    /// Get list of user's saved payment methods
+    func getPaymentMethods() async throws -> [PaymentMethod] {
+        return try await makeRequest(endpoint: "/payment-methods")
+    }
+
+    /// Add a new payment method using Stripe payment method ID
+    func addPaymentMethod(paymentMethodId: String) async throws -> PaymentMethod {
+        let body: [String: Any] = [
+            "payment_method_id": paymentMethodId
+        ]
+        return try await makeRequest(
+            endpoint: "/payment-methods",
+            method: .POST,
+            body: body
+        )
+    }
+
+    /// Remove a payment method
+    func removePaymentMethod(id: String) async throws {
+        try await makeVoidRequest(endpoint: "/payment-methods/\(id)", method: .DELETE)
+    }
+
+    /// Set a payment method as the default
+    func setDefaultPaymentMethod(id: String) async throws {
+        try await makeVoidRequest(endpoint: "/payment-methods/\(id)/default", method: .PUT)
+    }
+
+    // MARK: - Invoices
+
+    /// Get list of user's invoices
+    func getInvoices() async throws -> [Invoice] {
+        return try await makeRequest(endpoint: "/invoices")
+    }
+
+    /// Get a specific invoice
+    func getInvoice(id: String) async throws -> Invoice {
+        return try await makeRequest(endpoint: "/invoices/\(id)")
+    }
+
+    // MARK: - Coupons
+
+    /// Apply a coupon code to the user's account
+    func applyCoupon(code: String) async throws -> ApplyCouponResponse {
+        let body: [String: Any] = [
+            "code": code
+        ]
+        return try await makeRequest(
+            endpoint: "/coupons/apply",
+            method: .POST,
+            body: body
+        )
+    }
+
     // MARK: - Support Tickets
 
     func getSupportTickets() async throws -> [SupportTicket] {
