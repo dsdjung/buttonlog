@@ -242,6 +242,7 @@ struct ButtonCard: View {
     }
 
     private func iconForButton(_ icon: String) -> String {
+        // Icon mapping matches Android's Material Icons for consistency
         let iconMap: [String: String] = [
             "star": "star.fill",
             "heart": "heart.fill",
@@ -261,7 +262,8 @@ struct ButtonCard: View {
             "scissors": "scissors",
             "wrench": "wrench.fill",
             "hammer": "hammer.fill",
-            "gear": "gear"
+            "gear": "gear",
+            "lock": "lock.fill"
         ]
 
         return iconMap[icon] ?? "star.fill"

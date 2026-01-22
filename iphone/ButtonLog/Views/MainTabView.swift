@@ -74,9 +74,9 @@ struct MainTabView: View {
                             .font(.title2)
                             .foregroundColor(.white)
                             .frame(width: 56, height: 56)
-                            .background(Color.blue)
+                            .background(Color.blPrimary)
                             .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            .blShadow(BLShadow.medium)
                     }
                     
                     Spacer()

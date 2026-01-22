@@ -4,18 +4,41 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Background circle -->
+    <!-- ButtonLog App Icon - Hand tap button concept -->
+    <!-- Uses brand primary teal color: #00BFA5 -->
+
+    <!-- Background circle - Primary Teal -->
     <path
-        android:fillColor="#6200EE"
+        android:fillColor="#00BFA5"
         android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
-    <!-- Button icon - circle with inner circle -->
+
+    <!-- Button base - outer ring -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,54m-25,0a25,25 0,1 1,50 0a25,25 0,1 1,-50 0"/>
+        android:pathData="M54,58m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0"/>
+
+    <!-- Button inner - primary color -->
     <path
-        android:fillColor="#6200EE"
-        android:pathData="M54,54m-15,0a15,15 0,1 1,30 0a15,15 0,1 1,-30 0"/>
+        android:fillColor="#00897B"
+        android:pathData="M54,58m-16,0a16,16 0,1 1,32 0a16,16 0,1 1,-32 0"/>
+
+    <!-- Button center highlight -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"/>
+        android:pathData="M54,58m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0"/>
+
+    <!-- Hand/finger tap indicator (simplified) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30 L54,38 M54,30 L50,34 M54,30 L58,34"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"/>
+
+    <!-- Tap ripple effect - small arc -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:strokeAlpha="0.6"
+        android:pathData="M44,48 Q54,42 64,48"/>
 </vector>
