@@ -176,7 +176,7 @@ defmodule ButtonLogWeb.TeamsLive do
   def role_badge_class(role) do
     case role do
       "owner" -> "bg-purple-100 text-purple-800"
-      "admin" -> "bg-blue-100 text-blue-800"
+      "admin" -> "bg-primary-100 text-primary-700"
       _ -> "bg-gray-100 text-gray-800"
     end
   end

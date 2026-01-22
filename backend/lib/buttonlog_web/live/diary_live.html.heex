@@ -13,13 +13,13 @@
           <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-xl font-semibold text-gray-900">Date Selection</h2>
-              <button phx-click="go_to_today" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+              <button phx-click="go_to_today" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors text-sm">
                 Go to Today
               </button>
             </div>
             
             <div class="flex items-center justify-center space-x-4">
-              <button phx-click="previous_day" class="p-2 text-gray-600 hover:text-blue-600 transition-colors">
+              <button phx-click="previous_day" class="p-2 text-gray-600 hover:text-primary transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
@@ -34,7 +34,7 @@
                 </p>
               </div>
               
-              <button phx-click="next_day" class="p-2 text-gray-600 hover:text-blue-600 transition-colors">
+              <button phx-click="next_day" class="p-2 text-gray-600 hover:text-primary transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
@@ -48,7 +48,7 @@
                      name="date"
                      value={Date.to_string(@selected_date)}
                      phx-hook="DateSelector"
-                     class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                     class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                      max={Date.to_string(get_local_today())}>
               <div class="text-sm text-gray-500 mt-2">
                 Select a date to view activities
@@ -206,7 +206,7 @@
         <div class="text-center py-12">
           <h3 class="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
           <p class="text-gray-500 mb-4">Please log in to view your diary</p>
-          <a href={~p"/auth/login"} class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          <a href={~p"/auth/login"} class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
             Log In
           </a>
         </div>

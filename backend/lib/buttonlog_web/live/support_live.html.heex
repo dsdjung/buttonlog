@@ -3,7 +3,7 @@
     <%= if @selected_ticket do %>
       <!-- Ticket Detail View -->
       <div class="mb-6">
-        <button phx-click="back_to_list" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+        <button phx-click="back_to_list" class="text-primary hover:text-blue-800 font-medium flex items-center">
           <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
@@ -63,7 +63,7 @@
                 <div class="flex items-start space-x-4">
                   <div class={"flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center #{if message.sender_id != @current_user.id, do: "bg-blue-200", else: "bg-gray-200"}"}>
                     <%= if message.sender_id != @current_user.id do %>
-                      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
                       </svg>
                     <% else %>
@@ -103,7 +103,7 @@
                   id="reply_content"
                   name="reply[content]"
                   rows="3"
-                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
                   placeholder="Type your reply..."
                   phx-debounce="300"
                 ><%= @new_message %></textarea>
@@ -111,7 +111,7 @@
               <div class="flex justify-end">
                 <button
                   type="submit"
-                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={String.trim(@new_message) == ""}
                 >
                   Send Reply
@@ -137,12 +137,12 @@
           <div class="flex items-center space-x-4">
             <%= if @unread_count > 0 do %>
               <div class="text-sm text-gray-500">
-                <span class="font-medium text-blue-600"><%= @unread_count %></span> with updates
+                <span class="font-medium text-primary"><%= @unread_count %></span> with updates
               </div>
             <% end %>
             <button
               phx-click="show_new_ticket_form"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
             >
               New Ticket
             </button>
@@ -172,7 +172,7 @@
                   type="text"
                   id="ticket_subject"
                   name="ticket[subject]"
-                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
                   placeholder="Brief description of your issue"
                   value={@form_subject}
                   phx-debounce="300"
@@ -184,7 +184,7 @@
                 <select
                   id="ticket_category"
                   name="ticket[category]"
-                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
                 >
                   <option value="question" selected={@form_category == "question"}>Question</option>
                   <option value="bug" selected={@form_category == "bug"}>Bug Report</option>
@@ -198,7 +198,7 @@
                 <select
                   id="ticket_priority"
                   name="ticket[priority]"
-                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
                 >
                   <option value="low" selected={@form_priority == "low"}>Low</option>
                   <option value="normal" selected={@form_priority == "normal"}>Normal</option>
@@ -213,7 +213,7 @@
                   id="ticket_message"
                   name="ticket[message]"
                   rows="4"
-                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
                   placeholder="Describe your issue in detail..."
                   phx-debounce="300"
                 ><%= @form_message %></textarea>
@@ -229,7 +229,7 @@
                 </button>
                 <button
                   type="submit"
-                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={@submitting || String.trim(@form_subject) == "" || String.trim(@form_message) == ""}
                 >
                   <%= if @submitting, do: "Creating...", else: "Create Ticket" %>
@@ -253,7 +253,7 @@
             <p class="text-gray-500 mb-4">Have a question or found a bug? Create a ticket to get help.</p>
             <button
               phx-click="show_new_ticket_form"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
             >
               Create Your First Ticket
             </button>
@@ -314,7 +314,7 @@
 
       <!-- Back to Buttons -->
       <div class="mt-8 text-center">
-        <a href={~p"/buttons"} class="text-blue-600 hover:text-blue-800 font-medium">
+        <a href={~p"/buttons"} class="text-primary hover:text-blue-800 font-medium">
           ← Back to Buttons
         </a>
       </div>

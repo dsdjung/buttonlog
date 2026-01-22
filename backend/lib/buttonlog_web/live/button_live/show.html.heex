@@ -162,7 +162,7 @@
                           <button
                             type="button"
                             phx-click="toggle_auto_stop"
-                            class={"relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 #{if @button.auto_stop_enabled, do: "bg-blue-600", else: "bg-gray-200"}"}
+                            class={"relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 #{if @button.auto_stop_enabled, do: "bg-primary", else: "bg-gray-200"}"}
                             role="switch"
                             aria-checked={@button.auto_stop_enabled}>
                             <span class={"pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out #{if @button.auto_stop_enabled, do: "translate-x-5", else: "translate-x-0"}"}></span>
@@ -177,37 +177,37 @@
                             <button
                               phx-click="update_auto_stop_duration"
                               phx-value-duration="15"
-                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 15, do: "bg-blue-600 text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
+                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 15, do: "bg-primary text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
                               15 min
                             </button>
                             <button
                               phx-click="update_auto_stop_duration"
                               phx-value-duration="30"
-                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 30, do: "bg-blue-600 text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
+                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 30, do: "bg-primary text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
                               30 min
                             </button>
                             <button
                               phx-click="update_auto_stop_duration"
                               phx-value-duration="60"
-                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 60, do: "bg-blue-600 text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
+                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 60, do: "bg-primary text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
                               1 hour
                             </button>
                             <button
                               phx-click="update_auto_stop_duration"
                               phx-value-duration="120"
-                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 120, do: "bg-blue-600 text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
+                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 120, do: "bg-primary text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
                               2 hours
                             </button>
                             <button
                               phx-click="update_auto_stop_duration"
                               phx-value-duration="240"
-                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 240, do: "bg-blue-600 text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
+                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 240, do: "bg-primary text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
                               4 hours
                             </button>
                             <button
                               phx-click="update_auto_stop_duration"
                               phx-value-duration="480"
-                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 480, do: "bg-blue-600 text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
+                              class={"px-3 py-2 rounded-lg text-sm font-medium transition-colors #{if @button.auto_stop_minutes == 480, do: "bg-primary text-white", else: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"}"}>
                               8 hours
                             </button>
                           </div>
@@ -246,7 +246,7 @@
                 <button
                   phx-click="change_sharing_mode"
                   phx-value-mode="private"
-                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if (@button.sharing_mode || "private") == "private", do: "border-blue-500 bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
+                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if (@button.sharing_mode || "private") == "private", do: "border-primary bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
                   <div class="text-lg mb-1">🔒</div>
                   <div class="font-medium text-sm">Private</div>
                   <div class="text-xs text-gray-500">Only you</div>
@@ -255,7 +255,7 @@
                 <button
                   phx-click="change_sharing_mode"
                   phx-value-mode="friends"
-                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "friends", do: "border-blue-500 bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
+                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "friends", do: "border-primary bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
                   <div class="text-lg mb-1">👥</div>
                   <div class="font-medium text-sm">Friends</div>
                   <div class="text-xs text-gray-500">All friends</div>
@@ -264,7 +264,7 @@
                 <button
                   phx-click="change_sharing_mode"
                   phx-value-mode="invite_only"
-                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "invite_only", do: "border-blue-500 bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
+                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "invite_only", do: "border-primary bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
                   <div class="text-lg mb-1">✉️</div>
                   <div class="font-medium text-sm">Invite Only</div>
                   <div class="text-xs text-gray-500">Selected people</div>
@@ -273,7 +273,7 @@
                 <button
                   phx-click="change_sharing_mode"
                   phx-value-mode="public"
-                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "public", do: "border-blue-500 bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
+                  class={"px-4 py-3 rounded-lg border-2 text-center transition-colors #{if @button.sharing_mode == "public", do: "border-primary bg-blue-50 text-blue-700", else: "border-gray-200 hover:border-gray-300 text-gray-700"}"}>
                   <div class="text-lg mb-1">🌐</div>
                   <div class="font-medium text-sm">Public</div>
                   <div class="text-xs text-gray-500">Anyone with link</div>
@@ -288,7 +288,7 @@
                   <h3 class="text-sm font-medium text-gray-700">Collaborators</h3>
                   <button
                     phx-click="show_add_collaborator_modal"
-                    class="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium">
+                    class="inline-flex items-center px-3 py-1.5 border border-blue-600 text-primary rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
@@ -304,7 +304,7 @@
                       <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div class="flex items-center space-x-3">
                           <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span class="text-blue-600 font-medium text-sm">
+                            <span class="text-primary font-medium text-sm">
                               <%= String.first(collaborator.user_name || collaborator.user_display_name || "?") |> String.upcase() %>
                             </span>
                           </div>
@@ -348,7 +348,7 @@
                         id="copy-share-link"
                         phx-hook="CopyToClipboard"
                         data-copy-text={build_share_url(@button.share_token)}
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors text-sm font-medium">
                         Copy
                       </button>
                     </div>
@@ -361,7 +361,7 @@
                 <% else %>
                   <button
                     phx-click="generate_share_link"
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                    class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors text-sm font-medium">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
                     </svg>
@@ -401,7 +401,7 @@
                         phx-value-user_id={friend.id}
                         class="w-full flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left">
                         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span class="text-blue-600 font-medium">
+                          <span class="text-primary font-medium">
                             <%= String.first(friend.display_name || friend.username || "?") |> String.upcase() %>
                           </span>
                         </div>

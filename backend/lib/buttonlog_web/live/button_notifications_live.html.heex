@@ -11,7 +11,7 @@
           <a href={~p"/buttons/#{@button.id}"} class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
             Back to Button
           </a>
-          <button phx-click="save_all_settings" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          <button phx-click="save_all_settings" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
             Save Settings
           </button>
         </div>
@@ -34,7 +34,7 @@
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
         <div class="flex items-center space-x-3">
           <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M15 17h5l-5 5v-5z"/>
             </svg>
@@ -51,7 +51,7 @@
               will receive alerts when you click "<%= @button.name %>"
             </p>
             <%= if enabled_count > 0 do %>
-              <p class="text-sm text-blue-600 mt-1">
+              <p class="text-sm text-primary mt-1">
                 Selected friends: 
                 <%= @friends 
                   |> Enum.filter(fn friend -> 
@@ -99,7 +99,7 @@
                 Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled 
               end)
             %>
-            <span class="font-medium text-blue-600"><%= enabled_count %></span> of <%= length(@friends) %> friends selected
+            <span class="font-medium text-primary"><%= enabled_count %></span> of <%= length(@friends) %> friends selected
           </div>
         </div>
         <p class="text-gray-600 mb-6">Select which friends should receive alerts when you click "<%= @button.name %>":</p>
@@ -154,9 +154,9 @@
                                   do: "Click to disable alerts",
                                   else: "Click to enable alerts"}
                           class={[
-                            "w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-colors cursor-pointer hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                            "w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-colors cursor-pointer hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                             if(Map.get(@preferences_map, friend.id) && Map.get(@preferences_map, friend.id).enabled, 
-                               do: "bg-blue-600 border-blue-600 shadow-sm", 
+                               do: "bg-primary border-blue-600 shadow-sm", 
                                else: "border-gray-300 bg-white hover:border-blue-400")
                           ]}>
                     <svg class={[
@@ -176,7 +176,7 @@
           <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div class="flex items-start space-x-3">
               <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
@@ -200,7 +200,7 @@
             </div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">No friends yet</h3>
             <p class="text-gray-500 mb-4">You need to add friends before you can configure alerts</p>
-            <a href={~p"/friends"} class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <a href={~p"/friends"} class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
               Add Friends
             </a>
           </div>

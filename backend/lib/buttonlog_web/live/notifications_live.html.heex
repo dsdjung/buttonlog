@@ -9,11 +9,11 @@
         </div>
         <div class="flex items-center space-x-4">
           <div class="text-sm text-gray-500">
-            <span class="font-medium text-blue-600"><%= @unread_count %></span> unread
+            <span class="font-medium text-primary"><%= @unread_count %></span> unread
           </div>
           <%= if @unread_count > 0 do %>
             <button phx-click="mark_all_read" 
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors">
               Mark All Read
             </button>
           <% end %>
@@ -55,7 +55,7 @@
                     <% "button_click" -> %>
                       <svg class={[
                         "w-5 h-5",
-                        if(alert.read, do: "text-gray-600", else: "text-blue-600")
+                        if(alert.read, do: "text-gray-600", else: "text-primary")
                       ]} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M15 17h5l-5 5v-5z"/>
@@ -63,7 +63,7 @@
                     <% "friend_request" -> %>
                       <svg class={[
                         "w-5 h-5",
-                        if(alert.read, do: "text-gray-600", else: "text-blue-600")
+                        if(alert.read, do: "text-gray-600", else: "text-primary")
                       ]} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -71,7 +71,7 @@
                     <% type when type in ["support_ticket_reply", "support_ticket_status_update"] -> %>
                       <svg class={[
                         "w-5 h-5",
-                        if(alert.read, do: "text-gray-600", else: "text-blue-600")
+                        if(alert.read, do: "text-gray-600", else: "text-primary")
                       ]} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -79,7 +79,7 @@
                     <% type when type in ["gift_button_received", "gift_button_clicked", "gift_button_sent", "gift_button_deleted"] -> %>
                       <svg class={[
                         "w-5 h-5",
-                        if(alert.read, do: "text-gray-600", else: "text-blue-600")
+                        if(alert.read, do: "text-gray-600", else: "text-primary")
                       ]} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
@@ -87,7 +87,7 @@
                     <% _ -> %>
                       <svg class={[
                         "w-5 h-5",
-                        if(alert.read, do: "text-gray-600", else: "text-blue-600")
+                        if(alert.read, do: "text-gray-600", else: "text-primary")
                       ]} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -131,7 +131,7 @@
                   <%= if not alert.read do %>
                     <button phx-click="mark_read"
                             phx-value-id={alert.id}
-                            class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                            class="text-sm text-primary hover:text-blue-800 font-medium">
                       Mark Read
                     </button>
                   <% end %>
@@ -165,7 +165,7 @@
 
     <!-- Back to Buttons -->
     <div class="mt-8 text-center">
-      <a href={~p"/buttons"} class="text-blue-600 hover:text-blue-800 font-medium">
+      <a href={~p"/buttons"} class="text-primary hover:text-blue-800 font-medium">
         ← Back to Buttons
       </a>
     </div>

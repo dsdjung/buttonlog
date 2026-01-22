@@ -219,7 +219,7 @@ defmodule ButtonLogWeb.AdminLive.Support do
             <div>
               <h1 class="text-3xl font-bold text-gray-900">Support Tickets</h1>
               <p class="mt-1 text-sm text-gray-600">
-                <a href={~p"/admin"} class="text-blue-600 hover:underline">← Back to Dashboard</a>
+                <a href={~p"/admin"} class="text-primary hover:underline">← Back to Dashboard</a>
               </p>
             </div>
           </div>
@@ -250,7 +250,7 @@ defmodule ButtonLogWeb.AdminLive.Support do
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div>
               <label class="block text-sm font-medium text-gray-700">Status</label>
-              <select name="filters[status]" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              <select name="filters[status]" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
                 <option value="">All Statuses</option>
                 <option value="open" selected={@filters[:status] == "open"}>Open</option>
                 <option value="in_progress" selected={@filters[:status] == "in_progress"}>In Progress</option>
@@ -261,7 +261,7 @@ defmodule ButtonLogWeb.AdminLive.Support do
 
             <div>
               <label class="block text-sm font-medium text-gray-700">Category</label>
-              <select name="filters[category]" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              <select name="filters[category]" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
                 <option value="">All Categories</option>
                 <option value="bug" selected={@filters[:category] == "bug"}>Bug</option>
                 <option value="feature_request" selected={@filters[:category] == "feature_request"}>Feature Request</option>
@@ -272,7 +272,7 @@ defmodule ButtonLogWeb.AdminLive.Support do
 
             <div>
               <label class="block text-sm font-medium text-gray-700">Priority</label>
-              <select name="filters[priority]" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+              <select name="filters[priority]" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
                 <option value="">All Priorities</option>
                 <option value="low" selected={@filters[:priority] == "low"}>Low</option>
                 <option value="normal" selected={@filters[:priority] == "normal"}>Normal</option>
@@ -362,7 +362,7 @@ defmodule ButtonLogWeb.AdminLive.Support do
     ~H"""
     <div class="space-y-6">
       <!-- Back button -->
-      <a href={~p"/admin/support"} class="inline-flex items-center text-sm text-blue-600 hover:underline">
+      <a href={~p"/admin/support"} class="inline-flex items-center text-sm text-primary hover:underline">
         ← Back to list
       </a>
 
@@ -424,7 +424,7 @@ defmodule ButtonLogWeb.AdminLive.Support do
                   </span>
                   <button phx-click="unassign" class="text-xs text-red-600 hover:underline">Unassign</button>
                 <% else %>
-                  <button phx-click="assign_to_me" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                  <button phx-click="assign_to_me" class="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-primary-600">
                     Assign to me
                   </button>
                 <% end %>
@@ -447,7 +447,7 @@ defmodule ButtonLogWeb.AdminLive.Support do
                     <%= if message.sender do %>
                       <%= message.sender.display_name || message.sender.username %>
                       <%= if message.sender.is_admin do %>
-                        <span class="ml-1 text-xs bg-blue-100 text-blue-800 px-1 rounded">Admin</span>
+                        <span class="ml-1 text-xs bg-primary-100 text-primary-700 px-1 rounded">Admin</span>
                       <% end %>
                     <% else %>
                       Unknown
@@ -472,7 +472,7 @@ defmodule ButtonLogWeb.AdminLive.Support do
               <textarea
                 name="reply[content]"
                 rows="4"
-                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                 placeholder="Type your reply..."
                 phx-debounce="300"
               ><%= @reply_content %></textarea>
@@ -483,14 +483,14 @@ defmodule ButtonLogWeb.AdminLive.Support do
                     type="checkbox"
                     checked={@reply_internal}
                     phx-click="toggle_internal"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    class="rounded border-gray-300 text-primary focus:ring-primary"
                   />
                   <span class="ml-2 text-sm text-gray-600">Internal note (not visible to user)</span>
                 </label>
 
                 <button
                   type="submit"
-                  class={"px-4 py-2 text-sm font-medium text-white rounded-md #{if @reply_internal, do: "bg-yellow-600 hover:bg-yellow-700", else: "bg-blue-600 hover:bg-blue-700"}"}
+                  class={"px-4 py-2 text-sm font-medium text-white rounded-md #{if @reply_internal, do: "bg-yellow-600 hover:bg-yellow-700", else: "bg-primary hover:bg-primary-600"}"}
                 >
                   <%= if @reply_internal, do: "Add Internal Note", else: "Send Reply" %>
                 </button>
@@ -527,13 +527,13 @@ defmodule ButtonLogWeb.AdminLive.Support do
   defp category_icon(_), do: "📝"
 
   defp status_color("open"), do: "bg-yellow-100 text-yellow-800"
-  defp status_color("in_progress"), do: "bg-blue-100 text-blue-800"
+  defp status_color("in_progress"), do: "bg-primary-100 text-primary-700"
   defp status_color("resolved"), do: "bg-green-100 text-green-800"
   defp status_color("closed"), do: "bg-gray-100 text-gray-800"
   defp status_color(_), do: "bg-gray-100 text-gray-800"
 
   defp priority_color("low"), do: "bg-gray-100 text-gray-800"
-  defp priority_color("normal"), do: "bg-blue-100 text-blue-800"
+  defp priority_color("normal"), do: "bg-primary-100 text-primary-700"
   defp priority_color("high"), do: "bg-orange-100 text-orange-800"
   defp priority_color("urgent"), do: "bg-red-100 text-red-800"
   defp priority_color(_), do: "bg-gray-100 text-gray-800"

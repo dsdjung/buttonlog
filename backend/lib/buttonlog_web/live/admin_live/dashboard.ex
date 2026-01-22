@@ -63,7 +63,7 @@ defmodule ButtonLogWeb.AdminLive.Dashboard do
                 </div>
               </div>
               <div class="bg-gray-50 px-5 py-3">
-                <a href={~p"/admin/support?status=open"} class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                <a href={~p"/admin/support?status=open"} class="text-sm font-medium text-primary hover:text-blue-500">
                   View all →
                 </a>
               </div>
@@ -87,7 +87,7 @@ defmodule ButtonLogWeb.AdminLive.Dashboard do
                 </div>
               </div>
               <div class="bg-gray-50 px-5 py-3">
-                <a href={~p"/admin/support?status=in_progress"} class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                <a href={~p"/admin/support?status=in_progress"} class="text-sm font-medium text-primary hover:text-blue-500">
                   View all →
                 </a>
               </div>
@@ -111,7 +111,7 @@ defmodule ButtonLogWeb.AdminLive.Dashboard do
                 </div>
               </div>
               <div class="bg-gray-50 px-5 py-3">
-                <a href={~p"/admin/support?assigned=unassigned"} class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                <a href={~p"/admin/support?assigned=unassigned"} class="text-sm font-medium text-primary hover:text-blue-500">
                   View all →
                 </a>
               </div>
@@ -135,7 +135,7 @@ defmodule ButtonLogWeb.AdminLive.Dashboard do
                 </div>
               </div>
               <div class="bg-gray-50 px-5 py-3">
-                <a href={~p"/admin/support?priority=high"} class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                <a href={~p"/admin/support?priority=high"} class="text-sm font-medium text-primary hover:text-blue-500">
                   View all →
                 </a>
               </div>
@@ -176,7 +176,7 @@ defmodule ButtonLogWeb.AdminLive.Dashboard do
             <div class="px-4 py-5 sm:p-6">
               <h3 class="text-lg leading-6 font-medium text-gray-900">Quick Actions</h3>
               <div class="mt-5 flex flex-wrap gap-4">
-                <a href={~p"/admin/support"} class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                <a href={~p"/admin/support"} class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-600">
                   View All Tickets
                 </a>
                 <a href={~p"/"} class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">

@@ -5,7 +5,7 @@
       <!-- Header with New Button -->
       <%= if @authenticated do %>
         <div class="text-center mb-6">
-          <button phx-click="show_create_form" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium">
+          <button phx-click="show_create_form" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors text-lg font-medium">
             New Button
           </button>
         </div>
@@ -27,7 +27,7 @@
                 phx-keyup="search"
                 phx-debounce="300"
                 placeholder="Search buttons..."
-                class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
               />
               <%= if @search_query != "" do %>
                 <button
@@ -46,7 +46,7 @@
               <select
                 name="filter_type"
                 phx-change="filter_type"
-                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-primary focus:border-primary"
               >
                 <option value="all" selected={@filter_type == "all"}>All Types</option>
                 <option value="instant" selected={@filter_type == "instant"}>⚡ Instant</option>
@@ -239,7 +239,7 @@
               </div>
               <h3 class="text-lg font-medium text-gray-900 mb-2">No buttons yet</h3>
               <p class="text-gray-500 mb-4">Create your first button to get started</p>
-              <button phx-click="show_create_form" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+              <button phx-click="show_create_form" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                 Create Button
               </button>
             </div>
@@ -250,7 +250,7 @@
         <div class="text-center py-12">
           <h3 class="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
           <p class="text-gray-500 mb-4">Please log in to access your buttons</p>
-          <a href={~p"/auth/login"} class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          <a href={~p"/auth/login"} class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
             Log In
           </a>
         </div>
