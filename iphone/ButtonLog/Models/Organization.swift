@@ -296,11 +296,3 @@ struct CreateOrganizationRequest {
         return body
     }
 }
-
-// MARK: - API Response Types
-
-struct OrganizationsResponse: Codable {
-    let owned: [Organization]
-    let member: [Organization]
-    let invitations: [OrganizationInvitation]
-}
