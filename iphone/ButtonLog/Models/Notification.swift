@@ -5,7 +5,7 @@ struct AppNotification: Identifiable, Codable {
     let type: NotificationType
     let title: String
     let message: String
-    let data: NotificationData?
+    let data: [String: AnyCodableValue]?
     let isRead: Bool
     let createdAt: Date
     let sender: NotificationSender?
@@ -22,6 +22,23 @@ struct AppNotification: Identifiable, Codable {
     // Computed property to get userId from sender for backwards compatibility
     var userId: String? {
         sender?.id
+    }
+
+    // Helper to extract common notification data fields
+    var buttonId: String? {
+        data?["button_id"]?.stringValue
+    }
+
+    var buttonName: String? {
+        data?["button_name"]?.stringValue
+    }
+
+    var friendId: String? {
+        data?["friend_id"]?.stringValue
+    }
+
+    var friendName: String? {
+        data?["friend_name"]?.stringValue
     }
 }
 
@@ -80,43 +97,6 @@ enum NotificationType: String, Codable {
     }
 }
 
-struct NotificationData: Codable {
-    let buttonId: String?
-    let buttonName: String?
-    let friendId: String?
-    let friendName: String?
-    let actionUrl: String?
-
-    // Store additional unknown fields
-    private var additionalData: [String: AnyCodableValue]?
-
-    enum CodingKeys: String, CodingKey {
-        case buttonId = "button_id"
-        case buttonName = "button_name"
-        case friendId = "friend_id"
-        case friendName = "friend_name"
-        case actionUrl = "action_url"
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        buttonId = try container.decodeIfPresent(String.self, forKey: .buttonId)
-        buttonName = try container.decodeIfPresent(String.self, forKey: .buttonName)
-        friendId = try container.decodeIfPresent(String.self, forKey: .friendId)
-        friendName = try container.decodeIfPresent(String.self, forKey: .friendName)
-        actionUrl = try container.decodeIfPresent(String.self, forKey: .actionUrl)
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(buttonId, forKey: .buttonId)
-        try container.encodeIfPresent(buttonName, forKey: .buttonName)
-        try container.encodeIfPresent(friendId, forKey: .friendId)
-        try container.encodeIfPresent(friendName, forKey: .friendName)
-        try container.encodeIfPresent(actionUrl, forKey: .actionUrl)
-    }
-}
-
 /// Helper for handling dynamic JSON values
 enum AnyCodableValue: Codable {
     case string(String)
@@ -149,6 +129,30 @@ enum AnyCodableValue: Codable {
         case .bool(let value): try container.encode(value)
         case .null: try container.encodeNil()
         }
+    }
+
+    /// Extract string value if this is a string type
+    var stringValue: String? {
+        if case .string(let value) = self {
+            return value
+        }
+        return nil
+    }
+
+    /// Extract int value if this is an int type
+    var intValue: Int? {
+        if case .int(let value) = self {
+            return value
+        }
+        return nil
+    }
+
+    /// Extract bool value if this is a bool type
+    var boolValue: Bool? {
+        if case .bool(let value) = self {
+            return value
+        }
+        return nil
     }
 }
 
