@@ -18,10 +18,10 @@ struct Button: Identifiable, Codable, Equatable {
     let createdAt: Date
     let updatedAt: Date
 
-    // Gift button fields
-    let createdByFriendId: String?
-    let createdByFriend: GiftCreator?
-    let giftMessage: String?
+    // Gift button fields (with defaults for backwards compatibility)
+    var createdByFriendId: String? = nil
+    var createdByFriend: GiftCreator? = nil
+    var giftMessage: String? = nil
 
     // Computed properties
     var hexColor: String {
