@@ -18,7 +18,10 @@ defmodule ButtonLogWeb.SupportLive do
        |> assign(:unread_count, unread_count)
        |> assign(:selected_ticket, nil)
        |> assign(:show_new_ticket_form, false)
-       |> assign(:new_ticket_form, %{subject: "", category: "question", priority: "normal", message: ""})
+       |> assign(:form_subject, "")
+       |> assign(:form_category, "question")
+       |> assign(:form_priority, "normal")
+       |> assign(:form_message, "")
        |> assign(:new_message, "")
        |> assign(:submitting, false)
        |> assign(:page_title, "Help & Support")}
@@ -72,60 +75,74 @@ defmodule ButtonLogWeb.SupportLive do
     {:noreply,
      socket
      |> assign(:show_new_ticket_form, false)
-     |> assign(:new_ticket_form, %{subject: "", category: "question", priority: "normal", message: ""})}
+     |> assign(:form_subject, "")
+     |> assign(:form_category, "question")
+     |> assign(:form_priority, "normal")
+     |> assign(:form_message, "")}
   end
 
   @impl true
-  def handle_event("update_new_ticket_form", %{"field" => field, "value" => value}, socket) do
-    form = Map.put(socket.assigns.new_ticket_form, String.to_existing_atom(field), value)
-    {:noreply, assign(socket, :new_ticket_form, form)}
+  def handle_event("validate_ticket", %{"ticket" => ticket_params}, socket) do
+    {:noreply,
+     socket
+     |> assign(:form_subject, Map.get(ticket_params, "subject", ""))
+     |> assign(:form_category, Map.get(ticket_params, "category", "question"))
+     |> assign(:form_priority, Map.get(ticket_params, "priority", "normal"))
+     |> assign(:form_message, Map.get(ticket_params, "message", ""))}
   end
 
   @impl true
-  def handle_event("create_ticket", _params, socket) do
-    form = socket.assigns.new_ticket_form
+  def handle_event("create_ticket", %{"ticket" => ticket_params}, socket) do
+    subject = String.trim(Map.get(ticket_params, "subject", ""))
+    category = Map.get(ticket_params, "category", "question")
+    priority = Map.get(ticket_params, "priority", "normal")
+    message = String.trim(Map.get(ticket_params, "message", ""))
     user_id = socket.assigns.current_user.id
 
-    if String.trim(form.subject) == "" || String.trim(form.message) == "" do
+    if subject == "" || message == "" do
       {:noreply, put_flash(socket, :error, "Subject and message are required")}
     else
-      {:noreply, assign(socket, :submitting, true)}
-      |> then(fn socket ->
-        ticket_attrs = %{
-          subject: String.trim(form.subject),
-          category: form.category,
-          priority: form.priority
-        }
+      socket = assign(socket, :submitting, true)
 
-        case Support.create_ticket_with_message(ticket_attrs, String.trim(form.message), user_id) do
-          {:ok, ticket} ->
-            tickets = Support.list_user_tickets(user_id)
+      ticket_attrs = %{
+        subject: subject,
+        category: category,
+        priority: priority
+      }
 
-            socket
-            |> assign(:tickets, tickets)
-            |> assign(:show_new_ticket_form, false)
-            |> assign(:new_ticket_form, %{subject: "", category: "question", priority: "normal", message: ""})
-            |> assign(:submitting, false)
-            |> put_flash(:info, "Ticket created successfully")
-            |> push_navigate(to: ~p"/support/#{ticket.id}")
+      case Support.create_ticket_with_message(ticket_attrs, message, user_id) do
+        {:ok, ticket} ->
+          tickets = Support.list_user_tickets(user_id)
 
-          {:error, _changeset} ->
-            socket
-            |> assign(:submitting, false)
-            |> put_flash(:error, "Failed to create ticket")
-        end
-      end)
+          {:noreply,
+           socket
+           |> assign(:tickets, tickets)
+           |> assign(:show_new_ticket_form, false)
+           |> assign(:form_subject, "")
+           |> assign(:form_category, "question")
+           |> assign(:form_priority, "normal")
+           |> assign(:form_message, "")
+           |> assign(:submitting, false)
+           |> put_flash(:info, "Ticket created successfully")
+           |> push_navigate(to: ~p"/support/#{ticket.id}")}
+
+        {:error, _changeset} ->
+          {:noreply,
+           socket
+           |> assign(:submitting, false)
+           |> put_flash(:error, "Failed to create ticket")}
+      end
     end
   end
 
   @impl true
-  def handle_event("update_new_message", %{"value" => value}, socket) do
-    {:noreply, assign(socket, :new_message, value)}
+  def handle_event("validate_message", %{"reply" => %{"content" => content}}, socket) do
+    {:noreply, assign(socket, :new_message, content)}
   end
 
   @impl true
-  def handle_event("send_message", _params, socket) do
-    message = String.trim(socket.assigns.new_message)
+  def handle_event("send_message", %{"reply" => %{"content" => content}}, socket) do
+    message = String.trim(content)
     ticket = socket.assigns.selected_ticket
     user_id = socket.assigns.current_user.id
 
