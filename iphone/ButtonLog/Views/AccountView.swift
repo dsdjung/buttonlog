@@ -710,8 +710,8 @@ struct PlanCard: View {
                         }
                     }
 
-                    if let description = plan.description {
-                        Text(description)
+                    if !plan.description.isEmpty {
+                        Text(plan.description)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
