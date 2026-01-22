@@ -115,6 +115,35 @@ defmodule ButtonLog.Notifications do
   end
 
   @doc """
+  Gets paginated notifications for a specific user.
+  Returns {notifications, has_more} tuple.
+  """
+  def get_user_notifications_paginated(user_id, limit \\ 20, offset \\ 0) do
+    notifications = Repo.all(
+      from n in Notification,
+      where: n.recipient_id == ^user_id,
+      order_by: [desc: n.inserted_at],
+      limit: ^(limit + 1),
+      offset: ^offset,
+      preload: [:sender, :button]
+    )
+
+    has_more = length(notifications) > limit
+    {Enum.take(notifications, limit), has_more}
+  end
+
+  @doc """
+  Gets the count of unread notifications for a specific user.
+  """
+  def count_unread_notifications(user_id) do
+    Repo.one(
+      from n in Notification,
+      where: n.recipient_id == ^user_id and n.read == false,
+      select: count(n.id)
+    )
+  end
+
+  @doc """
   Gets unread notifications for a specific user.
   """
   def get_unread_notifications(user_id) do
