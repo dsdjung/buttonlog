@@ -31,9 +31,9 @@
                 <select name="button[type]" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
                   <option value="">Select type</option>
                   <option value="instant">⚡ Instant - Single click actions</option>
-                  <option value="timed">⏱️ Timed - Start/stop timing</option>
-                  <option value="state">🔄 State - On/off states</option>
+                  <option value="toggle">🔄 Toggle - Start/stop with duration tracking</option>
                   <option value="one-time">1️⃣ One-Time - Use once, then archived</option>
+                  <option value="workflow">📋 Workflow - Predefined sequence of states</option>
                 </select>
               </div>
               <div class="flex space-x-3">
@@ -82,9 +82,9 @@
                           <div class="text-xl">
                             <%= case button.type do %>
                               <% "instant" -> %>⚡
-                              <% "timed" -> %>⏱️
-                              <% "state" -> %>🔄
+                              <% "toggle" -> %>🔄
                               <% "one-time" -> %>1️⃣
+                              <% "workflow" -> %>📋
                               <% _ -> %>📱
                             <% end %>
                           </div>
@@ -95,7 +95,7 @@
                             <span id={"button-latest-click-#{button.id}"} phx-hook="LocalTime" data-utc={safe_to_iso8601(button.latest_click_at)}>
                               Last clicked: <%= Calendar.strftime(button.latest_click_at, "%m/%d %I:%M %p") %>
                             </span>
-                            <%= if button.type == "timed" and button.current_state == "active" do %>
+                            <%= if button.type == "toggle" and button.current_state == "active" do %>
                               <span class="ml-2 text-sm font-medium">
                                 • <span class="text-green-600">In Progress</span>
                               </span>

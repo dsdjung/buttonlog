@@ -143,11 +143,8 @@ defmodule ButtonLog.Buttons do
     case get_button(button_id, user_id) do
       {:ok, button} ->
         result = case button.type do
-          "timed" ->
-            handle_timed_button_click(button, user_id)
-
-          "state" ->
-            handle_state_button_click(button, user_id)
+          "toggle" ->
+            handle_toggle_button_click(button, user_id)
 
           "one-time" ->
             handle_one_time_button_click(button, user_id)
@@ -174,41 +171,7 @@ defmodule ButtonLog.Buttons do
     end
   end
 
-  defp handle_state_button_click(button, user_id) do
-    # Toggle state: idle -> active, active -> idle
-    {new_state, action} =
-      case button.current_state do
-        "idle" -> {"active", "start"}
-        "active" -> {"idle", "end"}
-        _ -> {"active", "start"}
-      end
-
-    result = Repo.transaction(fn ->
-      # Update button state
-      button
-      |> Button.changeset(%{
-        current_state: new_state,
-        state_changed_at: DateTime.utc_now() |> DateTime.truncate(:second)
-      })
-      |> Repo.update!()
-
-      # Create the button click record
-      %ButtonClick{}
-      |> ButtonClick.create_changeset(%{
-        device: "web",
-        platform: "web",
-        action: action
-      }, button.id, user_id)
-      |> Repo.insert!()
-    end)
-
-    # Notify gift creator if this is a gift button (outside transaction)
-    if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, action)
-
-    result
-  end
-
-  defp handle_timed_button_click(button, user_id) do
+  defp handle_toggle_button_click(button, user_id) do
     # Toggle state: idle -> active, active -> idle
     {new_state, action} =
       case button.current_state do
@@ -280,15 +243,15 @@ defmodule ButtonLog.Buttons do
   end
 
   @doc """
-  Starts a timer for a timed button.
+  Starts a timer for a toggle button.
   """
   def start_timer(button_id, user_id) do
     case get_button(button_id, user_id) do
       {:ok, button} ->
-        if button.type == "timed" do
+        if button.type == "toggle" do
           {:ok, %{started_at: DateTime.utc_now()}}
         else
-          {:error, :not_a_timed_button}
+          {:error, :not_a_toggle_button}
         end
       {:error, :not_found} ->
         {:error, :button_not_found}
@@ -296,15 +259,15 @@ defmodule ButtonLog.Buttons do
   end
 
   @doc """
-  Stops a timer for a timed button.
+  Stops a timer for a toggle button.
   """
   def stop_timer(button_id, user_id) do
     case get_button(button_id, user_id) do
       {:ok, button} ->
-        if button.type == "timed" do
+        if button.type == "toggle" do
           {:ok, 60} # Return duration in seconds
         else
-          {:error, :not_a_timed_button}
+          {:error, :not_a_toggle_button}
         end
       {:error, :not_found} ->
         {:error, :button_not_found}

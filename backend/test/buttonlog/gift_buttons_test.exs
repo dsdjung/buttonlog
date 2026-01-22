@@ -73,7 +73,7 @@ defmodule ButtonLog.GiftButtonsTest do
 
       button_attrs = %{
         "name" => "Exercise Tracker",
-        "type" => "timed"
+        "type" => "toggle"
       }
 
       {:ok, _button} = Buttons.create_button_for_friend(button_attrs, friend.id, creator.id)
@@ -98,7 +98,7 @@ defmodule ButtonLog.GiftButtonsTest do
 
       button_attrs = %{
         "name" => "Exercise Tracker",
-        "type" => "timed"
+        "type" => "toggle"
       }
 
       {:ok, _button} = Buttons.create_button_for_friend(button_attrs, friend.id, creator.id)
@@ -143,14 +143,14 @@ defmodule ButtonLog.GiftButtonsTest do
       assert click_notification.message =~ "Click Test"
     end
 
-    test "sends notification with correct action for timed button start" do
+    test "sends notification with correct action for toggle button start" do
       creator = insert_user(%{email: "creator5@test.com", username: "creator5"})
       friend = insert_user(%{email: "friend5@test.com", username: "friend5", display_name: "Timer Friend"})
       create_friendship(creator.id, friend.id)
 
       button_attrs = %{
         "name" => "Sleep Timer",
-        "type" => "timed"
+        "type" => "toggle"
       }
 
       {:ok, button} = Buttons.create_button_for_friend(button_attrs, friend.id, creator.id)
@@ -343,7 +343,7 @@ defmodule ButtonLog.GiftButtonsTest do
 
       # Create buttons for friend
       {:ok, button1} = Buttons.create_button_for_friend(%{"name" => "Gift 1", "type" => "instant"}, friend.id, creator.id)
-      {:ok, button2} = Buttons.create_button_for_friend(%{"name" => "Gift 2", "type" => "timed"}, friend.id, creator.id, "A message")
+      {:ok, button2} = Buttons.create_button_for_friend(%{"name" => "Gift 2", "type" => "toggle"}, friend.id, creator.id, "A message")
 
       # Create button for other_friend (should not appear)
       {:ok, _other_button} = Buttons.create_button_for_friend(%{"name" => "Other Gift", "type" => "instant"}, other_friend.id, creator.id)

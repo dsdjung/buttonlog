@@ -233,12 +233,12 @@ struct ButtonCard: View {
         switch button.type {
         case .instant:
             return "Click!"
-        case .state:
-            return button.currentState == .idle ? "Start" : "Stop"
-        case .timed:
+        case .toggle:
             return button.currentState == .idle ? "Start" : "Stop"
         case .oneTime:
-            return "Use Once"
+            return "Complete"
+        case .workflow:
+            return "Next"
         }
     }
 }

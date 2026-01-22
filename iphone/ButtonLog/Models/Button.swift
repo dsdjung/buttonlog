@@ -73,34 +73,34 @@ struct GiftCreator: Codable, Equatable {
 
 enum ButtonType: String, Codable, CaseIterable {
     case instant = "instant"
-    case timed = "timed"
-    case state = "state"
+    case toggle = "toggle"
     case oneTime = "one-time"
+    case workflow = "workflow"
 
     var displayName: String {
         switch self {
         case .instant: return "Instant"
-        case .timed: return "Timed"
-        case .state: return "State"
+        case .toggle: return "Toggle"
         case .oneTime: return "One-Time"
+        case .workflow: return "Workflow"
         }
     }
 
     var systemIcon: String {
         switch self {
         case .instant: return "bolt.fill"
-        case .timed: return "timer"
-        case .state: return "power"
+        case .toggle: return "power"
         case .oneTime: return "1.circle.fill"
+        case .workflow: return "list.bullet"
         }
     }
 
     var description: String {
         switch self {
         case .instant: return "Single click actions"
-        case .timed: return "Start/stop timing"
-        case .state: return "On/off states"
+        case .toggle: return "Start/stop with duration tracking"
         case .oneTime: return "Use once, then archived"
+        case .workflow: return "Predefined sequence of states"
         }
     }
 }

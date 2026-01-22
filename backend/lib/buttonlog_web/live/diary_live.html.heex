@@ -91,7 +91,7 @@
                     <%= format_duration(@summary.total_active_time) %>
                   </div>
                   <div class="text-purple-600 text-sm mt-1">
-                    Combined active time from all timed buttons
+                    Combined active time from all toggle buttons
                   </div>
                 </div>
               <% end %>
@@ -163,7 +163,7 @@
                           <div class="flex items-center space-x-2 text-sm text-gray-600">
                             <span class="capitalize"><%= activity.button.type %></span>
                             <span>•</span>
-                            <%= if activity.button.type == "timed" do %>
+                            <%= if activity.button.type == "toggle" do %>
                               <span><%= count_active_sessions(activity.clicks) %> sessions</span>
                               <span>•</span>
                               <span><%= activity.total_clicks %> clicks</span>

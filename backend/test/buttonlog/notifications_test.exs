@@ -11,7 +11,7 @@ defmodule ButtonLog.NotificationsTest do
       # Create test user, friend, and button
       user = insert_user()
       friend = insert_user(%{email: "friend@test.com", username: "friend"})
-      button = insert_button(user, %{name: "Test Timer", button_type: "timed"})
+      button = insert_button(user, %{name: "Test Timer", button_type: "toggle"})
 
       # Set up notification preference so friend receives notifications
       Notifications.set_button_friend_notification(button.id, user.id, friend.id, true)
@@ -36,7 +36,7 @@ defmodule ButtonLog.NotificationsTest do
     test "notification messages use 'stopped' for stop action" do
       user = insert_user()
       friend = insert_user(%{email: "friend2@test.com", username: "friend2"})
-      button = insert_button(user, %{name: "Test Timer", button_type: "timed"})
+      button = insert_button(user, %{name: "Test Timer", button_type: "toggle"})
 
       Notifications.set_button_friend_notification(button.id, user.id, friend.id, true)
 
@@ -55,14 +55,14 @@ defmodule ButtonLog.NotificationsTest do
       refute notification.title =~ "clicked"
     end
 
-    test "notification messages use 'stopped' for end action (timed button stop)" do
+    test "notification messages use 'stopped' for end action (toggle button stop)" do
       user = insert_user()
       friend = insert_user(%{email: "friend2b@test.com", username: "friend2b"})
-      button = insert_button(user, %{name: "Test Timer", button_type: "timed"})
+      button = insert_button(user, %{name: "Test Timer", button_type: "toggle"})
 
       Notifications.set_button_friend_notification(button.id, user.id, friend.id, true)
 
-      # The buttons context uses "end" action when stopping a timed button
+      # The buttons context uses "end" action when stopping a toggle button
       {:ok, _results} = Notifications.send_button_click_notifications(
         button.id,
         user.id,
@@ -123,7 +123,7 @@ defmodule ButtonLog.NotificationsTest do
     test "handles string action keys" do
       user = insert_user()
       friend = insert_user(%{email: "friend5@test.com", username: "friend5"})
-      button = insert_button(user, %{name: "Test Timer", button_type: "timed"})
+      button = insert_button(user, %{name: "Test Timer", button_type: "toggle"})
 
       Notifications.set_button_friend_notification(button.id, user.id, friend.id, true)
 

@@ -173,9 +173,9 @@ defmodule ButtonLogWeb.DiaryLive do
     |> Enum.map(fn {_button_id, button_clicks} ->
       button = List.first(button_clicks).button
 
-      # For timed buttons, calculate total active duration including sessions that started before this date
-      total_duration = if button.type == "timed" do
-        calculate_timed_button_duration(button.id, user_id, start_of_day, end_of_day)
+      # For toggle buttons, calculate total active duration including sessions that started before this date
+      total_duration = if button.type == "toggle" do
+        calculate_toggle_button_duration(button.id, user_id, start_of_day, end_of_day)
       else
         0
       end
@@ -209,13 +209,13 @@ defmodule ButtonLogWeb.DiaryLive do
     |> Enum.uniq()
     |> Enum.sort()
 
-    # Get in-progress timed buttons
-    in_progress_timed_buttons = get_in_progress_timed_buttons(activities)
+    # Get in-progress toggle buttons
+    in_progress_toggle_buttons = get_in_progress_toggle_buttons(activities)
 
-    # Calculate total active time from all timed buttons
+    # Calculate total active time from all toggle buttons
     # This includes both completed sessions and currently active sessions
     total_active_time = activities
-    |> Enum.filter(fn activity -> activity.button.type == "timed" end)
+    |> Enum.filter(fn activity -> activity.button.type == "toggle" end)
     |> Enum.reduce(0, fn activity, acc ->
       # For currently active buttons, add the current session time
       if activity.button.current_state == "active" do
@@ -239,7 +239,7 @@ defmodule ButtonLogWeb.DiaryLive do
       most_active_button: most_active,
       button_types_used: button_types,
       formatted_activities: formatted_activities,
-      in_progress_timed_buttons: in_progress_timed_buttons,
+      in_progress_toggle_buttons: in_progress_toggle_buttons,
       total_active_time: total_active_time,
       is_today: Date.compare(date, get_local_today()) == :eq,
       is_empty: activities == []
@@ -257,8 +257,8 @@ defmodule ButtonLogWeb.DiaryLive do
         count_text = if click_count == 1, do: "once", else: "#{click_count} times"
         "#{button.name} #{count_text}"
 
-      "timed" ->
-        # For timed buttons, show session count and total duration
+      "toggle" ->
+        # For toggle buttons, show session count and total duration
         session_count = count_active_sessions(activity.clicks)
         count_text = if session_count == 1, do: "once", else: "#{session_count} times"
 
@@ -275,13 +275,14 @@ defmodule ButtonLogWeb.DiaryLive do
         else
           "0 minutes"
         end
-        "#{button.name} #{count_text} for #{duration_text}"
+        state_text = if button.current_state == "active", do: " (in progress)", else: ""
+        "#{button.name} #{count_text} for #{duration_text}#{state_text}"
 
-      "state" ->
-        # For state buttons, show click count and current state
+      "workflow" ->
+        # For workflow buttons, show click count and current state
         click_count = activity.total_clicks
         count_text = if click_count == 1, do: "once", else: "#{click_count} times"
-        state_text = if button.current_state == "active", do: " (currently active)", else: ""
+        state_text = if button.current_state == "active", do: " (in progress)", else: ""
         "#{button.name} #{count_text}#{state_text}"
 
       _ ->
@@ -353,9 +354,9 @@ defmodule ButtonLogWeb.DiaryLive do
     DateTime.to_date(local_now)
   end
 
-    # Calculate total active duration for a timed button within a date range
+    # Calculate total active duration for a toggle button within a date range
   # This handles sessions that started before the date and multiple active periods
-  defp calculate_timed_button_duration(button_id, user_id, start_of_day, end_of_day) do
+  defp calculate_toggle_button_duration(button_id, user_id, start_of_day, end_of_day) do
     # Get all clicks for this button within the date range
     clicks_in_range = Repo.all(
       from c in ButtonLog.Buttons.ButtonClick,
@@ -501,7 +502,7 @@ defmodule ButtonLogWeb.DiaryLive do
     end
   end
 
-  # Count how many times a timed button was active (sessions, not clicks)
+  # Count how many times a toggle button was active (sessions, not clicks)
   def count_active_sessions(clicks) do
     # Sort clicks by time
     sorted_clicks = Enum.sort_by(clicks, & &1.clicked_at, :asc)
@@ -562,12 +563,12 @@ defmodule ButtonLogWeb.DiaryLive do
     end
   end
 
-  # Get in-progress timed buttons from activities
-  defp get_in_progress_timed_buttons(activities) do
+  # Get in-progress toggle buttons from activities
+  defp get_in_progress_toggle_buttons(activities) do
     activities
     |> Enum.filter(fn activity ->
-      # Only consider timed buttons
-      activity.button.type == "timed"
+      # Only consider toggle buttons
+      activity.button.type == "toggle"
     end)
     |> Enum.filter(fn activity ->
       # Use the same logic as the buttons page: check button.current_state

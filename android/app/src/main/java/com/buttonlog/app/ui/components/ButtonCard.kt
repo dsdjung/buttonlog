@@ -214,13 +214,14 @@ private fun ButtonActionButton(
     val (actionText, actionIcon) = when (button.type) {
         ButtonType.INSTANT -> "Click!" to Icons.Default.TouchApp
         ButtonType.ONE_TIME -> "Complete" to Icons.Default.CheckCircle
-        ButtonType.TIMED, ButtonType.STATE -> {
+        ButtonType.TOGGLE -> {
             if (button.currentState == ButtonState.ACTIVE) {
                 "Stop" to Icons.Default.Stop
             } else {
                 "Start" to Icons.Default.PlayArrow
             }
         }
+        ButtonType.WORKFLOW -> "Next" to Icons.Default.ArrowForward
     }
 
     Button(

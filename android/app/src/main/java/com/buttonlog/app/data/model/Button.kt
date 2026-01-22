@@ -64,14 +64,14 @@ enum class ButtonType(val displayName: String, val icon: String, val description
     @SerializedName("instant")
     INSTANT("Instant", "bolt", "Single click actions"),
 
-    @SerializedName("timed")
-    TIMED("Timed", "timer", "Start/stop timing"),
-
-    @SerializedName("state")
-    STATE("State", "toggle_on", "On/off states"),
+    @SerializedName("toggle")
+    TOGGLE("Toggle", "toggle_on", "Start/stop with duration tracking"),
 
     @SerializedName("one-time")
-    ONE_TIME("One-Time", "looks_one", "Use once, then archived")
+    ONE_TIME("One-Time", "looks_one", "Use once, then archived"),
+
+    @SerializedName("workflow")
+    WORKFLOW("Workflow", "list", "Predefined sequence of states")
 }
 
 enum class ButtonState(val displayName: String, val color: Color) {

@@ -89,7 +89,7 @@ struct CreateButtonView: View {
                 Section(header: Text("Settings")) {
                     Toggle("Enable Notifications", isOn: $formData.notificationsEnabled)
                     
-                    if formData.type == .timed {
+                    if formData.type == .toggle {
                         Toggle("Auto-stop", isOn: $formData.autoStopEnabled)
                     }
                     
@@ -280,7 +280,7 @@ struct EditButtonView: View {
                 Section(header: Text("Settings")) {
                     Toggle("Enable Notifications", isOn: $formData.notificationsEnabled)
 
-                    if formData.type == .timed {
+                    if formData.type == .toggle {
                         Toggle("Auto-stop", isOn: $formData.autoStopEnabled)
                     }
 

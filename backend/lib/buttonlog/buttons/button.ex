@@ -43,7 +43,7 @@ defmodule ButtonLog.Buttons.Button do
     |> validate_required([:name, :type])
     |> validate_length(:name, min: 1, max: 100)
     |> validate_length(:description, max: 500)
-    |> validate_inclusion(:type, ["instant", "timed", "state", "one-time"])
+    |> validate_inclusion(:type, ["instant", "toggle", "one-time", "workflow"])
     |> validate_inclusion(:current_state, ["idle", "active"], allow_blank: true)
     |> validate_format(:color, ~r/^#[0-9A-Fa-f]{6}$/, message: "must be a valid hex color")
   end

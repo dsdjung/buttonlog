@@ -32,8 +32,9 @@ final class ModelTests: XCTestCase {
 
     func testButtonTypes() {
         XCTAssertEqual(ButtonType.instant.rawValue, "instant")
-        XCTAssertEqual(ButtonType.timed.rawValue, "timed")
-        XCTAssertEqual(ButtonType.state.rawValue, "state")
+        XCTAssertEqual(ButtonType.toggle.rawValue, "toggle")
+        XCTAssertEqual(ButtonType.oneTime.rawValue, "one-time")
+        XCTAssertEqual(ButtonType.workflow.rawValue, "workflow")
     }
 
     func testButtonStates() {
@@ -45,13 +46,13 @@ final class ModelTests: XCTestCase {
         let formData = ButtonFormData(
             name: "New Button",
             description: "Description",
-            type: .timed,
+            type: .toggle,
             icon: "heart",
             color: "#FF0000"
         )
 
         XCTAssertEqual(formData.name, "New Button")
-        XCTAssertEqual(formData.type, .timed)
+        XCTAssertEqual(formData.type, .toggle)
         XCTAssertEqual(formData.color, "#FF0000")
     }
 
@@ -60,7 +61,7 @@ final class ModelTests: XCTestCase {
             id: "test-id",
             name: "Existing Button",
             description: "Existing description",
-            type: .state,
+            type: .toggle,
             icon: "bolt",
             color: "#00FF00",
             clickCount: 10,

@@ -220,12 +220,12 @@ struct ButtonActivityCard: View {
         switch button.type {
         case .instant:
             return "Clicked"
-        case .timed:
+        case .toggle:
             return ["Started", "Stopped"].randomElement() ?? "Clicked"
-        case .state:
-            return ["Activated", "Deactivated"].randomElement() ?? "Toggled"
         case .oneTime:
             return "Completed"
+        case .workflow:
+            return "Advanced"
         }
     }
     

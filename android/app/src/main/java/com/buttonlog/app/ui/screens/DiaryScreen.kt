@@ -399,8 +399,8 @@ private fun generateSimulatedActivity(buttonType: ButtonType): List<ActivityItem
         val action = when (buttonType) {
             ButtonType.INSTANT -> "Clicked"
             ButtonType.ONE_TIME -> "Completed"
-            ButtonType.TIMED -> listOf("Started", "Stopped").random()
-            ButtonType.STATE -> listOf("Activated", "Deactivated").random()
+            ButtonType.TOGGLE -> listOf("Started", "Stopped").random()
+            ButtonType.WORKFLOW -> "Advanced"
         }
         ActivityItem(time = time, action = action)
     }

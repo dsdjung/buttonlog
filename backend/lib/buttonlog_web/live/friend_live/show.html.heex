@@ -114,17 +114,10 @@
                 </button>
                 <button type="button"
                         phx-click="select_button_type"
-                        phx-value-type="timed"
+                        phx-value-type="toggle"
                         class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
-                        style={"#{if @gift_button_type == "timed", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
-                  ⏱️ Timed
-                </button>
-                <button type="button"
-                        phx-click="select_button_type"
-                        phx-value-type="state"
-                        class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
-                        style={"#{if @gift_button_type == "state", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
-                  🔄 State
+                        style={"#{if @gift_button_type == "toggle", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
+                  🔄 Toggle
                 </button>
                 <button type="button"
                         phx-click="select_button_type"
@@ -132,6 +125,13 @@
                         class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
                         style={"#{if @gift_button_type == "one-time", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
                   1️⃣ One-Time
+                </button>
+                <button type="button"
+                        phx-click="select_button_type"
+                        phx-value-type="workflow"
+                        class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
+                        style={"#{if @gift_button_type == "workflow", do: "background-color: #9333EA; color: white; border-color: #9333EA;", else: "background-color: white; color: #374151; border-color: #D1D5DB;"}"}>
+                  📋 Workflow
                 </button>
               </div>
             </div>
@@ -214,9 +214,9 @@
                        style={"background-color: #{button.color || "#9333EA"}; #{if button.archived, do: "opacity: 0.5;", else: ""}"}>
                     <%= case button.type do %>
                       <% "instant" -> %>⚡
-                      <% "timed" -> %>⏱️
-                      <% "state" -> %>🔄
+                      <% "toggle" -> %>🔄
                       <% "one-time" -> %>1️⃣
+                      <% "workflow" -> %>📋
                       <% _ -> %>📱
                     <% end %>
                   </div>
@@ -232,9 +232,9 @@
                     <p class="text-sm text-gray-500">
                       <%= case button.type do %>
                         <% "instant" -> %>Instant
-                        <% "timed" -> %>Timed
-                        <% "state" -> %>State
+                        <% "toggle" -> %>Toggle
                         <% "one-time" -> %>One-Time
+                        <% "workflow" -> %>Workflow
                         <% _ -> %>Button
                       <% end %>
                       <span class="mx-1">•</span>
@@ -272,8 +272,9 @@
                          style={"background-color: #{button.color || "#007AFF"}"}>
                       <%= case button.type do %>
                         <% "instant" -> %>⚡
-                        <% "timed" -> %>⏱️
-                        <% "state" -> %>🔄
+                        <% "toggle" -> %>🔄
+                        <% "one-time" -> %>1️⃣
+                        <% "workflow" -> %>📋
                         <% _ -> %>📱
                       <% end %>
                     </div>

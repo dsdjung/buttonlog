@@ -559,9 +559,9 @@ private fun ButtonTypeSelector(
                         Text(
                             text = when (type) {
                                 ButtonType.INSTANT -> "Click once to record"
-                                ButtonType.TIMED -> "Track duration with start/stop"
-                                ButtonType.STATE -> "Toggle on/off state"
+                                ButtonType.TOGGLE -> "Start/stop with duration tracking"
                                 ButtonType.ONE_TIME -> "Complete once, then automatically archived"
+                                ButtonType.WORKFLOW -> "Predefined sequence of states"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
