@@ -104,16 +104,6 @@
                   ]}>
                     <%= notification.message %>
                   </p>
-
-                  <%= if notification.metadata && map_size(notification.metadata) > 0 do %>
-                    <div class="mt-2 text-xs text-gray-500">
-                      <%= for {key, value} <- notification.metadata do %>
-                        <span class="inline-block mr-2">
-                          <span class="font-medium"><%= key %>:</span> <%= inspect(value) %>
-                        </span>
-                      <% end %>
-                    </div>
-                  <% end %>
                 </div>
 
                 <!-- Actions -->
