@@ -213,6 +213,7 @@ private fun ButtonActionButton(
     // Determine action text and icon based on button type and state
     val (actionText, actionIcon) = when (button.type) {
         ButtonType.INSTANT -> "Click!" to Icons.Default.TouchApp
+        ButtonType.ONE_TIME -> "Complete" to Icons.Default.CheckCircle
         ButtonType.TIMED, ButtonType.STATE -> {
             if (button.currentState == ButtonState.ACTIVE) {
                 "Stop" to Icons.Default.Stop
