@@ -102,6 +102,7 @@ defmodule ButtonLog.Support do
   """
   def count_unread_tickets(user_id) do
     from(t in Ticket,
+      as: :ticket,
       where: t.user_id == ^user_id,
       where:
         exists(
