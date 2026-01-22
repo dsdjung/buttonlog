@@ -13,7 +13,8 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountScreen(
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onSupportClick: () -> Unit = {}
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -93,6 +94,13 @@ fun AccountScreen(
                 title = "Privacy",
                 subtitle = "Manage your privacy settings",
                 onClick = { /* TODO: Navigate to privacy settings */ }
+            )
+
+            SettingsItem(
+                icon = Icons.Default.Chat,
+                title = "Help & Support",
+                subtitle = "Get help or report issues",
+                onClick = onSupportClick
             )
 
             SettingsItem(

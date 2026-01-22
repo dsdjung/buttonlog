@@ -18,6 +18,16 @@ defmodule ButtonLogWeb.Router do
     plug ButtonLogWeb.Plugs.AuthPlug
   end
 
+  pipeline :admin do
+    plug ButtonLogWeb.Plugs.AdminPlug
+  end
+
+  pipeline :require_authenticated_admin do
+    plug :fetch_session
+    plug ButtonLogWeb.Plugs.BrowserAuthPlug
+    plug ButtonLogWeb.Plugs.AdminPlug
+  end
+
     scope "/", ButtonLogWeb do
     pipe_through :browser
 
@@ -103,6 +113,33 @@ defmodule ButtonLogWeb.Router do
     post "/subscriptions/resume", API.SubscriptionController, :resume
     get "/subscriptions/stats", API.SubscriptionController, :stats
     post "/subscriptions/check-permission", API.SubscriptionController, :check_permission
+
+    # Support ticket endpoints (user)
+    get "/support/tickets", API.SupportController, :index
+    post "/support/tickets", API.SupportController, :create
+    get "/support/tickets/:id", API.SupportController, :show
+    post "/support/tickets/:id/messages", API.SupportController, :add_message
+  end
+
+  # Admin API routes
+  scope "/api/admin", ButtonLogWeb.API.Admin do
+    pipe_through [:api, :auth, :admin]
+
+    # Support ticket management (admin)
+    get "/support/tickets", SupportController, :index
+    get "/support/tickets/:id", SupportController, :show
+    put "/support/tickets/:id", SupportController, :update
+    post "/support/tickets/:id/messages", SupportController, :add_message
+    get "/support/stats", SupportController, :stats
+  end
+
+  # Admin web panel
+  scope "/admin", ButtonLogWeb do
+    pipe_through [:browser, :require_authenticated_admin]
+
+    live "/", AdminLive.Dashboard, :index
+    live "/support", AdminLive.Support, :index
+    live "/support/:id", AdminLive.Support, :show
   end
 
   scope "/api", ButtonLogWeb do

@@ -34,6 +34,9 @@ defmodule ButtonLog.Accounts.User do
     field :profile_visibility, :string
     field :activity_visibility, :string
 
+    # Admin flag
+    field :is_admin, :boolean, default: false
+
     # Virtual fields for password handling
     field :password, :string, virtual: true
     field :password_confirmation, :string, virtual: true

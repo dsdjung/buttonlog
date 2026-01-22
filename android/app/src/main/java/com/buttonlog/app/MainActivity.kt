@@ -34,8 +34,12 @@ import com.buttonlog.app.ui.screens.FriendDetailScreen
 import com.buttonlog.app.ui.screens.FriendsScreen
 import com.buttonlog.app.ui.screens.LoginScreen
 import com.buttonlog.app.ui.screens.NotificationsScreen
+import com.buttonlog.app.ui.screens.SupportScreen
+import com.buttonlog.app.ui.screens.SupportTicketScreen
+import com.buttonlog.app.ui.screens.CreateTicketScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
+import com.buttonlog.app.ui.viewmodels.SupportViewModel
 import com.buttonlog.app.ui.theme.ButtonLogTheme
 import com.buttonlog.app.ui.viewmodels.AuthViewModel
 import com.buttonlog.app.ui.viewmodels.NotificationsViewModel
@@ -71,6 +75,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var buttonToViewHistory by remember { mutableStateOf<Button?>(null) }
     var selectedFriend by remember { mutableStateOf<Friend?>(null) }
     var friendForGiftButton by remember { mutableStateOf<Friend?>(null) }
+    var showSupportScreen by remember { mutableStateOf(false) }
+    var selectedTicketId by remember { mutableStateOf<String?>(null) }
+    var showCreateTicket by remember { mutableStateOf(false) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
     val notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -189,7 +196,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     NotificationsScreen()
                 }
                 composable("account") {
-                    AccountScreen(onLogout = onLogout)
+                    AccountScreen(
+                        onLogout = onLogout,
+                        onSupportClick = { showSupportScreen = true }
+                    )
                 }
             }
             
@@ -297,6 +307,53 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             },
             onNavigateBack = {
                 friendForGiftButton = null
+            }
+        )
+    }
+
+    // Support Screen
+    if (showSupportScreen) {
+        val supportViewModel: SupportViewModel = hiltViewModel()
+
+        SupportScreen(
+            viewModel = supportViewModel,
+            onTicketClick = { ticketId ->
+                selectedTicketId = ticketId
+            },
+            onCreateTicket = {
+                showCreateTicket = true
+            },
+            onNavigateBack = {
+                showSupportScreen = false
+            }
+        )
+    }
+
+    // Support Ticket Detail Screen
+    selectedTicketId?.let { ticketId ->
+        val supportViewModel: SupportViewModel = hiltViewModel()
+
+        SupportTicketScreen(
+            ticketId = ticketId,
+            viewModel = supportViewModel,
+            onNavigateBack = {
+                selectedTicketId = null
+            }
+        )
+    }
+
+    // Create Ticket Screen
+    if (showCreateTicket) {
+        val supportViewModel: SupportViewModel = hiltViewModel()
+
+        CreateTicketScreen(
+            viewModel = supportViewModel,
+            onTicketCreated = { ticket ->
+                showCreateTicket = false
+                selectedTicketId = ticket.id
+            },
+            onNavigateBack = {
+                showCreateTicket = false
             }
         )
     }

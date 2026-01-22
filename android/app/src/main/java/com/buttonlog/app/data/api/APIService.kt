@@ -109,6 +109,23 @@ interface APIService {
 
     @GET("devices")
     suspend fun getDevices(): DevicesResponse
+
+    // MARK: - Support Ticket Endpoints
+
+    @GET("support/tickets")
+    suspend fun getSupportTickets(): SupportTicketsResponse
+
+    @GET("support/tickets/{id}")
+    suspend fun getSupportTicket(@Path("id") id: String): SupportTicketResponse
+
+    @POST("support/tickets")
+    suspend fun createSupportTicket(@Body request: CreateTicketRequest): SupportTicketResponse
+
+    @POST("support/tickets/{id}/messages")
+    suspend fun sendTicketMessage(
+        @Path("id") ticketId: String,
+        @Body request: SendMessageRequest
+    ): TicketMessageResponse
 }
 
 // MARK: - Request/Response Models

@@ -55,10 +55,14 @@ struct AccountView: View {
             
             // Support Section
             Section("Support") {
+                NavigationLink(destination: SupportView()) {
+                    Label("Help & Support", systemImage: "bubble.left.and.bubble.right")
+                }
+
                 Link(destination: URL(string: "https://buttonlog.com/help")!) {
                     Label("Help Center", systemImage: "questionmark.circle")
                 }
-                
+
                 Link(destination: URL(string: "mailto:support@buttonlog.com")!) {
                     Label("Contact Support", systemImage: "envelope")
                 }

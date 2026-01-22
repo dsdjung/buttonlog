@@ -489,14 +489,45 @@ class APIService {
             "action": action,
             "context": context
         ]
-        
+
         let response: PermissionCheckResponse = try await makeRequest(
             endpoint: "/subscriptions/check-permission",
             method: .POST,
             body: body
         )
-        
+
         return response.allowed
+    }
+
+    // MARK: - Support Tickets
+
+    func getSupportTickets() async throws -> [SupportTicket] {
+        return try await makeRequest(endpoint: "/support/tickets")
+    }
+
+    func getSupportTicket(id: String) async throws -> SupportTicket {
+        return try await makeRequest(endpoint: "/support/tickets/\(id)")
+    }
+
+    func createSupportTicket(_ formData: TicketFormData) async throws -> SupportTicket {
+        return try await makeRequest(
+            endpoint: "/support/tickets",
+            method: .POST,
+            body: formData.toRequestBody()
+        )
+    }
+
+    func sendTicketMessage(ticketId: String, content: String) async throws -> TicketMessage {
+        let body: [String: Any] = [
+            "message": [
+                "content": content
+            ]
+        ]
+        return try await makeRequest(
+            endpoint: "/support/tickets/\(ticketId)/messages",
+            method: .POST,
+            body: body
+        )
     }
 }
 
