@@ -4,34 +4,64 @@ defmodule ButtonLogWeb.API.SocialController do
 
   def friends(conn, _params) do
     user = conn.assigns.current_user
-    friends = Social.get_user_friends(user.id)
+
+    # Get accepted friends
+    accepted_friends = Social.get_user_friends(user.id)
+
+    # Get pending friend requests (where current user is the recipient)
+    pending_requests = Social.get_pending_friend_requests(user.id)
+
+    # Combine both lists
+    all_friends = Enum.map(accepted_friends, fn friend ->
+      %{
+        id: friend.friendship_id,
+        friend_id: friend.id,
+        friend_user: %{
+          id: friend.id,
+          username: friend.username,
+          display_name: friend.display_name,
+          first_name: nil,
+          last_name: nil,
+          profile_visibility: "public"
+        },
+        status: friend.friendship_status,
+        permissions: %{
+          can_see_buttons: true,
+          can_see_activity: true,
+          receive_notifications: true,
+          can_comment: true
+        },
+        created_at: DateTime.utc_now() |> DateTime.to_iso8601(),
+        updated_at: DateTime.utc_now() |> DateTime.to_iso8601()
+      }
+    end) ++ Enum.map(pending_requests, fn request ->
+      %{
+        id: request.id,
+        friend_id: request.user.id,
+        friend_user: %{
+          id: request.user.id,
+          username: request.user.username,
+          display_name: request.user.display_name,
+          first_name: nil,
+          last_name: nil,
+          profile_visibility: "public"
+        },
+        status: "pending",
+        permissions: %{
+          can_see_buttons: false,
+          can_see_activity: false,
+          receive_notifications: false,
+          can_comment: false
+        },
+        created_at: DateTime.utc_now() |> DateTime.to_iso8601(),
+        updated_at: DateTime.utc_now() |> DateTime.to_iso8601()
+      }
+    end)
 
     conn
     |> json(%{
       success: true,
-      data: Enum.map(friends, fn friend ->
-        %{
-          id: friend.friendship_id,
-          friend_id: friend.id,
-          friend_user: %{
-            id: friend.id,
-            username: friend.username,
-            display_name: friend.display_name,
-            first_name: nil,
-            last_name: nil,
-            profile_visibility: "public"
-          },
-          status: friend.friendship_status,
-          permissions: %{
-            can_see_buttons: true,
-            can_see_activity: true,
-            receive_notifications: true,
-            can_comment: true
-          },
-          created_at: DateTime.utc_now() |> DateTime.to_iso8601(),
-          updated_at: DateTime.utc_now() |> DateTime.to_iso8601()
-        }
-      end)
+      data: all_friends
     })
   end
 
