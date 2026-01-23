@@ -166,7 +166,7 @@ defmodule ButtonLog.Buttons do
             |> Repo.insert()
 
             # Notify gift creator if this is a gift button
-            if match?({:ok, _}, click_result), do: notify_gift_creator_of_click(button, "click")
+            if match?({:ok, _}, click_result), do: notify_gift_creator_of_click(button, "click", nil)
 
             click_result
         end
@@ -214,7 +214,7 @@ defmodule ButtonLog.Buttons do
     end)
 
     # Notify gift creator if this is a gift button (outside transaction)
-    if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, action)
+    if match?({:ok, _}, result), do: notify_gift_creator_of_click(button, action, nil)
 
     result
   end
@@ -284,7 +284,7 @@ defmodule ButtonLog.Buttons do
         # Send notifications (outside transaction)
         if match?({:ok, _}, result) do
           # Notify gift creator if this is a gift button (use "complete" action for one-time buttons)
-          notify_gift_creator_of_click(button, "complete")
+          notify_gift_creator_of_click(button, "complete", selected_choice)
           # Notify the button owner that their one-time button was completed
           notify_one_time_button_completed(button, user_id, selected_choice)
         end
@@ -655,8 +655,9 @@ defmodule ButtonLog.Buttons do
   @doc """
   Sends a notification to the gift creator when a gift button is clicked.
   Called from click_button when the button has a created_by_friend_id.
+  Accepts optional selected_choice for one-time buttons with multiple choices.
   """
-  def notify_gift_creator_of_click(button, action) do
+  def notify_gift_creator_of_click(button, action, selected_choice \\ nil) do
     if button.created_by_friend_id do
       alias ButtonLog.Alerts
 
@@ -669,16 +670,32 @@ defmodule ButtonLog.Buttons do
         _ -> "clicked"
       end
 
+      # Build message with optional choice
+      message = if selected_choice do
+        "#{owner.display_name || owner.username} #{action_past} the '#{button.name}' button with choice '#{selected_choice}'"
+      else
+        "#{owner.display_name || owner.username} #{action_past} the '#{button.name}' button you created for them"
+      end
+
+      # Build metadata with optional selected_choice
+      metadata = %{
+        button_id: button.id,
+        button_name: button.name,
+        action: action,
+        friend_id: button.user_id  # The friend who received and clicked the gift button
+      }
+
+      metadata = if selected_choice do
+        Map.put(metadata, :selected_choice, selected_choice)
+      else
+        metadata
+      end
+
       Alerts.create_alert(%{
         alert_type: "gift_button_clicked",
         title: "#{button.name} was #{action_past}!",
-        message: "#{owner.display_name || owner.username} #{action_past} the '#{button.name}' button you created for them",
-        metadata: %{
-          button_id: button.id,
-          button_name: button.name,
-          action: action,
-          friend_id: button.user_id  # The friend who received and clicked the gift button
-        }
+        message: message,
+        metadata: metadata
       }, button.created_by_friend_id, button.user_id, button.id)
     end
   end
