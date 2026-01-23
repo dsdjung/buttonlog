@@ -147,12 +147,23 @@ defmodule ButtonLogWeb.FriendLive.Show do
   end
 
   @impl true
-  def handle_event("create_gift_button", _params, socket) do
+  def handle_event("create_gift_button", params, socket) do
     user_id = socket.assigns.current_user.id
     friend_id = socket.assigns.friend.id
 
+    # Get choices from params (sent by GiftButtonChoices hook) or fallback to socket assigns
+    raw_choices = case params["choices_json"] do
+      json when is_binary(json) ->
+        case Jason.decode(json) do
+          {:ok, list} when is_list(list) -> Enum.map(list, &to_string/1)
+          _ -> socket.assigns.gift_button_choices
+        end
+      _ ->
+        socket.assigns.gift_button_choices
+    end
+
     # Filter out empty choices and only include if we have at least 2
-    choices = socket.assigns.gift_button_choices
+    choices = raw_choices
     |> Enum.map(&String.trim/1)
     |> Enum.filter(&(&1 != ""))
 

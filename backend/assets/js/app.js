@@ -93,6 +93,24 @@ Hooks.CopyToClipboard = {
   }
 };
 
+// Hook for gift button creation with choices
+Hooks.GiftButtonChoices = {
+  mounted() {
+    this.el.addEventListener('click', (e) => {
+      // Prevent default LiveView click handling
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Get choices from the hidden input (populated by Alpine.js)
+      const hiddenInput = document.getElementById('gift-choices-hidden');
+      const choicesJson = hiddenInput ? hiddenInput.value : '["", ""]';
+
+      // Push the event with the choices included
+      this.pushEvent('create_gift_button', {choices_json: choicesJson});
+    });
+  }
+};
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,

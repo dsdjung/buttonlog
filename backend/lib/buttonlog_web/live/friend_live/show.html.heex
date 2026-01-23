@@ -219,7 +219,7 @@
             <%= if @gift_button_type == "one-time" do %>
               <div id="gift-choices-section" phx-update="ignore">
                 <div x-data={"{ choices: #{Jason.encode!(@gift_button_choices || ["", ""])} }"}
-                     x-init="$watch('choices', value => { $refs.choicesInput.value = JSON.stringify(value); $refs.choicesInput.dispatchEvent(new Event('input', { bubbles: true })) })">
+                     x-effect="document.getElementById('gift-choices-hidden').value = JSON.stringify(choices)">
                   <label class="block text-sm font-medium text-gray-700 mb-1">Choices (Optional)</label>
                   <p class="text-xs text-gray-500 mb-2">Add 2 or more choices to create a multiple choice button</p>
                   <div class="space-y-2">
@@ -249,13 +249,12 @@
                       <span>Add Choice</span>
                     </button>
                   </div>
-                  <input type="hidden"
-                         x-ref="choicesInput"
-                         phx-change="update-gift-choices"
-                         name="choices_json"
-                         x-bind:value="JSON.stringify(choices)" />
                 </div>
               </div>
+              <input type="hidden"
+                     id="gift-choices-hidden"
+                     name="choices_json"
+                     value={Jason.encode!(@gift_button_choices || ["", ""])} />
             <% end %>
 
             <!-- Button Color -->
@@ -295,7 +294,9 @@
                 Cancel
               </button>
               <button type="button"
+                      id="create-gift-button"
                       phx-click="create_gift_button"
+                      phx-hook="GiftButtonChoices"
                       disabled={@gift_button_name == ""}
                       class="px-4 py-2 rounded-lg transition-colors"
                       style={"color: white; #{if @gift_button_name == "", do: "background-color: #C4B5FD; cursor: not-allowed;", else: "background-color: #9333EA;"}"}>
