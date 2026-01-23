@@ -27,26 +27,28 @@ struct ButtonsView: View {
                 .padding(.horizontal, BLSpacing.lg)
                 .padding(.top, BLSpacing.sm)
 
-            if appState.isLoadingButtons && appState.buttons.isEmpty {
-                // Loading state
-                VStack(spacing: BLSpacing.md) {
-                    ProgressView()
-                        .tint(.blPrimary)
-                    Text("Loading buttons...")
-                        .font(BLTypography.bodyMedium)
-                        .foregroundColor(.blTextSecondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Main content with pull-to-refresh support
+            ScrollView {
+                if appState.isLoadingButtons && appState.buttons.isEmpty {
+                    // Loading state
+                    VStack(spacing: BLSpacing.md) {
+                        ProgressView()
+                            .tint(.blPrimary)
+                        Text("Loading buttons...")
+                            .font(BLTypography.bodyMedium)
+                            .foregroundColor(.blTextSecondary)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 300)
+                    .padding(.top, 100)
 
-            } else if filteredButtons.isEmpty {
-                // Empty state
-                EmptyStateView {
-                    showingCreateButton = true
-                }
+                } else if filteredButtons.isEmpty {
+                    // Empty state
+                    EmptyStateView {
+                        showingCreateButton = true
+                    }
 
-            } else {
-                // Buttons list
-                ScrollView {
+                } else {
+                    // Buttons list
                     LazyVStack(spacing: BLSpacing.lg) {
                         ForEach(filteredButtons) { button in
                             ButtonCard(
@@ -79,9 +81,9 @@ struct ButtonsView: View {
                     .padding(BLSpacing.lg)
                     .padding(.bottom, 80) // Space for floating button
                 }
-                .refreshable {
-                    await appState.loadButtons()
-                }
+            }
+            .refreshable {
+                await appState.loadButtons()
             }
         }
         .background(Color.blBackground)

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,42 +49,48 @@ fun ButtonsScreen(
             modifier = Modifier.padding(16.dp)
         )
 
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            uiState.buttons.isEmpty() -> {
-                EmptyStateView(onCreateButton = onCreateButton)
-            }
-
-            else -> {
-                ButtonsList(
-                    buttons = uiState.filteredButtons,
-                    onButtonClick = { buttonId ->
-                        viewModel.clickButton(buttonId)
-                    },
-                    onButtonClickWithChoice = { buttonId, choice ->
-                        viewModel.clickButton(buttonId, choice)
-                    },
-                    onEditClick = { button ->
-                        onEditButton(button)
-                    },
-                    onHistoryClick = { button ->
-                        onViewHistory(button)
-                    },
-                    onAlertSettingsClick = { button ->
-                        buttonForAlertSettings = button
-                    },
-                    onDeleteClick = { button ->
-                        buttonToDelete = button
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { viewModel.refreshButtons() },
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when {
+                uiState.isLoading && !uiState.isRefreshing -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
                     }
-                )
+                }
+
+                uiState.buttons.isEmpty() && !uiState.isRefreshing -> {
+                    EmptyStateView(onCreateButton = onCreateButton)
+                }
+
+                else -> {
+                    ButtonsList(
+                        buttons = uiState.filteredButtons,
+                        onButtonClick = { buttonId ->
+                            viewModel.clickButton(buttonId)
+                        },
+                        onButtonClickWithChoice = { buttonId, choice ->
+                            viewModel.clickButton(buttonId, choice)
+                        },
+                        onEditClick = { button ->
+                            onEditButton(button)
+                        },
+                        onHistoryClick = { button ->
+                            onViewHistory(button)
+                        },
+                        onAlertSettingsClick = { button ->
+                            buttonForAlertSettings = button
+                        },
+                        onDeleteClick = { button ->
+                            buttonToDelete = button
+                        }
+                    )
+                }
             }
         }
     }

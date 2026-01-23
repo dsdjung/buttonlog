@@ -63,7 +63,15 @@ class ButtonsViewModel @Inject constructor(
             buttonRepository.fetchButtons()
         }
     }
-    
+
+    fun refreshButtons() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            buttonRepository.fetchButtons()
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
+
     fun updateSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
@@ -296,6 +304,7 @@ data class ButtonsUiState(
     val filteredButtons: List<Button> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val isLoadingSharing: Boolean = false,
     val buttonSharingSettings: List<ButtonSharingSetting> = emptyList(),
     val error: String? = null,
