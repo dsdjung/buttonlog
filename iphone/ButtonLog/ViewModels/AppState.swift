@@ -21,7 +21,10 @@ class AppState: ObservableObject {
     @Published var diaryError: String?
 
     @Published var errorMessage: String?
-    
+
+    // Track buttons currently being clicked (to disable them during the request)
+    @Published var clickingButtonIds: Set<String> = []
+
     private let apiService = APIService.shared
     private var cancellables = Set<AnyCancellable>()
     
@@ -111,6 +114,9 @@ class AppState: ObservableObject {
     }
     
     func clickButton(id: String, choice: String? = nil) async -> Bool {
+        // Mark button as clicking to disable it in UI
+        clickingButtonIds.insert(id)
+
         do {
             _ = try await apiService.clickButton(id: id, choice: choice)
 
@@ -126,8 +132,10 @@ class AppState: ObservableObject {
                 buttons.removeAll { $0.id == id }
             }
 
+            clickingButtonIds.remove(id)
             return true
         } catch {
+            clickingButtonIds.remove(id)
             errorMessage = "Failed to click button: \(error.localizedDescription)"
             return false
         }

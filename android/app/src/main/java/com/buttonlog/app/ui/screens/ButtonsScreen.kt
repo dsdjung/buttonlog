@@ -71,6 +71,7 @@ fun ButtonsScreen(
                 else -> {
                     ButtonsList(
                         buttons = uiState.filteredButtons,
+                        clickingButtonIds = uiState.clickingButtonIds,
                         onButtonClick = { buttonId ->
                             viewModel.clickButton(buttonId)
                         },
@@ -219,6 +220,7 @@ private fun EmptyStateView(onCreateButton: () -> Unit) {
 @Composable
 private fun ButtonsList(
     buttons: List<com.buttonlog.app.data.model.Button>,
+    clickingButtonIds: Set<String> = emptySet(),
     onButtonClick: (String) -> Unit,
     onButtonClickWithChoice: (String, String) -> Unit,
     onEditClick: (com.buttonlog.app.data.model.Button) -> Unit,
@@ -239,7 +241,8 @@ private fun ButtonsList(
                 onEditClick = { onEditClick(button) },
                 onHistoryClick = { onHistoryClick(button) },
                 onAlertSettingsClick = if (button.isOwner) {{ onAlertSettingsClick(button) }} else null,
-                onDeleteClick = { onDeleteClick(button) }
+                onDeleteClick = { onDeleteClick(button) },
+                isClicking = clickingButtonIds.contains(button.id)
             )
         }
     }

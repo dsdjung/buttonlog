@@ -34,8 +34,11 @@ fun ButtonCard(
     onSharingClick: (() -> Unit)? = null,
     onAlertSettingsClick: (() -> Unit)? = null,
     onDeleteClick: () -> Unit = {},
+    isClicking: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    // One-time buttons should be disabled while clicking
+    val isButtonDisabled = isClicking && button.type == ButtonType.ONE_TIME
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.95f else 1f,
@@ -81,6 +84,7 @@ fun ButtonCard(
                 ChoiceButtons(
                     button = button,
                     choices = choices,
+                    isDisabled = isButtonDisabled,
                     onChoiceClick = { choice ->
                         isPressed = true
                         onClickWithChoice?.invoke(choice) ?: onClick()
@@ -89,6 +93,7 @@ fun ButtonCard(
             } else {
                 ButtonActionButton(
                     button = button,
+                    isDisabled = isButtonDisabled,
                     onClick = {
                         isPressed = true
                         onClick()
@@ -265,46 +270,77 @@ private fun ButtonHeader(
 private fun ChoiceButtons(
     button: Button,
     choices: List<String>,
+    isDisabled: Boolean = false,
     onChoiceClick: (String) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = "Select an option:",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        // Display choices in a 2-column grid
-        val chunkedChoices = choices.chunked(2)
-        chunkedChoices.forEach { rowChoices ->
-            Row(
+        if (isDisabled) {
+            // Show loading state when clicking
+            Button(
+                onClick = {},
+                enabled = false,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                colors = ButtonDefaults.buttonColors(
+                    disabledContainerColor = button.uiColor.copy(alpha = 0.6f),
+                    disabledContentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                rowChoices.forEach { choice ->
-                    Button(
-                        onClick = { onChoiceClick(choice) },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = button.uiColor,
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = choice,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 2
-                        )
-                    }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                    Text(
+                        text = "Completing...",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
-                // Add spacer if odd number of choices in last row
-                if (rowChoices.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
+            }
+        } else {
+            Text(
+                text = "Select an option:",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Display choices in a 2-column grid
+            val chunkedChoices = choices.chunked(2)
+            chunkedChoices.forEach { rowChoices ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowChoices.forEach { choice ->
+                        Button(
+                            onClick = { onChoiceClick(choice) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = button.uiColor,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = choice,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 2
+                            )
+                        }
+                    }
+                    // Add spacer if odd number of choices in last row
+                    if (rowChoices.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -314,6 +350,7 @@ private fun ChoiceButtons(
 @Composable
 private fun ButtonActionButton(
     button: Button,
+    isDisabled: Boolean = false,
     onClick: () -> Unit
 ) {
     // Determine action text and icon based on button type and state
@@ -332,10 +369,13 @@ private fun ButtonActionButton(
 
     Button(
         onClick = onClick,
+        enabled = !isDisabled,
         modifier = Modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
             containerColor = button.uiColor,
-            contentColor = Color.White
+            contentColor = Color.White,
+            disabledContainerColor = button.uiColor.copy(alpha = 0.6f),
+            disabledContentColor = Color.White
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -343,17 +383,29 @@ private fun ButtonActionButton(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = actionIcon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-
-            Text(
-                text = actionText,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+            if (isDisabled) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+                Text(
+                    text = "Completing...",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            } else {
+                Icon(
+                    imageVector = actionIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = actionText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))

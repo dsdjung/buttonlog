@@ -78,7 +78,13 @@ class ButtonsViewModel @Inject constructor(
     
     fun clickButton(buttonId: String, choice: String? = null) {
         viewModelScope.launch {
+            // Mark button as clicking to disable it in UI
+            _uiState.update { it.copy(clickingButtonIds = it.clickingButtonIds + buttonId) }
+
             buttonRepository.clickButton(buttonId, choice)
+
+            // Remove from clicking set after completion
+            _uiState.update { it.copy(clickingButtonIds = it.clickingButtonIds - buttonId) }
         }
     }
     
@@ -308,6 +314,8 @@ data class ButtonsUiState(
     val isLoadingSharing: Boolean = false,
     val buttonSharingSettings: List<ButtonSharingSetting> = emptyList(),
     val error: String? = null,
+    // Track buttons currently being clicked (to disable one-time buttons during click)
+    val clickingButtonIds: Set<String> = emptySet(),
     // Alert preferences
     val buttonAlertPreferences: List<ButtonAlertPreference> = emptyList(),
     val isLoadingAlertPreferences: Boolean = false,

@@ -53,6 +53,7 @@ struct ButtonsView: View {
                         ForEach(filteredButtons) { button in
                             ButtonCard(
                                 button: button,
+                                isClicking: appState.clickingButtonIds.contains(button.id),
                                 onTap: {
                                     Task {
                                         await appState.clickButton(id: button.id)
@@ -117,6 +118,7 @@ struct ButtonsView: View {
 
 struct ButtonCard: View {
     let button: ButtonModel
+    var isClicking: Bool = false
     let onTap: () -> Void
     var onTapWithChoice: ((String) -> Void)? = nil
     let onEdit: () -> Void
@@ -126,6 +128,11 @@ struct ButtonCard: View {
 
     @State private var isPressed = false
     @State private var pressedChoice: String? = nil
+
+    // One-time buttons should be disabled while clicking
+    private var isButtonDisabled: Bool {
+        isClicking && button.type == .oneTime
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BLSpacing.md) {
@@ -216,42 +223,59 @@ struct ButtonCard: View {
             // Click Button(s) - show choice buttons for one-time buttons with choices
             if button.hasChoices, let choices = button.choices {
                 VStack(spacing: BLSpacing.sm) {
-                    Text("Select an option:")
-                        .font(BLTypography.labelSmall)
-                        .foregroundColor(.blTextSecondary)
+                    if isButtonDisabled {
+                        // Show loading state when clicking
+                        HStack(spacing: BLSpacing.sm) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Completing...")
+                                .font(BLTypography.bodyMedium)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, BLSpacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: BLRadius.md)
+                                .fill(button.uiColor.opacity(0.6))
+                        )
+                    } else {
+                        Text("Select an option:")
+                            .font(BLTypography.labelSmall)
+                            .foregroundColor(.blTextSecondary)
 
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: BLSpacing.sm) {
-                        ForEach(choices, id: \.self) { choice in
-                            SwiftUI.Button(action: {
-                                withAnimation(BLAnimation.fast) {
-                                    pressedChoice = choice
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: BLSpacing.sm) {
+                            ForEach(choices, id: \.self) { choice in
+                                SwiftUI.Button(action: {
+                                    withAnimation(BLAnimation.fast) {
+                                        pressedChoice = choice
+                                    }
+
+                                    onTapWithChoice?(choice) ?? onTap()
+
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        pressedChoice = nil
+                                    }
+                                }) {
+                                    HStack {
+                                        Image(systemName: "checkmark.circle")
+                                            .font(BLTypography.bodyMedium)
+
+                                        Text(choice)
+                                            .font(BLTypography.bodyMedium)
+                                            .lineLimit(1)
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, BLSpacing.md)
+                                    .padding(.horizontal, BLSpacing.sm)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: BLRadius.md)
+                                            .fill(button.uiColor)
+                                            .scaleEffect(pressedChoice == choice ? 0.96 : 1.0)
+                                    )
                                 }
-
-                                onTapWithChoice?(choice) ?? onTap()
-
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    pressedChoice = nil
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: "checkmark.circle")
-                                        .font(BLTypography.bodyMedium)
-
-                                    Text(choice)
-                                        .font(BLTypography.bodyMedium)
-                                        .lineLimit(1)
-                                }
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, BLSpacing.md)
-                                .padding(.horizontal, BLSpacing.sm)
-                                .background(
-                                    RoundedRectangle(cornerRadius: BLRadius.md)
-                                        .fill(button.uiColor)
-                                        .scaleEffect(pressedChoice == choice ? 0.96 : 1.0)
-                                )
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                 }
@@ -268,11 +292,18 @@ struct ButtonCard: View {
                     }
                 }) {
                     HStack {
-                        Image(systemName: buttonActionIcon(for: button))
-                            .font(BLTypography.titleMedium)
+                        if isButtonDisabled {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Completing...")
+                                .font(BLTypography.titleMedium)
+                        } else {
+                            Image(systemName: buttonActionIcon(for: button))
+                                .font(BLTypography.titleMedium)
 
-                        Text(buttonActionText(for: button))
-                            .font(BLTypography.titleMedium)
+                            Text(buttonActionText(for: button))
+                                .font(BLTypography.titleMedium)
+                        }
 
                         Spacer()
                     }
@@ -280,11 +311,12 @@ struct ButtonCard: View {
                     .padding(BLSpacing.lg)
                     .background(
                         RoundedRectangle(cornerRadius: BLRadius.lg)
-                            .fill(button.uiColor)
+                            .fill(isButtonDisabled ? button.uiColor.opacity(0.6) : button.uiColor)
                             .scaleEffect(isPressed ? 0.96 : 1.0)
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
+                .disabled(isButtonDisabled)
             }
         }
         .padding(BLSpacing.lg)
