@@ -230,7 +230,7 @@ class APIService {
         try await makeVoidRequest(endpoint: "/auth/logout", method: .DELETE)
     }
 
-    // OAuth callback - exchange code for token
+    // OAuth callback - exchange user info for token
     func exchangeOAuthCode(provider: String, code: String, state: String?) async throws -> AuthResponse {
         var body: [String: Any] = [
             "provider": provider,
@@ -239,6 +239,30 @@ class APIService {
         if let state = state {
             body["state"] = state
         }
+
+        return try await makeRequest(
+            endpoint: "/auth/oauth/callback",
+            method: .POST,
+            body: body,
+            requiresAuth: false
+        )
+    }
+
+    /// Authenticate with OAuth using user info from the provider
+    /// - Parameters:
+    ///   - provider: The OAuth provider (e.g., "google", "apple")
+    ///   - userInfo: Dictionary containing user info from the OAuth provider
+    ///     - email: User's email (required)
+    ///     - uid: Unique identifier from the provider (required)
+    ///     - name: User's display name (optional)
+    ///     - first_name: User's first name (optional)
+    ///     - last_name: User's last name (optional)
+    ///     - image: User's profile image URL (optional)
+    func authenticateWithOAuth(provider: String, userInfo: [String: Any]) async throws -> AuthResponse {
+        let body: [String: Any] = [
+            "provider": provider,
+            "user_info": userInfo
+        ]
 
         return try await makeRequest(
             endpoint: "/auth/oauth/callback",

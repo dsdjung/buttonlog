@@ -13,7 +13,10 @@ interface APIService {
 
     @POST("auth/register")
     suspend fun register(@Body data: RegistrationData): AuthResponse
-    
+
+    @POST("auth/oauth/callback")
+    suspend fun oauthCallback(@Body data: OAuthCallbackRequest): AuthResponse
+
     @DELETE("auth/logout")
     suspend fun logout()
     
@@ -331,6 +334,29 @@ data class FriendRequestBody(
     @SerializedName("friend_id")
     val friendId: String? = null,
     val message: String? = null
+)
+
+data class OAuthCallbackRequest(
+    val provider: String,
+    @SerializedName("user_info")
+    val userInfo: OAuthUserInfo
+)
+
+data class OAuthUserInfo(
+    val email: String,
+    val uid: String,
+    val name: String? = null,
+    @SerializedName("first_name")
+    val firstName: String? = null,
+    @SerializedName("last_name")
+    val lastName: String? = null,
+    val image: String? = null,
+    @SerializedName("access_token")
+    val accessToken: String? = null,
+    @SerializedName("refresh_token")
+    val refreshToken: String? = null,
+    @SerializedName("expires_at")
+    val expiresAt: Long? = null
 )
 
 data class FriendPermissionUpdateRequest(

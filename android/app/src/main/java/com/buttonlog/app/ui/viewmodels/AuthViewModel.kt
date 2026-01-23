@@ -63,6 +63,41 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun loginWithOAuth(
+        provider: String,
+        email: String,
+        uid: String,
+        name: String? = null,
+        firstName: String? = null,
+        lastName: String? = null,
+        image: String? = null,
+        accessToken: String? = null
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+
+            authRepository.loginWithOAuth(
+                provider = provider,
+                email = email,
+                uid = uid,
+                name = name,
+                firstName = firstName,
+                lastName = lastName,
+                image = image,
+                accessToken = accessToken
+            )
+                .onSuccess {
+                    // OAuth login successful, isLoggedIn will be updated by repository
+                }
+                .onFailure { error ->
+                    _errorMessage.value = error.message ?: "OAuth login failed"
+                }
+
+            _isLoading.value = false
+        }
+    }
+
     fun logout() {
         authRepository.logout()
     }

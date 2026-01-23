@@ -3,6 +3,8 @@ package com.buttonlog.app.data.repository
 import android.content.SharedPreferences
 import com.buttonlog.app.data.api.APIService
 import com.buttonlog.app.data.api.LoginCredentials
+import com.buttonlog.app.data.api.OAuthCallbackRequest
+import com.buttonlog.app.data.api.OAuthUserInfo
 import com.buttonlog.app.data.api.RegistrationData
 import com.buttonlog.app.data.model.AuthUserData
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,6 +84,45 @@ class AuthRepository @Inject constructor(
                 Result.success(response.data)
             } else {
                 val errorMessage = response.error?.message ?: "Registration failed"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun loginWithOAuth(
+        provider: String,
+        email: String,
+        uid: String,
+        name: String? = null,
+        firstName: String? = null,
+        lastName: String? = null,
+        image: String? = null,
+        accessToken: String? = null
+    ): Result<AuthUserData> {
+        return try {
+            val response = apiService.oauthCallback(
+                OAuthCallbackRequest(
+                    provider = provider,
+                    userInfo = OAuthUserInfo(
+                        email = email,
+                        uid = uid,
+                        name = name,
+                        firstName = firstName,
+                        lastName = lastName,
+                        image = image,
+                        accessToken = accessToken
+                    )
+                )
+            )
+            if (response.success && response.data != null) {
+                saveAuthData(response.data)
+                _isLoggedIn.value = true
+                _onboardingCompleted.value = response.data.user.onboardingCompleted
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "OAuth login failed"
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {

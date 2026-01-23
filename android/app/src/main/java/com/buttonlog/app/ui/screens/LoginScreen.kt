@@ -1,5 +1,8 @@
 package com.buttonlog.app.ui.screens
 
+import android.app.Activity
+import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -23,9 +28,18 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.buttonlog.app.R
 import com.buttonlog.app.ui.viewmodels.AuthViewModel
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
+
+// Google OAuth Web Client ID - replace with your actual client ID from Google Cloud Console
+private const val GOOGLE_WEB_CLIENT_ID = "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,14 +49,75 @@ fun LoginScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     var isLoginMode by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var isGoogleLoading by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
+
+    // Google Sign-In handler
+    fun signInWithGoogle() {
+        coroutineScope.launch {
+            isGoogleLoading = true
+            viewModel.clearError()
+
+            try {
+                val credentialManager = CredentialManager.create(context)
+
+                val googleIdOption = GetGoogleIdOption.Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(GOOGLE_WEB_CLIENT_ID)
+                    .setAutoSelectEnabled(false)
+                    .build()
+
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
+
+                val result = credentialManager.getCredential(
+                    request = request,
+                    context = context as Activity
+                )
+
+                val credential = result.credential
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+
+                // Extract user info from the Google credential
+                val userEmail = googleIdTokenCredential.id
+                val userId = googleIdTokenCredential.id // Use email as UID for Google
+                val displayName = googleIdTokenCredential.displayName
+                val givenName = googleIdTokenCredential.givenName
+                val familyName = googleIdTokenCredential.familyName
+                val profilePictureUri = googleIdTokenCredential.profilePictureUri?.toString()
+                val idToken = googleIdTokenCredential.idToken
+
+                // Send to backend
+                viewModel.loginWithOAuth(
+                    provider = "google",
+                    email = userEmail,
+                    uid = userId,
+                    name = displayName,
+                    firstName = givenName,
+                    lastName = familyName,
+                    image = profilePictureUri,
+                    accessToken = idToken
+                )
+            } catch (e: GetCredentialException) {
+                Log.e("LoginScreen", "Google Sign-In failed", e)
+                // Error will be shown via viewModel.errorMessage if needed
+            } catch (e: Exception) {
+                Log.e("LoginScreen", "Google Sign-In error", e)
+            } finally {
+                isGoogleLoading = false
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -202,12 +277,67 @@ fun LoginScreen(
                 isLoginMode = !isLoginMode
                 viewModel.clearError()
             },
-            enabled = !isLoading
+            enabled = !isLoading && !isGoogleLoading
         ) {
             Text(
                 if (isLoginMode) "Don't have an account? Register"
                 else "Already have an account? Login"
             )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Divider with "or"
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HorizontalDivider(modifier = Modifier.weight(1f))
+            Text(
+                text = "or",
+                modifier = Modifier.padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            HorizontalDivider(modifier = Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Google Sign-In Button
+        OutlinedButton(
+            onClick = { signInWithGoogle() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            enabled = !isLoading && !isGoogleLoading,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = Color.White
+            )
+        ) {
+            if (isGoogleLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_google),
+                        contentDescription = "Google logo",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Continue with Google",
+                        color = Color.Black
+                    )
+                }
+            }
         }
     }
 }

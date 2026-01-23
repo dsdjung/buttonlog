@@ -119,6 +119,100 @@ defmodule ButtonLogWeb.API.AuthController do
     end
   end
 
+  @doc """
+  Mobile OAuth callback endpoint.
+  Accepts OAuth provider info directly from mobile apps and returns a JWT token.
+
+  Expects:
+  - provider: "google", "facebook", or "apple"
+  - user_info: User info from the provider containing:
+    - email (required)
+    - uid (required) - unique identifier from OAuth provider
+    - name (optional)
+    - first_name (optional)
+    - last_name (optional)
+    - image (optional)
+    - access_token (optional)
+    - refresh_token (optional)
+  """
+  def oauth_callback(conn, %{"provider" => provider, "user_info" => user_info}) do
+    with {:ok, email} <- get_required_field(user_info, "email"),
+         {:ok, uid} <- get_required_field(user_info, "uid") do
+
+      # Build an auth-like structure for the accounts module
+      auth = %{
+        uid: uid,
+        info: %{
+          email: email,
+          name: user_info["name"],
+          first_name: user_info["first_name"],
+          last_name: user_info["last_name"],
+          image: user_info["image"]
+        },
+        credentials: %{
+          token: user_info["access_token"],
+          refresh_token: user_info["refresh_token"],
+          expires_at: user_info["expires_at"]
+        }
+      }
+
+      case Accounts.find_or_create_oauth_user(auth, provider) do
+        {:ok, user} ->
+          token = Token.create_token(user.id)
+          conn
+          |> json(%{
+            success: true,
+            data: %{
+              user: serialize_user(user),
+              token: token
+            }
+          })
+
+        {:error, reason} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "OAUTH_ERROR",
+              message: "OAuth authentication failed: #{inspect(reason)}"
+            }
+          })
+      end
+    else
+      {:error, field} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "MISSING_FIELD",
+            message: "Missing required field: #{field}"
+          }
+        })
+    end
+  end
+
+  def oauth_callback(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{
+      success: false,
+      error: %{
+        code: "INVALID_REQUEST",
+        message: "Missing required parameters: provider, user_info"
+      }
+    })
+  end
+
+  defp get_required_field(map, field) do
+    case Map.get(map, field) do
+      nil -> {:error, field}
+      "" -> {:error, field}
+      value -> {:ok, value}
+    end
+  end
+
   defp get_auth_token(conn) do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] -> token
