@@ -1238,7 +1238,7 @@ defmodule ButtonLog.Buttons do
                    b.current_state, b.state_changed_at, b.alerts_enabled,
                    b.auto_stop_enabled, b.auto_stop_minutes, b.scheduled_stop_at,
                    b.calendar_sync_enabled, b.user_id,
-                   b.inserted_at, b.updated_at, b.sharing_mode, owner.id,
+                   b.inserted_at, b.updated_at, b.sharing_mode, b.choices, owner.id,
                    owner.display_name, owner.username],
         order_by: [asc: b.name],
         select: %{
@@ -1261,6 +1261,7 @@ defmodule ButtonLog.Buttons do
           updated_at: b.updated_at,
           latest_click_at: max(bc.clicked_at),
           sharing_mode: b.sharing_mode,
+          choices: b.choices,
           is_shared_with_me: true,
           owner_id: owner.id,
           owner_name: coalesce(owner.display_name, owner.username)
