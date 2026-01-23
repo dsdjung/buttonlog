@@ -441,6 +441,14 @@ fun CreateButtonScreen(
                 }
             }
 
+            // Quick Templates
+            QuickTemplatesSection(
+                onTemplateSelected = { templateType, templateChoices ->
+                    selectedType = templateType
+                    choices = templateChoices.toMutableList()
+                }
+            )
+
             // Name field
             OutlinedTextField(
                 value = name,
@@ -803,6 +811,14 @@ fun CreateGiftButtonScreen(
                 }
             }
 
+            // Quick Templates
+            QuickTemplatesSection(
+                onTemplateSelected = { templateType, templateChoices ->
+                    selectedType = templateType
+                    choices = templateChoices.toMutableList()
+                }
+            )
+
             // Name field
             OutlinedTextField(
                 value = name,
@@ -927,6 +943,89 @@ private fun ButtonTypeSelector(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun QuickTemplatesSection(
+    onTemplateSelected: (ButtonType, List<String>) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "Quick Templates",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TemplateChip(
+                title = "Yes/No",
+                icon = Icons.Default.HelpOutline,
+                color = Color(0xFF9C27B0),
+                onClick = { onTemplateSelected(ButtonType.ONE_TIME, listOf("Yes", "No")) },
+                modifier = Modifier.weight(1f)
+            )
+
+            TemplateChip(
+                title = "Done/Skip",
+                icon = Icons.Default.CheckCircleOutline,
+                color = Color(0xFF4CAF50),
+                onClick = { onTemplateSelected(ButtonType.ONE_TIME, listOf("Done", "Skip")) },
+                modifier = Modifier.weight(1f)
+            )
+
+            TemplateChip(
+                title = "Rating",
+                icon = Icons.Default.Star,
+                color = Color(0xFF2196F3),
+                onClick = { onTemplateSelected(ButtonType.ONE_TIME, listOf("Good", "Okay", "Bad")) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Text(
+            text = "Or create a custom button below",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun TemplateChip(
+    title: String,
+    icon: ImageVector,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        color = color.copy(alpha = 0.1f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = color
+            )
         }
     }
 }

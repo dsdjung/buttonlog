@@ -29,13 +29,52 @@ struct CreateButtonView: View {
     var body: some View {
         NavigationView {
             Form {
+                // Quick Templates Section
+                Section(header: Text("Quick Templates")) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            TemplateButton(
+                                title: "Yes/No Question",
+                                icon: "questionmark.circle.fill",
+                                color: .purple
+                            ) {
+                                formData.type = .oneTime
+                                formData.choices = ["Yes", "No"]
+                            }
+
+                            TemplateButton(
+                                title: "Done/Skip Task",
+                                icon: "checkmark.circle.fill",
+                                color: .green
+                            ) {
+                                formData.type = .oneTime
+                                formData.choices = ["Done", "Skip"]
+                            }
+
+                            TemplateButton(
+                                title: "Rating",
+                                icon: "star.fill",
+                                color: .blue
+                            ) {
+                                formData.type = .oneTime
+                                formData.choices = ["Good", "Okay", "Bad"]
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+
+                    Text("Or create a custom button below")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 Section(header: Text("Basic Information")) {
                     TextField("Button Name", text: $formData.name)
-                    
+
                     TextField("Description (optional)", text: $formData.description, axis: .vertical)
                         .lineLimit(3)
                 }
-                
+
                 Section(header: Text("Button Type")) {
                     Picker("Type", selection: $formData.type) {
                         ForEach(ButtonType.allCases, id: \.self) { type in
@@ -534,6 +573,45 @@ struct CreateGiftButtonView: View {
                         .foregroundColor(.secondary)
                 }
 
+                // Quick Templates Section
+                Section(header: Text("Quick Templates")) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            TemplateButton(
+                                title: "Yes/No Question",
+                                icon: "questionmark.circle.fill",
+                                color: .purple
+                            ) {
+                                formData.type = .oneTime
+                                formData.choices = ["Yes", "No"]
+                            }
+
+                            TemplateButton(
+                                title: "Done/Skip Task",
+                                icon: "checkmark.circle.fill",
+                                color: .green
+                            ) {
+                                formData.type = .oneTime
+                                formData.choices = ["Done", "Skip"]
+                            }
+
+                            TemplateButton(
+                                title: "Rating",
+                                icon: "star.fill",
+                                color: .blue
+                            ) {
+                                formData.type = .oneTime
+                                formData.choices = ["Good", "Okay", "Bad"]
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+
+                    Text("Or create a custom button below")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 Section(header: Text("Basic Information")) {
                     TextField("Button Name", text: $formData.name)
 
@@ -794,6 +872,36 @@ struct GiftButtonPreview: View {
         .background(Color(.systemBackground))
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+    }
+}
+
+// Template button component for quick button creation
+struct TemplateButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        SwiftUI.Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption)
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(color.opacity(0.15))
+            .foregroundColor(color)
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(color.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
