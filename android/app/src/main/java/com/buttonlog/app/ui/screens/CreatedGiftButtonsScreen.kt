@@ -1,6 +1,8 @@
 package com.buttonlog.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -383,6 +385,10 @@ private fun EditGiftButtonDialog(
 ) {
     var name by remember { mutableStateOf(button.name) }
     var description by remember { mutableStateOf(button.description ?: "") }
+    var selectedIcon by remember { mutableStateOf(button.icon) }
+    var selectedColor by remember { mutableStateOf(button.color) }
+    var showIconPicker by remember { mutableStateOf(false) }
+    var showColorPicker by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -403,6 +409,54 @@ private fun EditGiftButtonDialog(
                     label = { Text("Description (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Icon selection
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Icon",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    IconButton(onClick = { showIconPicker = true }) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(parseColor(selectedColor)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = getIconForButton(selectedIcon),
+                                contentDescription = "Selected icon",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Color selection
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Color",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    IconButton(onClick = { showColorPicker = true }) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(parseColor(selectedColor))
+                        )
+                    }
+                }
 
                 // Show recipient info (read-only)
                 button.recipientName?.let { recipientName ->
@@ -432,8 +486,8 @@ private fun EditGiftButtonDialog(
                         name = name,
                         description = description,
                         type = button.type,
-                        icon = button.icon,
-                        color = button.color,
+                        icon = selectedIcon,
+                        color = selectedColor,
                         alertsEnabled = button.alertsEnabled,
                         autoStopEnabled = button.autoStopEnabled,
                         autoStopMinutes = button.autoStopMinutes,
@@ -453,6 +507,151 @@ private fun EditGiftButtonDialog(
             }
         }
     )
+
+    // Icon picker dialog
+    if (showIconPicker) {
+        IconPickerDialog(
+            selectedIcon = selectedIcon,
+            onIconSelected = { icon ->
+                selectedIcon = icon
+                showIconPicker = false
+            },
+            onDismiss = { showIconPicker = false }
+        )
+    }
+
+    // Color picker dialog
+    if (showColorPicker) {
+        ColorPickerDialog(
+            selectedColor = selectedColor,
+            onColorSelected = { color ->
+                selectedColor = color
+                showColorPicker = false
+            },
+            onDismiss = { showColorPicker = false }
+        )
+    }
+}
+
+@Composable
+private fun IconPickerDialog(
+    selectedIcon: String,
+    onIconSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val icons = listOf(
+        "star", "heart", "bolt", "flame", "leaf",
+        "drop", "sun", "moon", "cloud", "snowflake",
+        "car", "airplane", "gamecontroller", "book", "pencil",
+        "scissors", "wrench", "hammer", "gear", "lock"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Icon") },
+        text = {
+            Column {
+                for (row in icons.chunked(5)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        for (icon in row) {
+                            IconButton(
+                                onClick = { onIconSelected(icon) },
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (icon == selectedIcon)
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        else
+                                            Color.Transparent
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = getIconForButton(icon),
+                                    contentDescription = icon,
+                                    tint = if (icon == selectedIcon)
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun ColorPickerDialog(
+    selectedColor: String,
+    onColorSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val colors = listOf(
+        "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
+        "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
+        "#F8B500", "#00CED1", "#FF69B4", "#32CD32", "#FF7F50",
+        "#9370DB", "#20B2AA", "#FFD700", "#DC143C", "#4169E1"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Color") },
+        text = {
+            Column {
+                for (row in colors.chunked(5)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        for (color in row) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(parseColor(color))
+                                    .clickable { onColorSelected(color) }
+                                    .then(
+                                        if (color.equals(selectedColor, ignoreCase = true))
+                                            Modifier.border(3.dp, Color.White, CircleShape)
+                                        else
+                                            Modifier
+                                    )
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+private fun parseColor(colorString: String): Color {
+    return try {
+        val hex = if (colorString.startsWith("#")) colorString else "#$colorString"
+        Color(android.graphics.Color.parseColor(hex))
+    } catch (e: Exception) {
+        Color(0xFF007AFF)
+    }
 }
 
 @Composable
