@@ -250,6 +250,15 @@ defmodule ButtonLog.Social do
                                   notification_frequency: "immediate"
                                 }, friendship.user_id, user_id)
 
+                                # Send push notification to the original requester
+                                accepter = ButtonLog.Accounts.get_user!(user_id)
+                                Task.start(fn ->
+                                  ButtonLog.PushNotifications.send_friend_accepted_notification(
+                                    friendship.user_id,
+                                    accepter.display_name || accepter.username || accepter.email
+                                  )
+                                end)
+
                                 {:ok, updated_friendship}
 
                               {:error, reason} ->
@@ -384,6 +393,20 @@ defmodule ButtonLog.Social do
           IO.puts "Creating friendship..."
           result = create_friendship(%{}, user_id, friend_id)
           IO.puts "create_friendship result: #{inspect(result)}"
+
+          # Send push notification for friend request
+          case result do
+            {:ok, _friendship} ->
+              sender = ButtonLog.Accounts.get_user!(user_id)
+              Task.start(fn ->
+                ButtonLog.PushNotifications.send_friend_request_notification(
+                  friend_id,
+                  sender.display_name || sender.username || sender.email
+                )
+              end)
+            _ -> :ok
+          end
+
           result
       end
     end
