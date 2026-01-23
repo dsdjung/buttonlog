@@ -75,7 +75,9 @@ defmodule ButtonLogWeb.API.SocialController do
 
       Map.has_key?(params, "email") ->
         case ButtonLog.Accounts.get_user_by_email(params["email"]) do
-          nil -> {:error, :user_not_found}
+          nil ->
+            # User not found - send invitation email
+            {:invitation, params["email"]}
           friend -> {:ok, friend.id}
         end
 
@@ -138,6 +140,33 @@ defmodule ButtonLogWeb.API.SocialController do
                 }
               })
           end
+        end
+
+      {:invitation, email} ->
+        # Send invitation email to unregistered user
+        case Social.send_friend_invitation(user.id, email) do
+          {:ok, :invitation_sent} ->
+            conn
+            |> put_status(:created)
+            |> json(%{
+              success: true,
+              data: %{
+                invitation_sent: true,
+                email: email,
+                message: "Invitation email sent to #{email}"
+              }
+            })
+
+          {:error, :email_failed} ->
+            conn
+            |> put_status(:internal_server_error)
+            |> json(%{
+              success: false,
+              error: %{
+                code: "EMAIL_FAILED",
+                message: "Failed to send invitation email"
+              }
+            })
         end
 
       {:error, :user_not_found} ->
