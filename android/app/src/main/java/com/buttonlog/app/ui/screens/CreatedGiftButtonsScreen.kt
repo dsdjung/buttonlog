@@ -6,8 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -387,6 +389,7 @@ private fun EditGiftButtonDialog(
     var description by remember { mutableStateOf(button.description ?: "") }
     var selectedIcon by remember { mutableStateOf(button.icon) }
     var selectedColor by remember { mutableStateOf(button.color) }
+    var choices by remember { mutableStateOf(button.choices?.toMutableList() ?: mutableListOf()) }
     var showIconPicker by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
 
@@ -394,7 +397,10 @@ private fun EditGiftButtonDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Gift Button") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -458,6 +464,68 @@ private fun EditGiftButtonDialog(
                     }
                 }
 
+                // Choices section for one-time buttons
+                if (button.type == ButtonType.ONE_TIME) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Choices (Optional)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        choices.forEachIndexed { index, choice ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = choice,
+                                    onValueChange = { newValue ->
+                                        choices = choices.toMutableList().apply {
+                                            this[index] = newValue
+                                        }
+                                    },
+                                    label = { Text("Choice ${index + 1}") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = {
+                                        choices = choices.toMutableList().apply {
+                                            removeAt(index)
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.RemoveCircle,
+                                        contentDescription = "Remove choice",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+
+                        if (choices.size < 4) {
+                            TextButton(
+                                onClick = {
+                                    choices = choices.toMutableList().apply {
+                                        add("")
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AddCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Add Choice")
+                            }
+                        }
+                    }
+                }
+
                 // Show recipient info (read-only)
                 button.recipientName?.let { recipientName ->
                     Row(
@@ -492,7 +560,7 @@ private fun EditGiftButtonDialog(
                         autoStopEnabled = button.autoStopEnabled,
                         autoStopMinutes = button.autoStopMinutes,
                         calendarSyncEnabled = button.calendarSyncEnabled,
-                        choices = button.choices?.toMutableList() ?: mutableListOf()
+                        choices = choices.filter { it.isNotBlank() }.toMutableList()
                     )
                     onSave(formData)
                 },
