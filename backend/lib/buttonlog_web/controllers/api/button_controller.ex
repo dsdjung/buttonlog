@@ -3,6 +3,7 @@ defmodule ButtonLogWeb.API.ButtonController do
   alias ButtonLog.Buttons
   alias ButtonLog.Buttons.Button
   alias ButtonLog.Social
+  alias ButtonLog.Alerts
 
   def index(conn, _params) do
     user = conn.assigns.current_user
@@ -204,6 +205,14 @@ defmodule ButtonLogWeb.API.ButtonController do
     # Use access-checked click function to allow collaborators
     case Buttons.click_button_with_access_check(id, user.id, click_attrs, selected_choice: selected_choice) do
       {:ok, click} ->
+        # Send alerts to friends configured for this button
+        Alerts.send_button_click_alerts(id, user.id, %{
+          clicked_at: click.clicked_at,
+          action: click.action,
+          platform: click.platform,
+          selected_choice: selected_choice
+        })
+
         json(conn, %{
           success: true,
           data: serialize_click(click),

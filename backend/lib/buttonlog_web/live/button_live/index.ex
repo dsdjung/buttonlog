@@ -1,7 +1,7 @@
 defmodule ButtonLogWeb.ButtonLive.Index do
   use ButtonLogWeb, :live_view
   alias ButtonLog.Buttons
-  alias ButtonLog.Notifications
+  alias ButtonLog.Alerts
 
 
   @impl true
@@ -173,8 +173,8 @@ defmodule ButtonLogWeb.ButtonLive.Index do
         updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
         filtered_buttons = filter_buttons(updated_buttons, socket.assigns.search_query, socket.assigns.filter_type)
 
-        # Send notifications to friends
-        Notifications.send_button_click_notifications(button_id, user.id, %{
+        # Send alerts to friends
+        Alerts.send_button_click_alerts(button_id, user.id, %{
           clicked_at: click.clicked_at,
           action: click.action,
           platform: click.platform,
@@ -220,8 +220,8 @@ defmodule ButtonLogWeb.ButtonLive.Index do
         updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
         filtered_buttons = filter_buttons(updated_buttons, socket.assigns.search_query, socket.assigns.filter_type)
 
-        # Send notifications to friends
-        Notifications.send_button_click_notifications(button_id, user.id, %{
+        # Send alerts to friends
+        Alerts.send_button_click_alerts(button_id, user.id, %{
           clicked_at: click.clicked_at,
           action: click.action,
           platform: click.platform
