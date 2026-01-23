@@ -1168,6 +1168,157 @@ defmodule ButtonLogWeb.API.ButtonController do
         })
     end
   end
+
+  # =====================
+  # Diary / Daily Activity
+  # =====================
+
+  @doc """
+  Gets diary activity for a specific date.
+  GET /api/diary?date=2025-01-22
+  If no date provided, returns today's activity.
+  """
+  def diary(conn, params) do
+    user = conn.assigns.current_user
+
+    # Parse date from params, default to today
+    date = case params["date"] do
+      nil -> get_local_today()
+      date_string ->
+        case Date.from_iso8601(date_string) do
+          {:ok, date} -> date
+          {:error, _} -> get_local_today()
+        end
+    end
+
+    # Get daily activities
+    activities = get_daily_activities(user.id, date)
+    summary = generate_daily_summary(activities, date)
+
+    json(conn, %{
+      success: true,
+      data: %{
+        date: Date.to_iso8601(date),
+        summary: serialize_summary(summary),
+        activities: Enum.map(activities, &serialize_activity/1)
+      },
+      meta: %{
+        timestamp: DateTime.utc_now(),
+        request_id: generate_request_id()
+      }
+    })
+  end
+
+  # Get today's date in local timezone (EST)
+  defp get_local_today() do
+    utc_now = DateTime.utc_now()
+    timezone_offset_hours = -5  # Eastern Time (EST/EDT)
+    local_now = DateTime.add(utc_now, timezone_offset_hours * 3600, :second)
+    DateTime.to_date(local_now)
+  end
+
+  defp get_daily_activities(user_id, date) do
+    import Ecto.Query
+
+    # Convert local date to UTC start/end times for database query
+    # For EST (-5 hours), local midnight corresponds to UTC 5:00 AM
+    timezone_offset_hours = 5  # EST is 5 hours behind UTC
+
+    start_of_day = DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
+    |> DateTime.add(timezone_offset_hours * 3600, :second)
+
+    end_of_day = DateTime.new!(date, ~T[23:59:59], "Etc/UTC")
+    |> DateTime.add(timezone_offset_hours * 3600, :second)
+
+    # Get all button clicks for the user on the specified date
+    clicks = ButtonLog.Repo.all(
+      from c in ButtonLog.Buttons.ButtonClick,
+      join: b in ButtonLog.Buttons.Button, on: c.button_id == b.id,
+      where: c.user_id == ^user_id and c.clicked_at >= ^start_of_day and c.clicked_at <= ^end_of_day,
+      order_by: [desc: c.clicked_at],
+      preload: [button: b]
+    )
+
+    # Group clicks by button
+    clicks
+    |> Enum.group_by(fn click -> click.button_id end)
+    |> Enum.map(fn {_button_id, button_clicks} ->
+      button = List.first(button_clicks).button
+
+      %{
+        button: button,
+        clicks: button_clicks,
+        total_clicks: length(button_clicks),
+        first_click: List.last(button_clicks).clicked_at,  # Oldest click (last in desc order)
+        last_click: List.first(button_clicks).clicked_at   # Newest click (first in desc order)
+      }
+    end)
+    |> Enum.sort_by(fn activity -> activity.total_clicks end, :desc)
+  end
+
+  defp generate_daily_summary(activities, date) do
+    total_buttons_used = length(activities)
+    total_clicks = Enum.reduce(activities, 0, fn activity, acc -> acc + activity.total_clicks end)
+
+    # Get button types used
+    button_types = activities
+    |> Enum.map(fn activity -> activity.button.type end)
+    |> Enum.uniq()
+    |> Enum.sort()
+
+    # Get in-progress toggle buttons count
+    in_progress_count = activities
+    |> Enum.filter(fn activity ->
+      activity.button.type == "toggle" && activity.button.current_state == "active"
+    end)
+    |> length()
+
+    %{
+      date: date,
+      total_buttons_used: total_buttons_used,
+      total_clicks: total_clicks,
+      button_types_used: button_types,
+      in_progress_count: in_progress_count,
+      is_today: Date.compare(date, get_local_today()) == :eq,
+      is_empty: activities == []
+    }
+  end
+
+  defp serialize_summary(summary) do
+    %{
+      date: Date.to_iso8601(summary.date),
+      total_buttons_used: summary.total_buttons_used,
+      total_clicks: summary.total_clicks,
+      button_types_used: summary.button_types_used,
+      in_progress_count: summary.in_progress_count,
+      is_today: summary.is_today,
+      is_empty: summary.is_empty
+    }
+  end
+
+  defp serialize_activity(activity) do
+    %{
+      button: %{
+        id: activity.button.id,
+        name: activity.button.name,
+        type: activity.button.type,
+        icon: activity.button.icon,
+        color: activity.button.color,
+        current_state: activity.button.current_state
+      },
+      total_clicks: activity.total_clicks,
+      first_click_at: format_datetime(activity.first_click),
+      last_click_at: format_datetime(activity.last_click),
+      clicks: Enum.map(activity.clicks, fn click ->
+        %{
+          id: click.id,
+          clicked_at: format_datetime(click.clicked_at),
+          action: click.action,
+          selected_choice: click.selected_choice
+        }
+      end)
+    }
+  end
 end
 
 

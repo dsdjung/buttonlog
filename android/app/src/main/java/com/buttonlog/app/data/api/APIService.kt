@@ -93,6 +93,11 @@ interface APIService {
     @POST("buttons/{id}/alerts/deselect-all")
     suspend fun deselectAllButtonAlerts(@Path("id") buttonId: String): ApiResponse<SelectAllAlertsResponse>
 
+    // MARK: - Diary Endpoints
+
+    @GET("diary")
+    suspend fun getDiary(@Query("date") date: String? = null): DiaryResponse
+
     // MARK: - User Endpoints
 
     @GET("users/profile")
@@ -557,6 +562,66 @@ data class SetAlertPreferenceRequest(
 data class SelectAllAlertsResponse(
     val message: String,
     val count: Int
+)
+
+// MARK: - Diary Models
+
+data class DiaryResponse(
+    val success: Boolean,
+    val data: DiaryData?,
+    val error: ApiError?
+)
+
+data class DiaryData(
+    val date: String,
+    val summary: DiarySummary,
+    val activities: List<DiaryActivity>
+)
+
+data class DiarySummary(
+    val date: String,
+    @SerializedName("total_buttons_used")
+    val totalButtonsUsed: Int,
+    @SerializedName("total_clicks")
+    val totalClicks: Int,
+    @SerializedName("button_types_used")
+    val buttonTypesUsed: List<String>,
+    @SerializedName("in_progress_count")
+    val inProgressCount: Int,
+    @SerializedName("is_today")
+    val isToday: Boolean,
+    @SerializedName("is_empty")
+    val isEmpty: Boolean
+)
+
+data class DiaryActivity(
+    val button: DiaryButtonInfo,
+    @SerializedName("total_clicks")
+    val totalClicks: Int,
+    @SerializedName("first_click_at")
+    val firstClickAt: String?,
+    @SerializedName("last_click_at")
+    val lastClickAt: String?,
+    val clicks: List<DiaryClick>
+)
+
+data class DiaryButtonInfo(
+    val id: String,
+    val name: String,
+    val type: String,
+    val icon: String,
+    val color: String,
+    @SerializedName("current_state")
+    val currentState: String?
+)
+
+data class DiaryClick(
+    val id: String,
+    @SerializedName("clicked_at")
+    val clickedAt: String,
+    val action: String?,
+    @SerializedName("selected_choice")
+    val selectedChoice: String?
 )
 
 // MARK: - API Configuration

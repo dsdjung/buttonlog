@@ -9,12 +9,17 @@ class AppState: ObservableObject {
     @Published var subscriptionPlans: [SubscriptionPlan] = []
     @Published var currentSubscription: UserSubscription?
     @Published var subscriptionStats: SubscriptionStats?
-    
+
     @Published var isLoadingButtons = false
     @Published var isLoadingFriends = false
     @Published var isLoadingNotifications = false
     @Published var isLoadingSubscription = false
-    
+
+    // Diary state
+    @Published var diaryData: DiaryData?
+    @Published var isLoadingDiary = false
+    @Published var diaryError: String?
+
     @Published var errorMessage: String?
     
     private let apiService = APIService.shared
@@ -307,8 +312,36 @@ class AppState: ObservableObject {
         }
     }
     
+    // MARK: - Diary
+
+    func fetchDiary(for date: Date? = nil) async {
+        isLoadingDiary = true
+        diaryError = nil
+
+        // Format date to YYYY-MM-DD if provided
+        var dateString: String? = nil
+        if let date = date {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            dateString = formatter.string(from: date)
+        }
+
+        do {
+            let data = try await apiService.getDiary(date: dateString)
+            diaryData = data
+        } catch {
+            diaryError = "Failed to load diary: \(error.localizedDescription)"
+        }
+
+        isLoadingDiary = false
+    }
+
+    func clearDiaryError() {
+        diaryError = nil
+    }
+
     // MARK: - Utility
-    
+
     func clearError() {
         errorMessage = nil
     }

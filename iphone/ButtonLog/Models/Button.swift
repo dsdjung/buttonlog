@@ -474,6 +474,138 @@ struct ButtonClick: Identifiable, Codable {
     }
 }
 
+// MARK: - Diary Data Types
+
+/// Diary data for a specific date
+struct DiaryData: Codable {
+    let date: String
+    let summary: DiarySummary
+    let activities: [DiaryActivity]
+}
+
+/// Summary statistics for a day
+struct DiarySummary: Codable {
+    let totalButtonsUsed: Int
+    let totalClicks: Int
+    let inProgressCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case totalButtonsUsed = "total_buttons_used"
+        case totalClicks = "total_clicks"
+        case inProgressCount = "in_progress_count"
+    }
+}
+
+/// Activity for a single button on a given day
+struct DiaryActivity: Identifiable, Codable {
+    let button: DiaryButtonInfo
+    let totalClicks: Int
+    let clicks: [DiaryClick]
+
+    var id: String { button.id }
+
+    enum CodingKeys: String, CodingKey {
+        case button
+        case totalClicks = "total_clicks"
+        case clicks
+    }
+}
+
+/// Button info within diary activity
+struct DiaryButtonInfo: Codable, Identifiable {
+    let id: String
+    let name: String
+    let type: String
+    let icon: String
+    let color: String
+    let currentState: String?
+
+    var buttonType: ButtonType {
+        ButtonType(rawValue: type) ?? .instant
+    }
+
+    var hexColor: String {
+        return color.hasPrefix("#") ? color : "#\(color)"
+    }
+
+    var uiColor: Color {
+        return Color(hex: hexColor)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, type, icon, color
+        case currentState = "current_state"
+    }
+}
+
+/// Individual click within diary activity
+struct DiaryClick: Identifiable, Codable {
+    let id: String
+    let clickedAt: String
+    let action: String?
+    let selectedChoice: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case clickedAt = "clicked_at"
+        case action
+        case selectedChoice = "selected_choice"
+    }
+
+    /// Format the clicked_at time for display (e.g., "9:15 AM")
+    var formattedTime: String {
+        // Parse ISO date string
+        let inputFormatter = ISO8601DateFormatter()
+        inputFormatter.formatOptions = [.withInternetDateTime]
+
+        // Try with fractional seconds first
+        inputFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = inputFormatter.date(from: clickedAt) {
+            return formatTime(date)
+        }
+
+        // Try without fractional seconds
+        inputFormatter.formatOptions = [.withInternetDateTime]
+        if let date = inputFormatter.date(from: clickedAt) {
+            return formatTime(date)
+        }
+
+        // Try without timezone (backend sometimes sends "2026-01-22T01:50:40")
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+        if let date = dateFormatter.date(from: clickedAt) {
+            return formatTime(date)
+        }
+
+        // Fallback: extract time portion
+        if let timeStart = clickedAt.firstIndex(of: "T"),
+           let timeEnd = clickedAt.firstIndex(of: ".") ?? clickedAt.firstIndex(of: "Z") {
+            let timeSubstring = clickedAt[clickedAt.index(after: timeStart)..<timeEnd]
+            return String(timeSubstring)
+        }
+
+        return clickedAt
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "h:mm a"
+        outputFormatter.timeZone = TimeZone.current
+        return outputFormatter.string(from: date)
+    }
+
+    /// Format the action for display
+    var formattedAction: String {
+        switch action {
+        case "start": return "Started"
+        case "end": return "Stopped"
+        case "click": return "Clicked"
+        default: return "Clicked"
+        }
+    }
+}
+
 // MARK: - Color Extension
 extension Color {
     init(hex: String) {

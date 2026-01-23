@@ -894,6 +894,18 @@ class APIService {
             method: .DELETE
         )
     }
+
+    // MARK: - Diary
+
+    /// Fetch diary activity data for a specific date
+    /// - Parameter date: Date in YYYY-MM-DD format, or nil for today
+    func getDiary(date: String? = nil) async throws -> DiaryData {
+        var endpoint = "/diary"
+        if let date = date {
+            endpoint += "?date=\(date)"
+        }
+        return try await makeRequest(endpoint: endpoint)
+    }
 }
 
 // MARK: - Supporting Types

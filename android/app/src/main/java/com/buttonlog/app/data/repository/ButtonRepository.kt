@@ -6,6 +6,7 @@ import com.buttonlog.app.data.api.ButtonUpdateData
 import com.buttonlog.app.data.api.ClickButtonRequest
 import com.buttonlog.app.data.api.CreateButtonRequest
 import com.buttonlog.app.data.api.CreateGiftButtonRequest
+import com.buttonlog.app.data.api.DiaryData
 import com.buttonlog.app.data.api.SetAlertPreferenceRequest
 import com.buttonlog.app.data.api.UpdateButtonRequest
 import com.buttonlog.app.data.model.Button
@@ -336,6 +337,26 @@ class ButtonRepository @Inject constructor(
                 Result.success(response.data.count)
             } else {
                 val errorMessage = response.error?.message ?: "Failed to deselect all alerts"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // MARK: - Diary
+
+    /**
+     * Fetches diary activity data for a specific date.
+     * @param date The date in ISO format (YYYY-MM-DD), or null for today
+     */
+    suspend fun getDiary(date: String? = null): Result<DiaryData> {
+        return try {
+            val response = apiService.getDiary(date)
+            if (response.success && response.data != null) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to fetch diary data"
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {

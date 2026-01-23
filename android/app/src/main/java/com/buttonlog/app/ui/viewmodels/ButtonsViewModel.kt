@@ -3,6 +3,7 @@ package com.buttonlog.app.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.buttonlog.app.data.api.ButtonAlertPreference
+import com.buttonlog.app.data.api.DiaryData
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonSharingSetting
@@ -10,6 +11,8 @@ import com.buttonlog.app.data.repository.ButtonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -249,6 +252,43 @@ class ButtonsViewModel @Inject constructor(
     fun clearAlertPreferences() {
         _uiState.update { it.copy(buttonAlertPreferences = emptyList(), alertPreferencesError = null) }
     }
+
+    // MARK: - Diary
+
+    fun fetchDiary(date: Date? = null) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingDiary = true, diaryError = null) }
+
+            // Format date to ISO format if provided
+            val dateString = date?.let {
+                SimpleDateFormat("yyyy-MM-dd", Locale.US).format(it)
+            }
+
+            val result = buttonRepository.getDiary(dateString)
+            result.fold(
+                onSuccess = { diaryData ->
+                    _uiState.update {
+                        it.copy(
+                            diaryData = diaryData,
+                            isLoadingDiary = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            diaryError = error.message,
+                            isLoadingDiary = false
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun clearDiaryError() {
+        _uiState.update { it.copy(diaryError = null) }
+    }
 }
 
 data class ButtonsUiState(
@@ -262,6 +302,10 @@ data class ButtonsUiState(
     // Alert preferences
     val buttonAlertPreferences: List<ButtonAlertPreference> = emptyList(),
     val isLoadingAlertPreferences: Boolean = false,
-    val alertPreferencesError: String? = null
+    val alertPreferencesError: String? = null,
+    // Diary
+    val diaryData: DiaryData? = null,
+    val isLoadingDiary: Boolean = false,
+    val diaryError: String? = null
 )
 

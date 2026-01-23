@@ -21,9 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.buttonlog.app.data.model.Button
-import com.buttonlog.app.data.model.ButtonState
-import com.buttonlog.app.data.model.ButtonType
+import com.buttonlog.app.data.api.DiaryActivity
+import com.buttonlog.app.data.api.DiaryData
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -40,8 +39,9 @@ fun DiaryScreen(
     val dateFormat = remember { SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault()) }
     val calendar = remember { Calendar.getInstance() }
 
-    LaunchedEffect(Unit) {
-        viewModel.fetchButtons()
+    // Fetch diary data when screen loads or date changes
+    LaunchedEffect(selectedDate) {
+        viewModel.fetchDiary(selectedDate)
     }
 
     Column(
@@ -109,28 +109,65 @@ fun DiaryScreen(
         }
 
         // Content
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Daily summary card
-            item {
-                DailySummaryCard(
-                    date = selectedDate,
-                    buttons = uiState.buttons
-                )
-            }
-
-            // Button activities
-            val buttonsWithActivity = getButtonsWithActivity(uiState.buttons)
-            if (buttonsWithActivity.isNotEmpty()) {
-                items(buttonsWithActivity) { button ->
-                    ButtonActivityCard(button = button)
+        when {
+            uiState.isLoadingDiary -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-            } else {
-                item {
-                    EmptyDayView()
+            }
+            uiState.diaryError != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text = uiState.diaryError ?: "Unknown error",
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center
+                        )
+                        Button(onClick = { viewModel.fetchDiary(selectedDate) }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
+            else -> {
+                val diaryData = uiState.diaryData
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Daily summary card
+                    item {
+                        DailySummaryCard(diaryData = diaryData)
+                    }
+
+                    // Button activities
+                    if (diaryData?.activities?.isNotEmpty() == true) {
+                        items(diaryData.activities) { activity ->
+                            ButtonActivityCard(activity = activity)
+                        }
+                    } else {
+                        item {
+                            EmptyDayView()
+                        }
+                    }
                 }
             }
         }
@@ -168,10 +205,7 @@ fun DiaryScreen(
 }
 
 @Composable
-private fun DailySummaryCard(
-    date: Date,
-    buttons: List<Button>
-) {
+private fun DailySummaryCard(diaryData: DiaryData?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
@@ -194,22 +228,22 @@ private fun DailySummaryCard(
             ) {
                 SummaryItem(
                     title = "Total Clicks",
-                    value = "12", // Simulated
+                    value = "${diaryData?.summary?.totalClicks ?: 0}",
                     icon = Icons.Default.TouchApp,
                     color = MaterialTheme.colorScheme.primary
                 )
 
                 SummaryItem(
-                    title = "Active",
-                    value = "${buttons.count { it.currentState == ButtonState.ACTIVE }}",
-                    icon = Icons.Default.Power,
+                    title = "Buttons Used",
+                    value = "${diaryData?.summary?.totalButtonsUsed ?: 0}",
+                    icon = Icons.Default.SmartButton,
                     color = Color(0xFF34C759) // Green
                 )
 
                 SummaryItem(
-                    title = "Streak",
-                    value = "7 days", // Simulated
-                    icon = Icons.Default.LocalFireDepartment,
+                    title = "In Progress",
+                    value = "${diaryData?.summary?.inProgressCount ?: 0}",
+                    icon = Icons.Default.PlayCircle,
                     color = Color(0xFFFF9500) // Orange
                 )
             }
@@ -251,7 +285,13 @@ private fun SummaryItem(
 }
 
 @Composable
-private fun ButtonActivityCard(button: Button) {
+private fun ButtonActivityCard(activity: DiaryActivity) {
+    val buttonColor = try {
+        Color(android.graphics.Color.parseColor(activity.button.color))
+    } catch (e: Exception) {
+        MaterialTheme.colorScheme.primary
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
@@ -271,11 +311,11 @@ private fun ButtonActivityCard(button: Button) {
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(button.uiColor),
+                        .background(buttonColor),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = getIconForButton(button.icon),
+                        imageVector = getIconForButton(activity.button.icon),
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
@@ -286,12 +326,12 @@ private fun ButtonActivityCard(button: Button) {
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = button.name,
+                        text = activity.button.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "${(1..8).random()} clicks", // Simulated
+                        text = "${activity.totalClicks} ${if (activity.totalClicks == 1) "click" else "clicks"}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -302,7 +342,7 @@ private fun ButtonActivityCard(button: Button) {
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = button.type.displayName,
+                        text = formatButtonType(activity.button.type),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
@@ -313,9 +353,20 @@ private fun ButtonActivityCard(button: Button) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val activities = generateSimulatedActivity(button.type)
-                activities.forEach { activity ->
-                    ActivityTimelineItem(activity = activity)
+                activity.clicks.take(5).forEach { click ->
+                    ActivityTimelineItem(
+                        time = formatClickTime(click.clickedAt),
+                        action = formatAction(click.action, activity.button.type),
+                        choice = click.selectedChoice
+                    )
+                }
+                if (activity.clicks.size > 5) {
+                    Text(
+                        text = "... and ${activity.clicks.size - 5} more",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 20.dp)
+                    )
                 }
             }
         }
@@ -323,7 +374,11 @@ private fun ButtonActivityCard(button: Button) {
 }
 
 @Composable
-private fun ActivityTimelineItem(activity: ActivityItem) {
+private fun ActivityTimelineItem(
+    time: String,
+    action: String,
+    choice: String? = null
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -337,14 +392,14 @@ private fun ActivityTimelineItem(activity: ActivityItem) {
         )
 
         Text(
-            text = activity.time,
+            text = time,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(70.dp)
         )
 
         Text(
-            text = activity.action,
+            text = if (choice != null) "$action: $choice" else action,
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -386,30 +441,36 @@ private fun EmptyDayView() {
     }
 }
 
-private data class ActivityItem(
-    val time: String,
-    val action: String
-)
-
-private fun generateSimulatedActivity(buttonType: ButtonType): List<ActivityItem> {
-    val times = listOf("9:15 AM", "12:30 PM", "3:45 PM", "7:20 PM")
-    val count = (1..4).random()
-
-    return times.take(count).map { time ->
-        val action = when (buttonType) {
-            ButtonType.INSTANT -> "Clicked"
-            ButtonType.ONE_TIME -> "Completed"
-            ButtonType.TOGGLE -> listOf("Started", "Stopped").random()
-            ButtonType.WORKFLOW -> "Advanced"
-        }
-        ActivityItem(time = time, action = action)
+private fun formatButtonType(type: String): String {
+    return when (type) {
+        "instant" -> "Instant"
+        "toggle" -> "Toggle"
+        "one-time" -> "One-Time"
+        "workflow" -> "Workflow"
+        else -> type.replaceFirstChar { it.uppercase() }
     }
 }
 
-private fun getButtonsWithActivity(buttons: List<Button>): List<Button> {
-    // In a real app, this would filter based on actual activity data
-    // For now, simulate some activity
-    return buttons.take(3)
+private fun formatAction(action: String?, type: String): String {
+    return when {
+        action == "start" -> "Started"
+        action == "end" -> "Stopped"
+        action == "click" && type == "one-time" -> "Completed"
+        action == "click" -> "Clicked"
+        else -> "Clicked"
+    }
+}
+
+private fun formatClickTime(isoTime: String): String {
+    return try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+        inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+        val date = inputFormat.parse(isoTime)
+        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        outputFormat.format(date ?: Date())
+    } catch (e: Exception) {
+        isoTime.substringAfter("T").substringBefore(".")
+    }
 }
 
 private fun isSameDay(date1: Date, date2: Date): Boolean {

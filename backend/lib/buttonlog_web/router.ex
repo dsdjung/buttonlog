@@ -74,6 +74,9 @@ defmodule ButtonLogWeb.Router do
   scope "/api", ButtonLogWeb do
     pipe_through [:api, :auth]
 
+    # Diary endpoint
+    get "/diary", API.ButtonController, :diary
+
     # Button endpoints
     get "/buttons", API.ButtonController, :index
     post "/buttons", API.ButtonController, :create

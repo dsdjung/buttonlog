@@ -97,7 +97,7 @@
               <% end %>
 
               <!-- In-Progress Timed Buttons -->
-              <%= if length(@summary.in_progress_timed_buttons) > 0 do %>
+              <%= if length(@summary.in_progress_toggle_buttons) > 0 do %>
                 <div class="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
                   <div class="flex items-center justify-between mb-3">
                     <h4 class="font-medium text-green-900">⏱️ Currently In Progress</h4>
@@ -106,7 +106,7 @@
                     </button>
                   </div>
                   <div class="space-y-3">
-                    <%= for in_progress <- @summary.in_progress_timed_buttons do %>
+                    <%= for in_progress <- @summary.in_progress_toggle_buttons do %>
                       <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
                         <div class="flex items-center space-x-3">
                           <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold" 
