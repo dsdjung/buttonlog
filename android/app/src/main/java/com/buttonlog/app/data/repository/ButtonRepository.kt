@@ -57,7 +57,7 @@ class ButtonRepository @Inject constructor(
             _isLoading.value = true
             _error.value = null
 
-            val response = apiService.createButton(CreateButtonRequest(buttonData))
+            val response = apiService.createButton(CreateButtonRequest.from(buttonData))
             if (response.success && response.data != null) {
                 _buttons.value = _buttons.value + response.data
                 Result.success(response.data)
@@ -242,9 +242,9 @@ class ButtonRepository @Inject constructor(
             _isLoading.value = true
             _error.value = null
 
-            val request = CreateGiftButtonRequest(
+            val request = CreateGiftButtonRequest.from(
                 friendId = friendId,
-                button = buttonData,
+                formData = buttonData,
                 message = message
             )
             val response = apiService.createButtonForFriend(request)

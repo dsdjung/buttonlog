@@ -95,6 +95,38 @@ defmodule ButtonLog.ButtonsTest do
       assert button.archived == false
     end
 
+    test "creates a one-time button with choices", %{user: user} do
+      attrs = %{name: "Dinner at Home?", type: "one-time", choices: ["Yes", "No"]}
+      assert {:ok, %Button{} = button} = Buttons.create_button(attrs, user.id)
+      assert button.type == "one-time"
+      assert button.choices == ["Yes", "No"]
+    end
+
+    test "creates a one-time button with multiple choices", %{user: user} do
+      attrs = %{name: "How are you feeling?", type: "one-time", choices: ["Great", "Good", "Okay", "Not good"]}
+      assert {:ok, %Button{} = button} = Buttons.create_button(attrs, user.id)
+      assert button.choices == ["Great", "Good", "Okay", "Not good"]
+    end
+
+    test "returns error when non-one-time button has choices", %{user: user} do
+      attrs = %{name: "Invalid Button", type: "instant", choices: ["Yes", "No"]}
+      assert {:error, changeset} = Buttons.create_button(attrs, user.id)
+      assert "can only be set for one-time buttons" in errors_on(changeset).choices
+    end
+
+    test "returns error when one-time button has less than 2 choices", %{user: user} do
+      attrs = %{name: "Invalid Button", type: "one-time", choices: ["Only One"]}
+      assert {:error, changeset} = Buttons.create_button(attrs, user.id)
+      assert "must have at least 2 options" in errors_on(changeset).choices
+    end
+
+    test "returns error when one-time button has more than 10 choices", %{user: user} do
+      choices = Enum.map(1..11, &"Choice #{&1}")
+      attrs = %{name: "Too Many Choices", type: "one-time", choices: choices}
+      assert {:error, changeset} = Buttons.create_button(attrs, user.id)
+      assert "cannot exceed 10 options" in errors_on(changeset).choices
+    end
+
     test "creates a workflow button with valid data", %{user: user} do
       attrs = %{name: "Workflow Button", type: "workflow"}
       assert {:ok, %Button{} = button} = Buttons.create_button(attrs, user.id)
@@ -315,6 +347,34 @@ defmodule ButtonLog.ButtonsTest do
       {:ok, updated_button} = Buttons.get_button(button.id, user.id)
       assert updated_button.archived == true
       assert updated_button.archived_at != nil
+    end
+  end
+
+  describe "click_button/3 - one-time button with choices" do
+    setup do
+      user = insert_user()
+      {:ok, button} = Buttons.create_button(
+        %{name: "Dinner at Home?", type: "one-time", choices: ["Yes", "No"]},
+        user.id
+      )
+      %{user: user, button: button}
+    end
+
+    test "clicking with a valid choice records the selected choice", %{user: user, button: button} do
+      {:ok, click} = Buttons.click_button(button.id, user.id, selected_choice: "Yes")
+      assert click.selected_choice == "Yes"
+      assert click.action == "click"
+
+      {:ok, updated_button} = Buttons.get_button(button.id, user.id)
+      assert updated_button.archived == true
+    end
+
+    test "returns error when choice is required but not provided", %{user: user, button: button} do
+      assert {:error, :choice_required} = Buttons.click_button(button.id, user.id)
+    end
+
+    test "returns error when invalid choice is provided", %{user: user, button: button} do
+      assert {:error, :invalid_choice} = Buttons.click_button(button.id, user.id, selected_choice: "Maybe")
     end
   end
 

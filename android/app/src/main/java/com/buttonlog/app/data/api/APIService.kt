@@ -337,8 +337,14 @@ data class GenericResponse(
 
 // Button request wrappers (backend expects {"button": {...}})
 data class CreateButtonRequest(
-    val button: ButtonFormData
-)
+    val button: ButtonRequestData
+) {
+    companion object {
+        fun from(formData: ButtonFormData): CreateButtonRequest {
+            return CreateButtonRequest(ButtonRequestData.from(formData))
+        }
+    }
+}
 
 data class UpdateButtonRequest(
     val button: ButtonUpdateData
@@ -347,9 +353,72 @@ data class UpdateButtonRequest(
 data class CreateGiftButtonRequest(
     @SerializedName("friend_id")
     val friendId: String,
-    val button: ButtonFormData,
+    val button: ButtonRequestData,
     val message: String? = null
-)
+) {
+    companion object {
+        fun from(friendId: String, formData: ButtonFormData, message: String? = null): CreateGiftButtonRequest {
+            return CreateGiftButtonRequest(
+                friendId = friendId,
+                button = ButtonRequestData.from(formData),
+                message = message
+            )
+        }
+    }
+}
+
+/**
+ * Properly serialized button data for API requests.
+ * Handles filtering of choices and proper snake_case field names.
+ */
+data class ButtonRequestData(
+    val name: String,
+    val description: String?,
+    val type: String,  // Already in API format: "instant", "toggle", "one-time", "workflow"
+    val icon: String,
+    val color: String,
+    @SerializedName("alerts_enabled")
+    val alertsEnabled: Boolean,
+    @SerializedName("auto_stop_enabled")
+    val autoStopEnabled: Boolean,
+    @SerializedName("auto_stop_minutes")
+    val autoStopMinutes: Int?,
+    @SerializedName("calendar_sync_enabled")
+    val calendarSyncEnabled: Boolean,
+    val choices: List<String>?  // Only included if valid (2+ non-empty choices for one-time buttons)
+) {
+    companion object {
+        fun from(formData: ButtonFormData): ButtonRequestData {
+            // Convert ButtonType to API string format
+            val typeString = when (formData.type) {
+                ButtonType.INSTANT -> "instant"
+                ButtonType.TOGGLE -> "toggle"
+                ButtonType.ONE_TIME -> "one-time"
+                ButtonType.WORKFLOW -> "workflow"
+            }
+
+            // Filter and trim choices, only include for one-time buttons with 2+ valid choices
+            val validChoices = if (formData.type == ButtonType.ONE_TIME) {
+                formData.choices.map { it.trim() }.filter { it.isNotEmpty() }.takeIf { it.size >= 2 }
+            } else {
+                null
+            }
+
+            return ButtonRequestData(
+                name = formData.name.trim(),
+                description = formData.description.ifEmpty { null },
+                type = typeString,
+                icon = formData.icon,
+                color = formData.color,
+                alertsEnabled = formData.alertsEnabled,
+                autoStopEnabled = formData.autoStopEnabled,
+                autoStopMinutes = if (formData.autoStopEnabled) formData.autoStopMinutes else null,
+                calendarSyncEnabled = formData.calendarSyncEnabled,
+                choices = validChoices
+            )
+        }
+    }
+}
 
 data class ClickButtonRequest(
     val choice: String? = null

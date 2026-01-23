@@ -204,15 +204,20 @@ data class ShareLinkResponse(
 )
 
 // Button creation form data
+// Uses @SerializedName annotations for proper JSON serialization with Gson/Retrofit
 data class ButtonFormData(
     var name: String = "",
     var description: String = "",
     var type: ButtonType = ButtonType.INSTANT,
     var icon: String = "star",
     var color: String = "#00BFA5",
+    @SerializedName("alerts_enabled")
     var alertsEnabled: Boolean = true,
+    @SerializedName("auto_stop_enabled")
     var autoStopEnabled: Boolean = false,
+    @SerializedName("auto_stop_minutes")
     var autoStopMinutes: Int? = null,  // Duration in minutes (15, 30, 60, 120, 240, 480)
+    @SerializedName("calendar_sync_enabled")
     var calendarSyncEnabled: Boolean = false,
     var choices: MutableList<String> = mutableListOf()  // Multiple choice options for one-time buttons
 ) {
@@ -222,6 +227,13 @@ data class ButtonFormData(
     /** True if this form has valid choices (for one-time buttons) */
     val hasValidChoices: Boolean
         get() = choices.count { it.trim().isNotEmpty() } >= 2
+
+    /** Get choices filtered and trimmed for API submission */
+    fun getValidChoices(): List<String>? {
+        if (type != ButtonType.ONE_TIME) return null
+        val validChoices = choices.map { it.trim() }.filter { it.isNotEmpty() }
+        return if (validChoices.size >= 2) validChoices else null
+    }
 
     /** Convert to request body map for API call */
     fun toRequestBody(): Map<String, Any?> {
@@ -242,11 +254,8 @@ data class ButtonFormData(
         }
 
         // Include choices for one-time buttons if valid
-        if (type == ButtonType.ONE_TIME) {
-            val validChoices = choices.map { it.trim() }.filter { it.isNotEmpty() }
-            if (validChoices.size >= 2) {
-                body["choices"] = validChoices
-            }
+        getValidChoices()?.let { validChoices ->
+            body["choices"] = validChoices
         }
 
         return body.filterValues { it != null }
