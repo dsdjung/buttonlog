@@ -11,6 +11,7 @@ defmodule ButtonLogWeb.ButtonLive.Index do
     if user_id do
       user = ButtonLog.Accounts.get_user!(user_id)
       buttons = ButtonLog.Buttons.list_user_buttons(user_id)
+      friends = ButtonLog.Social.get_user_friends(user_id)
 
       if connected?(socket) do
         Phoenix.PubSub.subscribe(ButtonLog.PubSub, "buttons")
@@ -21,6 +22,7 @@ defmodule ButtonLogWeb.ButtonLive.Index do
        |> assign(:all_buttons, buttons)
        |> assign(:buttons, buttons)
        |> assign(:current_user, user)
+       |> assign(:friends, friends)
        |> assign(:show_create_form, false)
        |> assign(:button_changeset, nil)
        |> assign(:page_title, "ButtonLog")
@@ -33,6 +35,7 @@ defmodule ButtonLogWeb.ButtonLive.Index do
        |> assign(:all_buttons, [])
        |> assign(:buttons, [])
        |> assign(:current_user, nil)
+       |> assign(:friends, [])
        |> assign(:show_create_form, false)
        |> assign(:button_changeset, nil)
        |> assign(:page_title, "ButtonLog")
@@ -130,7 +133,10 @@ defmodule ButtonLogWeb.ButtonLive.Index do
       _ -> button_params
     end
 
-    case Buttons.create_button(button_params, user.id) do
+    # Parse friend_alerts configuration
+    friend_alert_config = parse_friend_alert_config(button_params["friend_alerts"])
+
+    case Buttons.create_button(button_params, user.id, friend_alert_config) do
       {:ok, button} ->
         # Refresh the buttons list to get proper structure with latest_click_at
         updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
@@ -385,4 +391,14 @@ defmodule ButtonLogWeb.ButtonLive.Index do
     |> DateTime.from_naive!("Etc/UTC")
     |> format_time_remaining()
   end
+
+  # Parse friend_alerts configuration from form params
+  defp parse_friend_alert_config(nil), do: nil
+  defp parse_friend_alert_config(%{"mode" => "none"}), do: %{mode: "none"}
+  defp parse_friend_alert_config(%{"mode" => "all_friends"}), do: %{mode: "all_friends"}
+  defp parse_friend_alert_config(%{"mode" => "select_specific", "friend_ids" => friend_ids}) when is_list(friend_ids) do
+    %{mode: "select_specific", friend_ids: friend_ids}
+  end
+  defp parse_friend_alert_config(%{"mode" => "select_specific"}), do: %{mode: "none"}  # No friends selected
+  defp parse_friend_alert_config(_), do: nil
 end

@@ -158,6 +158,20 @@ enum class ButtonState(val displayName: String, val color: Color) {
     ACTIVE("Active", Color.Green)
 }
 
+/** Friend alert mode for button creation */
+enum class FriendAlertMode(val displayName: String, val description: String) {
+    NONE("None", "Only I see this button"),
+    ALL_FRIENDS("All Friends", "Notify all friends when clicked"),
+    SELECT_SPECIFIC("Select Specific", "Choose specific friends to notify");
+
+    /** Convert to API value */
+    fun toApiValue(): String = when (this) {
+        NONE -> "none"
+        ALL_FRIENDS -> "all_friends"
+        SELECT_SPECIFIC -> "select_specific"
+    }
+}
+
 enum class SharingMode(
     val displayName: String,
     val description: String,
@@ -219,7 +233,10 @@ data class ButtonFormData(
     var autoStopMinutes: Int? = null,  // Duration in minutes (15, 30, 60, 120, 240, 480)
     @SerializedName("calendar_sync_enabled")
     var calendarSyncEnabled: Boolean = false,
-    var choices: MutableList<String> = mutableListOf()  // Multiple choice options for one-time buttons
+    var choices: MutableList<String> = mutableListOf(),  // Multiple choice options for one-time buttons
+    // Friend alert configuration
+    var friendAlertMode: FriendAlertMode = FriendAlertMode.NONE,
+    var selectedFriendIds: MutableList<String> = mutableListOf()
 ) {
     val isValid: Boolean
         get() = name.trim().isNotEmpty()
@@ -256,6 +273,15 @@ data class ButtonFormData(
         // Include choices for one-time buttons if valid
         getValidChoices()?.let { validChoices ->
             body["choices"] = validChoices
+        }
+
+        // Include friend_alerts configuration if not "none"
+        if (friendAlertMode != FriendAlertMode.NONE) {
+            val friendAlerts = mutableMapOf<String, Any>("mode" to friendAlertMode.toApiValue())
+            if (friendAlertMode == FriendAlertMode.SELECT_SPECIFIC && selectedFriendIds.isNotEmpty()) {
+                friendAlerts["friend_ids"] = selectedFriendIds.toList()
+            }
+            body["friend_alerts"] = friendAlerts
         }
 
         return body.filterValues { it != null }

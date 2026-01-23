@@ -25,6 +25,7 @@ import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonSharingSetting
 import com.buttonlog.app.data.model.ButtonType
 import com.buttonlog.app.data.model.Friend
+import com.buttonlog.app.data.model.FriendAlertMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -350,6 +351,7 @@ private fun ColorOption(
 fun CreateButtonScreen(
     isLoading: Boolean,
     error: String?,
+    friends: List<Friend> = emptyList(),
     onCreateButton: (ButtonFormData) -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -362,6 +364,8 @@ fun CreateButtonScreen(
     var autoStopEnabled by remember { mutableStateOf(false) }
     var autoStopMinutes by remember { mutableStateOf<Int?>(null) }
     var choices by remember { mutableStateOf(mutableListOf("", "")) }
+    var friendAlertMode by remember { mutableStateOf(FriendAlertMode.NONE) }
+    var selectedFriendIds by remember { mutableStateOf(mutableSetOf<String>()) }
 
     val scrollState = rememberScrollState()
 
@@ -398,7 +402,9 @@ fun CreateButtonScreen(
                                     choices.filter { it.trim().isNotEmpty() }.toMutableList()
                                 } else {
                                     mutableListOf()
-                                }
+                                },
+                                friendAlertMode = friendAlertMode,
+                                selectedFriendIds = selectedFriendIds.toMutableList()
                             )
                             onCreateButton(formData)
                         },
@@ -567,6 +573,23 @@ fun CreateButtonScreen(
                         }
                     }
                 }
+            }
+
+            // Friend Notifications Section (only if user has friends)
+            if (friends.isNotEmpty()) {
+                FriendNotificationsSection(
+                    friends = friends,
+                    friendAlertMode = friendAlertMode,
+                    selectedFriendIds = selectedFriendIds,
+                    onModeChange = { friendAlertMode = it },
+                    onFriendToggle = { friendId, isSelected ->
+                        selectedFriendIds = if (isSelected) {
+                            (selectedFriendIds + friendId).toMutableSet()
+                        } else {
+                            (selectedFriendIds - friendId).toMutableSet()
+                        }
+                    }
+                )
             }
         }
     }
@@ -1026,6 +1049,142 @@ private fun TemplateChip(
                 style = MaterialTheme.typography.labelMedium,
                 color = color
             )
+        }
+    }
+}
+
+@Composable
+private fun FriendNotificationsSection(
+    friends: List<Friend>,
+    friendAlertMode: FriendAlertMode,
+    selectedFriendIds: Set<String>,
+    onModeChange: (FriendAlertMode) -> Unit,
+    onFriendToggle: (String, Boolean) -> Unit
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Collapsible header
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isExpanded = !isExpanded }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Column {
+                        Text(
+                            text = "Friend Notifications (Optional)",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "Notify friends when you click this button",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand"
+                )
+            }
+        }
+
+        // Expandable content
+        if (isExpanded) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Mode selection
+                    FriendAlertMode.values().forEach { mode ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onModeChange(mode) }
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = mode.displayName,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = mode.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            RadioButton(
+                                selected = friendAlertMode == mode,
+                                onClick = { onModeChange(mode) }
+                            )
+                        }
+                    }
+
+                    // Friend selection (only when SELECT_SPECIFIC is chosen)
+                    if (friendAlertMode == FriendAlertMode.SELECT_SPECIFIC) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                        Text(
+                            text = "Select Friends",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        friends.forEach { friend ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onFriendToggle(
+                                            friend.friendId,
+                                            !selectedFriendIds.contains(friend.friendId)
+                                        )
+                                    }
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = friend.friendUser.displayNameOrUsername,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                Checkbox(
+                                    checked = selectedFriendIds.contains(friend.friendId),
+                                    onCheckedChange = { isChecked ->
+                                        onFriendToggle(friend.friendId, isChecked)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

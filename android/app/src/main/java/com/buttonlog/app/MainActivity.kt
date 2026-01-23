@@ -296,6 +296,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         CreateButtonScreen(
             isLoading = buttonsUiState.isLoading,
             error = buttonsUiState.error,
+            friends = friendsUiState.friends,
             onCreateButton = { formData ->
                 buttonsViewModel.createButton(formData)
                 showCreateButton = false

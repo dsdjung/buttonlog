@@ -399,7 +399,93 @@ defmodule ButtonLog.ButtonsTest do
     end
   end
 
+  describe "create_button/3 - friend alert configuration" do
+    setup do
+      user = insert_user()
+      friend1 = insert_user()
+      friend2 = insert_user()
+      friend3 = insert_user()
+
+      # Create friendships (accepted)
+      create_friendship(user, friend1)
+      create_friendship(user, friend2)
+      # friend3 is not a friend
+
+      %{user: user, friend1: friend1, friend2: friend2, friend3: friend3}
+    end
+
+    test "creates button without friend alerts by default", %{user: user} do
+      attrs = %{name: "Test Button", type: "instant"}
+      {:ok, button} = Buttons.create_button(attrs, user.id)
+
+      # Check no alert preferences were created
+      prefs = ButtonLog.Alerts.get_button_alert_preferences(button.id, user.id)
+      assert prefs == []
+    end
+
+    test "creates button with all_friends alert config", %{user: user, friend1: friend1, friend2: friend2} do
+      attrs = %{name: "Alert All Button", type: "instant"}
+      friend_alert_config = %{mode: "all_friends"}
+
+      {:ok, button} = Buttons.create_button(attrs, user.id, friend_alert_config)
+
+      # Check alert preferences were created for all friends
+      prefs = ButtonLog.Alerts.get_button_alert_preferences(button.id, user.id)
+      assert length(prefs) == 2
+
+      friend_ids = Enum.map(prefs, & &1.friend_id) |> Enum.sort()
+      expected_ids = [friend1.id, friend2.id] |> Enum.sort()
+      assert friend_ids == expected_ids
+
+      # All should be enabled
+      assert Enum.all?(prefs, & &1.enabled)
+    end
+
+    test "creates button with select_specific friend alert config", %{user: user, friend1: friend1, friend2: _friend2} do
+      attrs = %{name: "Select Specific Button", type: "instant"}
+      friend_alert_config = %{mode: "select_specific", friend_ids: [friend1.id]}
+
+      {:ok, button} = Buttons.create_button(attrs, user.id, friend_alert_config)
+
+      # Check only the specified friend has alert preference
+      prefs = ButtonLog.Alerts.get_button_alert_preferences(button.id, user.id)
+      assert length(prefs) == 1
+      assert hd(prefs).friend_id == friend1.id
+      assert hd(prefs).enabled == true
+    end
+
+    test "ignores invalid friend_ids in select_specific config", %{user: user, friend1: friend1, friend3: friend3} do
+      attrs = %{name: "Invalid Friends Button", type: "instant"}
+      # Include a non-friend ID in the list
+      friend_alert_config = %{mode: "select_specific", friend_ids: [friend1.id, friend3.id]}
+
+      {:ok, button} = Buttons.create_button(attrs, user.id, friend_alert_config)
+
+      # Only the valid friend should have alert preference (friend3 is not a friend)
+      prefs = ButtonLog.Alerts.get_button_alert_preferences(button.id, user.id)
+      assert length(prefs) == 1
+      assert hd(prefs).friend_id == friend1.id
+    end
+
+    test "creates button with none mode creates no alerts", %{user: user} do
+      attrs = %{name: "No Alerts Button", type: "instant"}
+      friend_alert_config = %{mode: "none"}
+
+      {:ok, button} = Buttons.create_button(attrs, user.id, friend_alert_config)
+
+      prefs = ButtonLog.Alerts.get_button_alert_preferences(button.id, user.id)
+      assert prefs == []
+    end
+  end
+
   # Helper functions
+
+  defp create_friendship(user, friend) do
+    alias ButtonLog.Social
+    {:ok, friendship} = Social.send_friend_request(user.id, friend.id)
+    {:ok, _} = Social.accept_friend_request(friendship.id, friend.id)
+    friendship
+  end
 
   defp insert_user(attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])

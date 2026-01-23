@@ -170,21 +170,61 @@ struct CreateButtonView: View {
                 
                 Section(header: Text("Settings")) {
                     Toggle("Enable Alerts", isOn: $formData.alertsEnabled)
-                    
+
                     if formData.type == .toggle {
                         Toggle("Auto-stop", isOn: $formData.autoStopEnabled)
                     }
-                    
+
                     Toggle("Calendar Sync", isOn: $formData.calendarSyncEnabled)
                 }
-                
+
+                // Friend Notifications Section (only if user has friends)
+                if !appState.friends.isEmpty {
+                    Section(header: Text("Friend Notifications (Optional)"),
+                            footer: Text("Notify friends when you click this button")) {
+                        Picker("Notify", selection: $formData.friendAlertMode) {
+                            ForEach(FriendAlertMode.allCases, id: \.self) { mode in
+                                VStack(alignment: .leading) {
+                                    Text(mode.displayName)
+                                }
+                                .tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        // Show friend selection when selectSpecific is chosen
+                        if formData.friendAlertMode == .selectSpecific {
+                            ForEach(appState.friends, id: \.friendId) { friend in
+                                Toggle(isOn: Binding(
+                                    get: { formData.selectedFriendIds.contains(friend.friendId) },
+                                    set: { isSelected in
+                                        if isSelected {
+                                            if !formData.selectedFriendIds.contains(friend.friendId) {
+                                                formData.selectedFriendIds.append(friend.friendId)
+                                            }
+                                        } else {
+                                            formData.selectedFriendIds.removeAll { $0 == friend.friendId }
+                                        }
+                                    }
+                                )) {
+                                    HStack {
+                                        Image(systemName: "person.circle.fill")
+                                            .foregroundColor(.secondary)
+                                        Text(friend.friendUser.displayNameOrUsername)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section {
                     // Preview
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Preview")
                             .font(.headline)
                             .foregroundColor(.secondary)
-                        
+
                         ButtonPreview(formData: formData)
                     }
                 }

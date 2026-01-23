@@ -92,8 +92,13 @@ defmodule ButtonLog.Buttons do
 
   @doc """
   Creates a button.
+
+  Accepts an optional `friend_alert_config` map to configure friend notifications at creation time:
+  - `%{mode: "all_friends"}` - Enable alerts for all current friends
+  - `%{mode: "select_specific", friend_ids: [id1, id2, ...]}` - Enable alerts for specific friends
+  - `nil` or `%{mode: "none"}` - No friend alerts (default)
   """
-  def create_button(attrs \\ %{}, user_id) do
+  def create_button(attrs \\ %{}, user_id, friend_alert_config \\ nil) do
     result = %Button{}
     |> Button.create_changeset(attrs, user_id)
     |> Repo.insert()
@@ -102,12 +107,48 @@ defmodule ButtonLog.Buttons do
       {:ok, button} ->
         # Notify the creator about their new button
         notify_button_created(button, user_id)
+
+        # Configure friend alerts if specified
+        configure_friend_alerts(button, user_id, friend_alert_config)
+
         {:ok, button}
 
       error ->
         error
     end
   end
+
+  # Configures friend alert preferences at button creation time
+  defp configure_friend_alerts(_button, _user_id, nil), do: :ok
+  defp configure_friend_alerts(_button, _user_id, %{mode: "none"}), do: :ok
+
+  defp configure_friend_alerts(button, user_id, %{mode: "all_friends"}) do
+    # Get all accepted friends and enable alerts for each
+    friends = ButtonLog.Social.get_user_friends(user_id)
+
+    Enum.each(friends, fn friend ->
+      ButtonLog.Alerts.set_button_friend_alert(button.id, user_id, friend.id, true)
+    end)
+
+    :ok
+  end
+
+  defp configure_friend_alerts(button, user_id, %{mode: "select_specific", friend_ids: friend_ids}) when is_list(friend_ids) do
+    # Get all accepted friends to validate friend_ids
+    friends = ButtonLog.Social.get_user_friends(user_id)
+    valid_friend_ids = MapSet.new(Enum.map(friends, & &1.id))
+
+    # Only enable alerts for valid friends
+    Enum.each(friend_ids, fn friend_id ->
+      if MapSet.member?(valid_friend_ids, friend_id) do
+        ButtonLog.Alerts.set_button_friend_alert(button.id, user_id, friend_id, true)
+      end
+    end)
+
+    :ok
+  end
+
+  defp configure_friend_alerts(_button, _user_id, _), do: :ok
 
   @doc """
   Updates a button.

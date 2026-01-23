@@ -52,7 +52,10 @@ defmodule ButtonLogWeb.API.ButtonController do
   def create(conn, %{"button" => button_params}) do
     user = conn.assigns.current_user
 
-    case Buttons.create_button(button_params, user.id) do
+    # Parse friend_alerts configuration if provided
+    friend_alert_config = parse_friend_alert_config(button_params["friend_alerts"])
+
+    case Buttons.create_button(button_params, user.id, friend_alert_config) do
       {:ok, button} ->
         conn
         |> put_status(:created)
@@ -82,6 +85,15 @@ defmodule ButtonLogWeb.API.ButtonController do
         })
     end
   end
+
+  # Parse friend_alerts configuration from request params
+  defp parse_friend_alert_config(nil), do: nil
+  defp parse_friend_alert_config(%{"mode" => "none"}), do: %{mode: "none"}
+  defp parse_friend_alert_config(%{"mode" => "all_friends"}), do: %{mode: "all_friends"}
+  defp parse_friend_alert_config(%{"mode" => "select_specific", "friend_ids" => friend_ids}) when is_list(friend_ids) do
+    %{mode: "select_specific", friend_ids: friend_ids}
+  end
+  defp parse_friend_alert_config(_), do: nil
 
   def update(conn, %{"id" => id, "button" => button_params}) do
     user = conn.assigns.current_user

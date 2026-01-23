@@ -255,18 +255,41 @@ enum ButtonType: String, Codable, CaseIterable {
 enum ButtonState: String, Codable, CaseIterable {
     case idle = "idle"
     case active = "active"
-    
+
     var displayName: String {
         switch self {
         case .idle: return "Idle"
         case .active: return "Active"
         }
     }
-    
+
     var color: Color {
         switch self {
         case .idle: return .secondary
         case .active: return .green
+        }
+    }
+}
+
+// Friend alert mode for button creation
+enum FriendAlertMode: String, CaseIterable {
+    case none = "none"
+    case allFriends = "all_friends"
+    case selectSpecific = "select_specific"
+
+    var displayName: String {
+        switch self {
+        case .none: return "None"
+        case .allFriends: return "All Friends"
+        case .selectSpecific: return "Select Specific"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .none: return "Only I see this button"
+        case .allFriends: return "Notify all friends when clicked"
+        case .selectSpecific: return "Choose specific friends to notify"
         }
     }
 }
@@ -283,6 +306,10 @@ struct ButtonFormData {
     var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var calendarSyncEnabled: Bool = false
     var choices: [String] = []  // Multiple choice options for one-time buttons
+
+    // Friend alert configuration
+    var friendAlertMode: FriendAlertMode = .none
+    var selectedFriendIds: [String] = []
 
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -328,6 +355,15 @@ struct ButtonFormData {
             if validChoices.count >= 2 {
                 body["choices"] = validChoices
             }
+        }
+
+        // Include friend_alerts configuration if not "none"
+        if friendAlertMode != .none {
+            var friendAlerts: [String: Any] = ["mode": friendAlertMode.rawValue]
+            if friendAlertMode == .selectSpecific && !selectedFriendIds.isEmpty {
+                friendAlerts["friend_ids"] = selectedFriendIds
+            }
+            body["friend_alerts"] = friendAlerts
         }
 
         return body
