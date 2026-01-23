@@ -168,6 +168,25 @@ class AuthRepository @Inject constructor(
         _onboardingCompleted.value = false
     }
 
+    suspend fun refreshToken(): Result<String> {
+        return try {
+            val response = apiService.refreshToken()
+            if (response.success && response.data != null) {
+                sharedPreferences.edit()
+                    .putString(KEY_AUTH_TOKEN, response.data.token)
+                    .apply()
+                Result.success(response.data.token)
+            } else {
+                val errorMessage = response.error?.message ?: "Token refresh failed"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            // If token refresh fails, log out the user
+            logout()
+            Result.failure(e)
+        }
+    }
+
     private fun saveAuthData(authUserData: AuthUserData) {
         sharedPreferences.edit()
             .putString(KEY_AUTH_TOKEN, authUserData.token)

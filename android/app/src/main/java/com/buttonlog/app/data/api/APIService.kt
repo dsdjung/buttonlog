@@ -17,6 +17,9 @@ interface APIService {
     @POST("auth/oauth/callback")
     suspend fun oauthCallback(@Body data: OAuthCallbackRequest): AuthResponse
 
+    @POST("auth/refresh")
+    suspend fun refreshToken(): TokenRefreshResponse
+
     @DELETE("auth/logout")
     suspend fun logout()
     
@@ -367,6 +370,16 @@ data class GenericResponse(
     val success: Boolean,
     val data: Any?,
     val error: ApiError?
+)
+
+data class TokenRefreshResponse(
+    val success: Boolean,
+    val data: TokenData?,
+    val error: ApiError?
+)
+
+data class TokenData(
+    val token: String
 )
 
 // Button request wrappers (backend expects {"button": {...}})

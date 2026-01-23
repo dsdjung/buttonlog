@@ -53,7 +53,7 @@ defmodule ButtonLogWeb.AuthController do
   end
 
   # OAuth Methods
-  def request(conn, %{"provider" => provider} = params) do
+  def request(conn, %{"provider" => _provider} = params) do
     # Store mobile flag in session for the callback
     is_mobile = params["mobile"] == "true"
 

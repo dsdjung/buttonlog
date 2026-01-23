@@ -6,6 +6,7 @@ defmodule ButtonLog.Accounts do
   import Ecto.Query, warn: false
   alias ButtonLog.Repo
   alias ButtonLog.Accounts.User
+  alias ButtonLog.Accounts.OAuthCredential
 
   @doc """
   Returns the list of users.
@@ -162,65 +163,82 @@ defmodule ButtonLog.Accounts do
   # OAuth User Management
   @doc """
   Finds or creates an OAuth user.
+  Uses the oauth_credentials table to support multiple providers per user.
   """
   def find_or_create_oauth_user(auth, provider) do
-    IO.puts "=== FIND OR CREATE OAUTH USER DEBUG ==="
-    IO.puts "Provider: #{provider}"
-    IO.puts "Auth UID: #{auth.uid}"
-    IO.puts "Auth email: #{auth.info.email}"
-    IO.puts "================================"
-
-        # First check if user already exists with this OAuth provider
+    # First check if user already exists with this OAuth provider (new table)
     case find_oauth_user(auth.uid, provider) do
       user when not is_nil(user) ->
-        IO.puts "=== EXISTING OAUTH USER FOUND ==="
-        IO.puts "User: #{inspect(user)}"
-        IO.puts "================================"
+        # Update the OAuth credentials in case token changed
+        update_oauth_credentials(user.id, auth, provider)
         {:ok, user}
+
       nil ->
-        IO.puts "=== NO EXISTING OAUTH USER, CHECKING EMAIL ==="
-        # Check if user exists with the same email
-        case Repo.get_by(User, email: auth.info.email) do
-          existing_user when not is_nil(existing_user) ->
-            IO.puts "=== EXISTING USER WITH EMAIL FOUND ==="
-            IO.puts "User: #{inspect(existing_user)}"
-            IO.puts "Linking OAuth provider..."
-            IO.puts "================================"
-            # User exists with same email, link the OAuth provider
-            link_oauth_provider(existing_user.id, auth, provider)
+        # Check legacy users table for backwards compatibility
+        case find_oauth_user_legacy(auth.uid, provider) do
+          user when not is_nil(user) ->
+            # Migrate legacy OAuth data to new table
+            migrate_oauth_to_credentials(user, auth, provider)
+            {:ok, user}
+
           nil ->
-            IO.puts "=== NO EXISTING USER, CREATING NEW ==="
-            IO.puts "Email: #{auth.info.email}"
-            IO.puts "================================"
-            # No existing user, create new one
-            create_oauth_user(auth, provider)
+            # Check if user exists with the same email
+            case Repo.get_by(User, email: auth.info.email) do
+              existing_user when not is_nil(existing_user) ->
+                # User exists with same email, link the OAuth provider
+                link_oauth_provider(existing_user.id, auth, provider)
+
+              nil ->
+                # No existing user, create new one
+                create_oauth_user(auth, provider)
+            end
         end
     end
   end
 
   @doc """
-  Finds a user by OAuth provider and UID.
+  Finds a user by OAuth provider and UID using the new oauth_credentials table.
   """
   def find_oauth_user(uid, provider) do
-    IO.puts "=== FIND OAUTH USER DEBUG ==="
-    IO.puts "Looking for provider: #{provider} (type: #{inspect(provider)})"
-    IO.puts "Looking for UID: #{uid} (type: #{inspect(uid)})"
+    query = from c in OAuthCredential,
+      where: c.provider == ^provider and c.provider_uid == ^uid,
+      join: u in User, on: u.id == c.user_id,
+      select: u
 
-    # Let's also check what's actually in the database
-    all_users = Repo.all(User)
-    IO.puts "Total users in database: #{length(all_users)}"
-    Enum.each(all_users, fn user ->
-      IO.puts "User: #{user.username} - provider: #{inspect(user.provider)} - provider_uid: #{inspect(user.provider_uid)}"
-    end)
-
-    result = Repo.get_by(User, provider: provider, provider_uid: uid)
-    IO.puts "Query result: #{inspect(result)}"
-    IO.puts "================================"
-    result
+    Repo.one(query)
   end
 
   @doc """
-  Creates a new OAuth user.
+  Finds a user by OAuth provider and UID using the legacy users table fields.
+  For backwards compatibility during migration.
+  """
+  def find_oauth_user_legacy(uid, provider) do
+    Repo.get_by(User, provider: provider, provider_uid: uid)
+  end
+
+  @doc """
+  Gets all OAuth providers linked to a user.
+  """
+  def get_user_oauth_providers(user_id) do
+    Repo.all(
+      from c in OAuthCredential,
+      where: c.user_id == ^user_id,
+      select: %{provider: c.provider, provider_uid: c.provider_uid}
+    )
+  end
+
+  @doc """
+  Checks if a user has a specific OAuth provider linked.
+  """
+  def has_oauth_provider?(user_id, provider) do
+    query = from c in OAuthCredential,
+      where: c.user_id == ^user_id and c.provider == ^provider
+
+    Repo.exists?(query)
+  end
+
+  @doc """
+  Creates a new OAuth user with credentials in the new table.
   """
   def create_oauth_user(auth, provider) do
     # Generate username from name or email
@@ -234,54 +252,69 @@ defmodule ButtonLog.Accounts do
       name -> name
     end
 
-    # Convert Unix timestamp to DateTime if it exists
-    expires_at = case auth.credentials.expires_at do
-      nil -> nil
-      timestamp when is_integer(timestamp) ->
-        DateTime.from_unix!(timestamp)
-      _ -> nil
-    end
-
-    attrs = %{
+    # User attributes (without OAuth fields in the user table itself)
+    user_attrs = %{
       email: auth.info.email,
       username: username,
       display_name: display_name,
       avatar: auth.info.image,
+      email_verified: true,
+      # Keep legacy fields for backwards compatibility
       provider: provider,
-      provider_uid: auth.uid,
-      provider_token: auth.credentials.token,
-      provider_refresh_token: auth.credentials.refresh_token,
-      provider_expires_at: expires_at,
-      email_verified: true
+      provider_uid: auth.uid
     }
 
-    %User{}
-    |> User.oauth_registration_changeset(attrs)
-    |> Repo.insert()
+    Repo.transaction(fn ->
+      # Create the user
+      case %User{}
+           |> User.oauth_registration_changeset(user_attrs)
+           |> Repo.insert() do
+        {:ok, user} ->
+          # Create the OAuth credential
+          case create_oauth_credential(user.id, auth, provider) do
+            {:ok, _credential} -> user
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
   end
 
   @doc """
   Removes an OAuth provider association from a user.
+  Now removes from oauth_credentials table.
   """
   def remove_oauth_provider(user_id, provider) do
     user = get_user!(user_id)
 
-    # Only allow removal if user has password or other OAuth providers
+    # Check if removal is allowed
     case can_remove_oauth_provider?(user, provider) do
       true ->
-        attrs = %{
-          provider: nil,
-          provider_uid: nil,
-          provider_token: nil,
-          provider_refresh_token: nil,
-          provider_expires_at: nil
-        }
+        # Remove from oauth_credentials table
+        query = from c in OAuthCredential,
+          where: c.user_id == ^user_id and c.provider == ^provider
 
-        case user
-             |> User.changeset(attrs)
-             |> Repo.update() do
-          {:ok, updated_user} -> {:ok, updated_user}
-          {:error, changeset} -> {:error, changeset}
+        case Repo.delete_all(query) do
+          {count, _} when count > 0 ->
+            # Also clear legacy fields if they match
+            if user.provider == provider do
+              user
+              |> User.changeset(%{
+                provider: nil,
+                provider_uid: nil,
+                provider_token: nil,
+                provider_refresh_token: nil,
+                provider_expires_at: nil
+              })
+              |> Repo.update()
+            else
+              {:ok, user}
+            end
+
+          _ ->
+            {:error, :provider_not_found}
         end
 
       false ->
@@ -291,41 +324,88 @@ defmodule ButtonLog.Accounts do
 
   @doc """
   Links an additional OAuth provider to an existing user.
+  Now uses oauth_credentials table to support multiple providers.
   """
   def link_oauth_provider(user_id, auth, provider) do
     user = get_user!(user_id)
 
-    # Check if provider is already linked
+    # Check if provider is already linked to ANY user
     case find_oauth_user(auth.uid, provider) do
       nil ->
-        # Link the provider
-        # Convert Unix timestamp to DateTime if it exists
-        expires_at = case auth.credentials.expires_at do
-          nil -> nil
-          timestamp when is_integer(timestamp) ->
-            DateTime.from_unix!(timestamp)
-          _ -> nil
-        end
-
-        attrs = %{
-          provider: provider,
-          provider_uid: auth.uid,
-          provider_token: auth.credentials.token,
-          provider_refresh_token: auth.credentials.refresh_token,
-          provider_expires_at: expires_at
-        }
-
-        case user
-             |> User.changeset(attrs)
-             |> Repo.update() do
-          {:ok, updated_user} -> {:ok, updated_user}
+        # Not linked to anyone, create the credential
+        case create_oauth_credential(user_id, auth, provider) do
+          {:ok, _credential} -> {:ok, user}
           {:error, changeset} -> {:error, changeset}
         end
 
-      _existing_user ->
-        {:error, :provider_already_linked}
+      existing_user when existing_user.id == user_id ->
+        # Already linked to this user, just update tokens
+        update_oauth_credentials(user_id, auth, provider)
+        {:ok, user}
+
+      _other_user ->
+        {:error, :provider_already_linked_to_another_user}
     end
   end
+
+  @doc """
+  Creates an OAuth credential entry.
+  """
+  def create_oauth_credential(user_id, auth, provider) do
+    expires_at = parse_expires_at(auth.credentials.expires_at)
+
+    attrs = %{
+      user_id: user_id,
+      provider: provider,
+      provider_uid: auth.uid,
+      provider_token: auth.credentials.token,
+      provider_refresh_token: auth.credentials.refresh_token,
+      provider_expires_at: expires_at
+    }
+
+    %OAuthCredential{}
+    |> OAuthCredential.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates OAuth credentials for an existing user-provider link.
+  """
+  def update_oauth_credentials(user_id, auth, provider) do
+    expires_at = parse_expires_at(auth.credentials.expires_at)
+
+    query = from c in OAuthCredential,
+      where: c.user_id == ^user_id and c.provider == ^provider
+
+    case Repo.one(query) do
+      nil ->
+        # Credential doesn't exist, create it
+        create_oauth_credential(user_id, auth, provider)
+
+      credential ->
+        credential
+        |> OAuthCredential.changeset(%{
+          provider_token: auth.credentials.token,
+          provider_refresh_token: auth.credentials.refresh_token,
+          provider_expires_at: expires_at
+        })
+        |> Repo.update()
+    end
+  end
+
+  @doc """
+  Migrates legacy OAuth data from users table to oauth_credentials.
+  """
+  def migrate_oauth_to_credentials(user, auth, provider) do
+    # Check if credential already exists
+    unless has_oauth_provider?(user.id, provider) do
+      create_oauth_credential(user.id, auth, provider)
+    end
+  end
+
+  defp parse_expires_at(nil), do: nil
+  defp parse_expires_at(timestamp) when is_integer(timestamp), do: DateTime.from_unix!(timestamp)
+  defp parse_expires_at(_), do: nil
 
   @doc """
   Searches for users by username or display name.
@@ -391,13 +471,21 @@ defmodule ButtonLog.Accounts do
     Repo.get_by(User, username: username)
   end
 
-  defp can_remove_oauth_provider?(user, provider) do
-    # Check if this is the user's current provider
-    if user.provider == provider do
-      # Only allow removal if user has password or other OAuth providers
-      user.password_hash != nil
-    else
-      true
+  defp can_remove_oauth_provider?(user, _provider) do
+    # Count how many OAuth providers the user has
+    oauth_count = Repo.one(
+      from c in OAuthCredential,
+      where: c.user_id == ^user.id,
+      select: count(c.id)
+    )
+
+    # User can remove provider if they have:
+    # 1. A password, OR
+    # 2. More than one OAuth provider linked
+    cond do
+      user.password_hash != nil -> true
+      oauth_count > 1 -> true
+      true -> false
     end
   end
 end

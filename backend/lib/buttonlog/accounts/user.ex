@@ -51,6 +51,7 @@ defmodule ButtonLog.Accounts.User do
     has_many :friend_permissions, ButtonLog.Social.FriendPermission
     has_many :notifications, ButtonLog.Notifications.Notification, foreign_key: :recipient_id
     has_many :mobile_connections, ButtonLog.Mobile.Connection
+    has_many :oauth_credentials, ButtonLog.Accounts.OAuthCredential
 
     timestamps()
   end
