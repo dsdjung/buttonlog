@@ -670,6 +670,8 @@ defmodule ButtonLog.Buttons do
         _ -> "clicked"
       end
 
+      title = "#{button.name} was #{action_past}!"
+
       # Build message with optional choice
       message = if selected_choice do
         "#{owner.display_name || owner.username} #{action_past} the '#{button.name}' button with choice '#{selected_choice}'"
@@ -691,12 +693,43 @@ defmodule ButtonLog.Buttons do
         metadata
       end
 
+      # Create in-app alert
       Alerts.create_alert(%{
         alert_type: "gift_button_clicked",
-        title: "#{button.name} was #{action_past}!",
+        title: title,
         message: message,
         metadata: metadata
       }, button.created_by_friend_id, button.user_id, button.id)
+
+      # Send push notification to gift creator's mobile devices
+      Task.start(fn ->
+        ButtonLog.PushNotifications.send_gift_button_notification(
+          button.created_by_friend_id,
+          owner.display_name || owner.username,
+          button.name,
+          button.id,
+          action_past,
+          selected_choice
+        )
+      end)
+
+      # Broadcast via WebSocket for real-time update on mobile apps
+      ButtonLogWeb.Endpoint.broadcast(
+        "user:#{button.created_by_friend_id}",
+        "notification_received",
+        %{
+          type: "gift_button_clicked",
+          title: title,
+          message: message,
+          button_id: button.id,
+          button_name: button.name,
+          action: action_past,
+          selected_choice: selected_choice,
+          friend_id: button.user_id,
+          friend_name: owner.display_name || owner.username,
+          timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+        }
+      )
     end
   end
 

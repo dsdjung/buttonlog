@@ -105,6 +105,28 @@ defmodule ButtonLog.PushNotifications do
   end
 
   @doc """
+  Sends a gift button click notification to the gift creator.
+  Called when someone clicks a button that was created for them by a friend.
+  """
+  def send_gift_button_notification(recipient_id, clicker_name, button_name, button_id, action_past, selected_choice \\ nil) do
+    title = "Your gift button was #{action_past}!"
+    body = if selected_choice do
+      "#{clicker_name} #{action_past} '#{button_name}' with choice '#{selected_choice}'"
+    else
+      "#{clicker_name} #{action_past} '#{button_name}' that you created for them"
+    end
+    data = %{
+      "type" => "gift_button_clicked",
+      "button_id" => button_id,
+      "action" => "view_notifications",
+      "action_type" => action_past,
+      "selected_choice" => selected_choice || ""
+    }
+
+    send_to_user(recipient_id, title, body, data)
+  end
+
+  @doc """
   Sends a friend request notification.
   """
   def send_friend_request_notification(recipient_id, sender_name) do
