@@ -218,6 +218,69 @@ struct GiftCreator: Codable, Equatable {
     }
 }
 
+/// Gift button created by the current user for a friend (recipient)
+struct CreatedGiftButton: Identifiable, Codable, Equatable {
+    let id: String
+    let name: String
+    let description: String?
+    let type: ButtonType
+    let icon: String
+    let color: String
+    let isActive: Bool
+    let currentState: ButtonState
+    let stateChangedAt: Date?
+    let alertsEnabled: Bool
+    let autoStopEnabled: Bool
+    let autoStopMinutes: Int?
+    let calendarSyncEnabled: Bool
+    let userId: String
+    let createdAt: Date
+    let updatedAt: Date
+    let giftMessage: String?
+    let choices: [String]?
+    let recipient: GiftRecipient?
+
+    var hexColor: String {
+        return color.hasPrefix("#") ? color : "#\(color)"
+    }
+
+    var uiColor: Color {
+        return Color(hex: hexColor)
+    }
+
+    /// Display name of the friend who received this gift
+    var recipientName: String? {
+        return recipient?.displayName ?? recipient?.username
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, type, icon, color, choices, recipient
+        case isActive = "is_active"
+        case currentState = "current_state"
+        case stateChangedAt = "state_changed_at"
+        case alertsEnabled = "alerts_enabled"
+        case autoStopEnabled = "auto_stop_enabled"
+        case autoStopMinutes = "auto_stop_minutes"
+        case calendarSyncEnabled = "calendar_sync_enabled"
+        case userId = "user_id"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case giftMessage = "gift_message"
+    }
+}
+
+/// Minimal user info for gift button recipient
+struct GiftRecipient: Codable, Equatable {
+    let id: String
+    let username: String?
+    let displayName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, username
+        case displayName = "display_name"
+    }
+}
+
 enum ButtonType: String, Codable, CaseIterable {
     case instant = "instant"
     case toggle = "toggle"

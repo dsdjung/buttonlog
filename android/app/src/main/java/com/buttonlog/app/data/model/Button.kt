@@ -136,6 +136,69 @@ data class GiftCreator(
     val displayName: String?
 )
 
+/** Minimal user info for gift button recipient */
+data class GiftRecipient(
+    val id: String,
+    val username: String?,
+    @SerializedName("display_name")
+    val displayName: String?
+)
+
+/** Gift button created by the current user for a friend */
+data class CreatedGiftButton(
+    val id: String,
+    val name: String,
+    val description: String?,
+    val type: ButtonType,
+    val icon: String,
+    val color: String,
+    @SerializedName("is_active")
+    val isActive: Boolean,
+    @SerializedName("current_state")
+    val currentState: ButtonState,
+    @SerializedName("state_changed_at")
+    val stateChangedAt: Date?,
+    @SerializedName("alerts_enabled")
+    val alertsEnabled: Boolean,
+    @SerializedName("auto_stop_enabled")
+    val autoStopEnabled: Boolean,
+    @SerializedName("auto_stop_minutes")
+    val autoStopMinutes: Int?,
+    @SerializedName("calendar_sync_enabled")
+    val calendarSyncEnabled: Boolean,
+    @SerializedName("user_id")
+    val userId: String,
+    @SerializedName("created_at")
+    val createdAt: Date,
+    @SerializedName("updated_at")
+    val updatedAt: Date,
+    @SerializedName("gift_message")
+    val giftMessage: String?,
+    val choices: List<String>?,
+    val recipient: GiftRecipient?
+) {
+    val hexColor: String
+        get() = if (color.startsWith("#")) color else "#$color"
+
+    val uiColor: Color
+        get() = try {
+            Color(android.graphics.Color.parseColor(hexColor))
+        } catch (e: Exception) {
+            Color(0xFF007AFF)
+        }
+
+    /** Display name of the friend who received this gift */
+    val recipientName: String?
+        get() = recipient?.displayName ?: recipient?.username
+}
+
+data class CreatedGiftButtonsResponse(
+    val success: Boolean,
+    val data: List<CreatedGiftButton>?,
+    val error: ApiError?,
+    val meta: ApiMeta?
+)
+
 enum class ButtonType(val displayName: String, val icon: String, val description: String) {
     @SerializedName("instant")
     INSTANT("Instant", "bolt", "Single click actions"),

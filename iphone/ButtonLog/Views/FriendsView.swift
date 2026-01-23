@@ -4,9 +4,31 @@ struct FriendsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var showingAddFriend = false
     @State private var selectedFriend: Friend?
-    
+    @State private var showingCreatedGiftButtons = false
+
     var body: some View {
         List {
+            // Created Gift Buttons Section
+            Section {
+                NavigationLink(destination: CreatedGiftButtonsView()) {
+                    HStack {
+                        Image(systemName: "gift.fill")
+                            .foregroundColor(.purple)
+                            .frame(width: 24)
+                        VStack(alignment: .leading) {
+                            Text("Buttons I Created for Friends")
+                                .font(.body)
+                            if !appState.createdGiftButtons.isEmpty {
+                                Text("\(appState.createdGiftButtons.count) gift button\(appState.createdGiftButtons.count == 1 ? "" : "s")")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        Spacer()
+                    }
+                }
+            }
+
             // Pending Friend Requests Section
             if !appState.pendingFriendRequests.isEmpty {
                 Section("Pending Requests") {

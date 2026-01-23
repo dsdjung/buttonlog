@@ -9,11 +9,13 @@ class AppState: ObservableObject {
     @Published var subscriptionPlans: [SubscriptionPlan] = []
     @Published var currentSubscription: UserSubscription?
     @Published var subscriptionStats: SubscriptionStats?
+    @Published var createdGiftButtons: [CreatedGiftButton] = []
 
     @Published var isLoadingButtons = false
     @Published var isLoadingFriends = false
     @Published var isLoadingNotifications = false
     @Published var isLoadingSubscription = false
+    @Published var isLoadingCreatedGiftButtons = false
 
     // Diary state
     @Published var diaryData: DiaryData?
@@ -195,7 +197,44 @@ class AppState: ObservableObject {
             return false
         }
     }
-    
+
+    // MARK: - Created Gift Buttons
+
+    func loadCreatedGiftButtons() async {
+        isLoadingCreatedGiftButtons = true
+
+        do {
+            let buttons = try await apiService.getCreatedGiftButtons()
+            self.createdGiftButtons = buttons
+        } catch {
+            errorMessage = "Failed to load created gift buttons: \(error.localizedDescription)"
+        }
+
+        isLoadingCreatedGiftButtons = false
+    }
+
+    func updateCreatedGiftButton(id: String, formData: ButtonFormData) async -> Bool {
+        do {
+            _ = try await apiService.updateButton(id: id, formData: formData)
+            await loadCreatedGiftButtons() // Refresh the list
+            return true
+        } catch {
+            errorMessage = "Failed to update gift button: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    func deleteCreatedGiftButton(id: String) async -> Bool {
+        do {
+            try await apiService.deleteButton(id: id)
+            createdGiftButtons.removeAll { $0.id == id }
+            return true
+        } catch {
+            errorMessage = "Failed to delete gift button: \(error.localizedDescription)"
+            return false
+        }
+    }
+
     // MARK: - Notifications
     
     func loadNotifications() async {

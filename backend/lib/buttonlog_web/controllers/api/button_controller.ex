@@ -576,6 +576,58 @@ defmodule ButtonLogWeb.API.ButtonController do
   end
 
   @doc """
+  Lists all gift buttons created by the current user for their friends.
+  GET /api/buttons/created-gifts
+  """
+  def created_gift_buttons(conn, _params) do
+    user = conn.assigns.current_user
+    buttons = Buttons.list_created_gift_buttons(user.id)
+
+    json(conn, %{
+      success: true,
+      data: Enum.map(buttons, &serialize_gift_button/1),
+      meta: %{
+        timestamp: DateTime.utc_now(),
+        request_id: generate_request_id()
+      }
+    })
+  end
+
+  # Serialize a gift button with recipient information
+  defp serialize_gift_button(%{} = button) do
+    %{
+      id: button.id,
+      name: button.name,
+      description: button.description,
+      type: button.type,
+      icon: button[:icon] || "star.fill",
+      color: button[:color] || "#00BFA5",
+      is_active: button.is_active,
+      current_state: button[:current_state] || "idle",
+      state_changed_at: format_datetime(button[:state_changed_at]),
+      alerts_enabled: button.alerts_enabled,
+      auto_stop_enabled: button.auto_stop_enabled,
+      auto_stop_minutes: button[:auto_stop_minutes],
+      calendar_sync_enabled: button.calendar_sync_enabled,
+      user_id: button.user_id,
+      created_at: format_datetime(button.inserted_at),
+      updated_at: format_datetime(button.updated_at),
+      gift_message: button[:gift_message],
+      choices: button[:choices],
+      # Recipient info (the friend who received this gift)
+      recipient: if button[:recipient] && button[:recipient][:id] do
+        %{
+          id: button.recipient.id,
+          username: button.recipient.username,
+          display_name: button.recipient.display_name
+        }
+      else
+        nil
+      end
+    }
+  end
+
+  @doc """
   Creates a button for a friend (gift button).
   POST /api/buttons/gift
   """

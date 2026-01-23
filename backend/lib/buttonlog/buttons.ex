@@ -81,12 +81,71 @@ defmodule ButtonLog.Buttons do
   end
 
   @doc """
+  Returns all gift buttons created by a user (across all friends).
+  """
+  def list_created_gift_buttons(creator_id) do
+    Repo.all(
+      from b in Button,
+      left_join: bc in ButtonClick, on: b.id == bc.button_id,
+      left_join: recipient in assoc(b, :user),
+      where: b.created_by_friend_id == ^creator_id and (is_nil(b.archived) or b.archived == false),
+      group_by: [b.id, b.name, b.description, b.type, b.icon, b.color, b.is_active, b.current_state, b.state_changed_at, b.alerts_enabled, b.auto_stop_enabled, b.auto_stop_minutes, b.calendar_sync_enabled, b.user_id, b.inserted_at, b.updated_at, b.created_by_friend_id, b.gift_message, b.choices, recipient.id, recipient.username, recipient.display_name],
+      order_by: [desc: b.inserted_at],
+      select: %{
+        id: b.id,
+        name: b.name,
+        description: b.description,
+        type: b.type,
+        icon: b.icon,
+        color: b.color,
+        is_active: b.is_active,
+        current_state: b.current_state,
+        state_changed_at: b.state_changed_at,
+        alerts_enabled: b.alerts_enabled,
+        auto_stop_enabled: b.auto_stop_enabled,
+        auto_stop_minutes: b.auto_stop_minutes,
+        calendar_sync_enabled: b.calendar_sync_enabled,
+        user_id: b.user_id,
+        inserted_at: b.inserted_at,
+        updated_at: b.updated_at,
+        latest_click_at: max(bc.clicked_at),
+        created_by_friend_id: b.created_by_friend_id,
+        gift_message: b.gift_message,
+        choices: b.choices,
+        recipient: %{
+          id: recipient.id,
+          username: recipient.username,
+          display_name: recipient.display_name
+        }
+      }
+    )
+  end
+
+  @doc """
   Gets a single button.
   """
   def get_button(id, user_id) do
     case Repo.get_by(Button, id: id, user_id: user_id) do
       nil -> {:error, :not_found}
       button -> {:ok, button}
+    end
+  end
+
+  @doc """
+  Gets a button for editing. Allows both the owner and the gift creator to access.
+  """
+  def get_button_for_edit(id, user_id) do
+    case Repo.get(Button, id) do
+      nil ->
+        {:error, :not_found}
+
+      button ->
+        # Allow edit if user is the owner OR the gift creator
+        if button.user_id == user_id or button.created_by_friend_id == user_id do
+          {:ok, button}
+        else
+          {:error, :not_found}
+        end
     end
   end
 
@@ -151,10 +210,10 @@ defmodule ButtonLog.Buttons do
   defp configure_friend_alerts(_button, _user_id, _), do: :ok
 
   @doc """
-  Updates a button.
+  Updates a button. Allows both the owner and the gift creator to edit.
   """
   def update_button(id, attrs, user_id) do
-    case get_button(id, user_id) do
+    case get_button_for_edit(id, user_id) do
       {:ok, button} ->
         button
         |> Button.changeset(attrs)
@@ -165,13 +224,16 @@ defmodule ButtonLog.Buttons do
   end
 
   @doc """
-  Deletes a button.
+  Deletes a button. Allows both the owner and the gift creator to delete.
   """
   def delete_button(id, user_id) do
-    case get_button(id, user_id) do
+    case get_button_for_edit(id, user_id) do
       {:ok, button} ->
         # Notify gift creator before deletion (if this is a gift button)
-        notify_gift_creator_of_deletion(button)
+        # Only notify if the deleter is not the gift creator themselves
+        if button.created_by_friend_id != user_id do
+          notify_gift_creator_of_deletion(button)
+        end
 
         Repo.delete(button)
 

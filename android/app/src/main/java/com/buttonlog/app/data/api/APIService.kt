@@ -70,6 +70,9 @@ interface APIService {
     @POST("buttons/gift")
     suspend fun createButtonForFriend(@Body request: CreateGiftButtonRequest): ButtonResponse
 
+    @GET("buttons/created-gifts")
+    suspend fun getCreatedGiftButtons(): CreatedGiftButtonsResponse
+
     // Button alert preferences
     @GET("buttons/{id}/alerts")
     suspend fun getButtonAlertPreferences(@Path("id") buttonId: String): ApiResponse<List<ButtonAlertPreference>>

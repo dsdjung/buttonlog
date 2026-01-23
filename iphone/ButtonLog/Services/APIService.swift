@@ -293,6 +293,11 @@ class APIService {
         )
     }
 
+    /// Get all gift buttons created by the current user for their friends
+    func getCreatedGiftButtons() async throws -> [CreatedGiftButton] {
+        return try await makeRequest(endpoint: "/buttons/created-gifts")
+    }
+
     /// Create a button for a friend (gift button)
     func createButtonForFriend(friendId: String, formData: ButtonFormData, message: String? = nil) async throws -> ButtonModel {
         var body: [String: Any] = [

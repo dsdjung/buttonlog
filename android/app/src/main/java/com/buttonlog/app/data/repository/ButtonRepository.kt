@@ -15,6 +15,7 @@ import com.buttonlog.app.data.model.ButtonClick
 import com.buttonlog.app.data.model.ButtonSharingSetting
 import com.buttonlog.app.data.model.ButtonSharingUpdateRequest
 import com.buttonlog.app.data.model.ButtonSharingUpdate
+import com.buttonlog.app.data.model.CreatedGiftButton
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -226,6 +227,57 @@ class ButtonRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    /**
+     * Fetch all gift buttons created by the current user for their friends.
+     * These are buttons where the user is the creator, not the owner.
+     */
+    suspend fun getCreatedGiftButtons(): Result<List<CreatedGiftButton>> {
+        return try {
+            val response = apiService.getCreatedGiftButtons()
+            if (response.success && response.data != null) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to fetch gift buttons"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Update a gift button that the current user created for a friend.
+     */
+    suspend fun updateGiftButton(buttonId: String, buttonData: ButtonFormData): Result<Button> {
+        return try {
+            _isLoading.value = true
+            _error.value = null
+
+            val updateData = ButtonUpdateData(
+                name = buttonData.name.trim().ifEmpty { null },
+                description = buttonData.description.ifEmpty { null },
+                icon = buttonData.icon,
+                color = buttonData.color,
+                alertsEnabled = buttonData.alertsEnabled,
+                autoStopEnabled = buttonData.autoStopEnabled,
+                calendarSyncEnabled = buttonData.calendarSyncEnabled
+            )
+            val response = apiService.updateButton(buttonId, UpdateButtonRequest(updateData))
+            if (response.success && response.data != null) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to update gift button"
+                _error.value = errorMessage
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            _error.value = e.message ?: "Failed to update gift button"
+            Result.failure(e)
+        } finally {
+            _isLoading.value = false
         }
     }
 
