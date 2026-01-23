@@ -174,3 +174,17 @@ struct DeviceRegistration: Codable {
         case isActive = "is_active"
     }
 }
+
+struct TestNotificationResult: Codable {
+    let message: String
+    let successes: Int
+    let failures: Int
+    let totalDevices: Int
+
+    enum CodingKeys: String, CodingKey {
+        case message
+        case successes
+        case failures
+        case totalDevices = "total_devices"
+    }
+}

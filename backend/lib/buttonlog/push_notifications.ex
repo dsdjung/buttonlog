@@ -254,21 +254,116 @@ defmodule ButtonLog.PushNotifications do
   end
 
   defp get_fcm_access_token do
-    # In production, this would use Google's OAuth 2.0 service account flow
-    # to get an access token from the service account JSON
+    # Use Google's OAuth 2.0 service account flow to get an access token
     config = Application.get_env(:buttonlog, :fcm, [])
 
     case config[:service_account_json] do
       nil ->
         {:error, :no_service_account}
 
-      json_path when is_binary(json_path) ->
-        # TODO: Implement full JWT generation and OAuth token exchange
-        # For now, check if we have a pre-configured access token (for testing)
-        case config[:access_token] do
-          nil -> {:error, :not_implemented}
-          token -> {:ok, token}
+      json_string when is_binary(json_string) ->
+        # Check cache first
+        case :persistent_term.get({__MODULE__, :fcm_token}, nil) do
+          {token, expires_at} when is_binary(token) ->
+            if DateTime.compare(DateTime.utc_now(), expires_at) == :lt do
+              {:ok, token}
+            else
+              fetch_new_fcm_token(json_string)
+            end
+
+          _ ->
+            fetch_new_fcm_token(json_string)
         end
+    end
+  end
+
+  defp fetch_new_fcm_token(json_string) do
+    with {:ok, service_account} <- Jason.decode(json_string),
+         {:ok, jwt} <- build_google_jwt(service_account),
+         {:ok, token, expires_in} <- exchange_jwt_for_token(jwt) do
+      # Cache the token
+      expires_at = DateTime.add(DateTime.utc_now(), expires_in - 60, :second)
+      :persistent_term.put({__MODULE__, :fcm_token}, {token, expires_at})
+      {:ok, token}
+    end
+  end
+
+  defp build_google_jwt(service_account) do
+    now = DateTime.utc_now() |> DateTime.to_unix()
+
+    header = %{
+      "alg" => "RS256",
+      "typ" => "JWT"
+    }
+
+    claims = %{
+      "iss" => service_account["client_email"],
+      "scope" => "https://www.googleapis.com/auth/firebase.messaging",
+      "aud" => "https://oauth2.googleapis.com/token",
+      "iat" => now,
+      "exp" => now + 3600
+    }
+
+    header_b64 = Base.url_encode64(Jason.encode!(header), padding: false)
+    claims_b64 = Base.url_encode64(Jason.encode!(claims), padding: false)
+    signing_input = "#{header_b64}.#{claims_b64}"
+
+    private_key = service_account["private_key"]
+
+    case sign_with_rsa(signing_input, private_key) do
+      {:ok, signature} ->
+        signature_b64 = Base.url_encode64(signature, padding: false)
+        {:ok, "#{signing_input}.#{signature_b64}"}
+
+      error ->
+        error
+    end
+  end
+
+  defp sign_with_rsa(data, pem_key) do
+    try do
+      [entry] = :public_key.pem_decode(pem_key)
+      key = :public_key.pem_entry_decode(entry)
+      signature = :public_key.sign(data, :sha256, key)
+      {:ok, signature}
+    rescue
+      e ->
+        Logger.error("RSA signing failed: #{inspect(e)}")
+        {:error, :signing_failed}
+    end
+  end
+
+  defp exchange_jwt_for_token(jwt) do
+    url = "https://oauth2.googleapis.com/token"
+
+    body = URI.encode_query(%{
+      "grant_type" => "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      "assertion" => jwt
+    })
+
+    headers = [{"Content-Type", "application/x-www-form-urlencoded"}]
+
+    case HTTPoison.post(url, body, headers) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: resp_body}} ->
+        case Jason.decode(resp_body) do
+          {:ok, %{"access_token" => token, "expires_in" => expires_in}} ->
+            {:ok, token, expires_in}
+
+          {:ok, resp} ->
+            Logger.error("Unexpected OAuth response: #{inspect(resp)}")
+            {:error, :unexpected_response}
+
+          error ->
+            error
+        end
+
+      {:ok, %HTTPoison.Response{status_code: code, body: resp_body}} ->
+        Logger.error("OAuth token exchange failed (#{code}): #{resp_body}")
+        {:error, {:oauth_failed, code}}
+
+      {:error, reason} ->
+        Logger.error("OAuth request failed: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 

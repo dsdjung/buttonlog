@@ -587,7 +587,23 @@ class APIService {
             body: body
         )
     }
-    
+
+    func sendTestNotification(title: String? = nil, body: String? = nil) async throws -> TestNotificationResult {
+        var requestBody: [String: Any] = [:]
+        if let title = title {
+            requestBody["title"] = title
+        }
+        if let body = body {
+            requestBody["body"] = body
+        }
+
+        return try await makeRequest(
+            endpoint: "/devices/test-notification",
+            method: .POST,
+            body: requestBody.isEmpty ? nil : requestBody
+        )
+    }
+
     // MARK: - Subscriptions
     
     func getSubscriptionPlans() async throws -> [SubscriptionPlan] {

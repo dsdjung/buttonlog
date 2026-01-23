@@ -147,6 +147,7 @@ defmodule ButtonLogWeb.Router do
     post "/devices/register", API.MobileController, :register_device
     delete "/devices/unregister", API.MobileController, :unregister_device
     get "/devices", API.MobileController, :list_devices
+    post "/devices/test-notification", API.MobileController, :send_test_notification
 
     # Subscription endpoints
     get "/subscriptions", API.SubscriptionController, :index

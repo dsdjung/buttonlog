@@ -1,6 +1,7 @@
 defmodule ButtonLogWeb.API.MobileController do
   use ButtonLogWeb, :controller
   alias ButtonLog.Mobile
+  alias ButtonLog.PushNotifications
 
   @doc """
   Registers a device for push notifications.
@@ -104,6 +105,30 @@ defmodule ButtonLogWeb.API.MobileController do
           last_seen_at: connection.last_seen_at
         }
       end)
+    })
+  end
+
+  @doc """
+  Sends a test push notification to the current user's devices.
+  Useful for verifying push notification setup.
+  """
+  def send_test_notification(conn, params) do
+    user = conn.assigns.current_user
+    title = params["title"] || "Test Notification"
+    body = params["body"] || "This is a test push notification from ButtonLog"
+
+    {:ok, result} = PushNotifications.send_to_user(user.id, title, body, %{"type" => "test"})
+
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      success: true,
+      data: %{
+        message: "Test notification sent",
+        successes: result.successes,
+        failures: result.failures,
+        total_devices: result.total
+      }
     })
   end
 

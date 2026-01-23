@@ -174,6 +174,9 @@ interface APIService {
     @GET("devices")
     suspend fun getDevices(): DevicesResponse
 
+    @POST("devices/test-notification")
+    suspend fun sendTestNotification(@Body request: TestNotificationRequest? = null): TestNotificationResponse
+
     // MARK: - Support Ticket Endpoints
 
     @GET("support/tickets")
@@ -545,6 +548,25 @@ data class DeviceRegistrationResponse(
 data class DevicesResponse(
     val success: Boolean,
     val data: List<DeviceRegistration>,
+    val error: ApiError?
+)
+
+data class TestNotificationRequest(
+    val title: String? = null,
+    val body: String? = null
+)
+
+data class TestNotificationData(
+    val message: String,
+    val successes: Int,
+    val failures: Int,
+    @SerializedName("total_devices")
+    val totalDevices: Int
+)
+
+data class TestNotificationResponse(
+    val success: Boolean,
+    val data: TestNotificationData?,
     val error: ApiError?
 )
 

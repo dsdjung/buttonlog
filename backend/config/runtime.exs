@@ -91,3 +91,22 @@ if config_env() == :prod do
   #   adapter: Swoosh.Adapters.SendGrid,
   #   api_key: System.get_env("SENDGRID_API_KEY")
 end
+
+# Push notification configuration (all environments)
+# FCM (Firebase Cloud Messaging) for Android
+if fcm_project_id = System.get_env("FCM_PROJECT_ID") do
+  config :buttonlog, :fcm,
+    project_id: fcm_project_id,
+    service_account_json: System.get_env("FCM_SERVICE_ACCOUNT_JSON")
+end
+
+# APNs (Apple Push Notification Service) for iOS
+if apns_key_id = System.get_env("APNS_KEY_ID") do
+  config :buttonlog, :apns,
+    key_id: apns_key_id,
+    team_id: System.get_env("APNS_TEAM_ID"),
+    key_path: System.get_env("APNS_KEY_PATH"),
+    key_content: System.get_env("APNS_KEY_CONTENT"),
+    topic: System.get_env("APNS_BUNDLE_ID", "com.buttonlog.app"),
+    environment: System.get_env("APNS_ENVIRONMENT", "sandbox")
+end
