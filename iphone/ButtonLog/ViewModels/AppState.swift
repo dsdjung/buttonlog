@@ -117,19 +117,26 @@ class AppState: ObservableObject {
         // Mark button as clicking to disable it in UI
         clickingButtonIds.insert(id)
 
+        // Get the button type before clicking to determine post-click behavior
+        let buttonType = buttons.first(where: { $0.id == id })?.type
+
         do {
             _ = try await apiService.clickButton(id: id, choice: choice)
 
-            // Reload the specific button to get updated state from server
-            // For one-time buttons with choices, they may be archived
-            do {
-                let updatedButton = try await apiService.getButton(id: id)
-                if let index = buttons.firstIndex(where: { $0.id == id }) {
-                    buttons[index] = updatedButton
-                }
-            } catch {
-                // Button may have been archived (one-time), remove from list
+            // For one-time buttons, remove immediately (they get archived on backend)
+            if buttonType == .oneTime {
                 buttons.removeAll { $0.id == id }
+            } else {
+                // For other button types, reload to get updated state from server
+                do {
+                    let updatedButton = try await apiService.getButton(id: id)
+                    if let index = buttons.firstIndex(where: { $0.id == id }) {
+                        buttons[index] = updatedButton
+                    }
+                } catch {
+                    // Button not found, remove from list
+                    buttons.removeAll { $0.id == id }
+                }
             }
 
             clickingButtonIds.remove(id)
