@@ -122,6 +122,21 @@ defmodule ButtonLogWeb.FriendLive.Show do
   end
 
   @impl true
+  def handle_event("apply_gift_template", %{"template" => template}, socket) do
+    {type, choices} = case template do
+      "yes_no" -> {"one-time", ["Yes", "No"]}
+      "done_skip" -> {"one-time", ["Done", "Skip"]}
+      "rating" -> {"one-time", ["Good", "Okay", "Bad"]}
+      _ -> {"one-time", ["", ""]}
+    end
+
+    {:noreply,
+     socket
+     |> assign(:gift_button_type, type)
+     |> assign(:gift_button_choices, choices)}
+  end
+
+  @impl true
   def handle_event("update_gift_choice", %{"index" => index_str, "value" => value}, socket) do
     index = String.to_integer(index_str)
     choices = socket.assigns.gift_button_choices || ["", ""]
