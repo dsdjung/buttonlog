@@ -126,10 +126,11 @@ fun LoginScreen(
                     accessToken = idToken
                 )
             } catch (e: GetCredentialException) {
-                Log.e("LoginScreen", "Google Sign-In failed", e)
-                // Error will be shown via viewModel.errorMessage if needed
+                Log.e("LoginScreen", "Google Sign-In failed: ${e.type} - ${e.message}", e)
+                viewModel.setError("Google Sign-In failed: ${e.message ?: e.type}")
             } catch (e: Exception) {
-                Log.e("LoginScreen", "Google Sign-In error", e)
+                Log.e("LoginScreen", "Google Sign-In error: ${e.message}", e)
+                viewModel.setError("Google Sign-In error: ${e.message ?: "Unknown error"}")
             } finally {
                 isGoogleLoading = false
             }
