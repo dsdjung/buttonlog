@@ -3,6 +3,7 @@ defmodule ButtonLog.GiftButtonsTest do
 
   alias ButtonLog.Buttons
   alias ButtonLog.Alerts
+  alias ButtonLog.Notifications
 
   describe "create_button/2" do
     test "sends notification to creator when button is created" do
@@ -78,17 +79,17 @@ defmodule ButtonLog.GiftButtonsTest do
 
       {:ok, _button} = Buttons.create_button_for_friend(button_attrs, friend.id, creator.id)
 
-      # Check that a notification was sent to the friend
-      alerts = Alerts.get_user_alerts(friend.id)
-      assert length(alerts) == 1
+      # Check that a notification was sent to the friend (now stored in notifications table)
+      notifications = Notifications.get_user_notifications(friend.id)
+      assert length(notifications) == 1
 
-      alert = hd(alerts)
-      assert alert.alert_type == "gift_button_received"
-      assert alert.title == "New Button Gift!"
-      assert alert.message =~ "The Creator"
-      assert alert.message =~ "Exercise Tracker"
-      assert alert.recipient_id == friend.id
-      assert alert.sender_id == creator.id
+      notification = hd(notifications)
+      assert notification.notification_type == "gift_button_received"
+      assert notification.title == "New Button Gift!"
+      assert notification.message =~ "The Creator"
+      assert notification.message =~ "Exercise Tracker"
+      assert notification.recipient_id == friend.id
+      assert notification.sender_id == creator.id
     end
 
     test "sends notification to creator when gift button is created" do
@@ -103,16 +104,16 @@ defmodule ButtonLog.GiftButtonsTest do
 
       {:ok, _button} = Buttons.create_button_for_friend(button_attrs, friend.id, creator.id)
 
-      # Check that a notification was sent to the creator
-      alerts = Alerts.get_user_alerts(creator.id)
-      assert length(alerts) == 1
+      # Check that a notification was sent to the creator (now stored in notifications table)
+      notifications = Notifications.get_user_notifications(creator.id)
+      assert length(notifications) == 1
 
-      alert = hd(alerts)
-      assert alert.alert_type == "gift_button_sent"
-      assert alert.title == "Gift Button Sent!"
-      assert alert.message =~ "The Friend"
-      assert alert.message =~ "Exercise Tracker"
-      assert alert.recipient_id == creator.id
+      notification = hd(notifications)
+      assert notification.notification_type == "gift_button_sent"
+      assert notification.title == "Gift Button Sent!"
+      assert notification.message =~ "The Friend"
+      assert notification.message =~ "Exercise Tracker"
+      assert notification.recipient_id == creator.id
     end
   end
 
@@ -132,15 +133,15 @@ defmodule ButtonLog.GiftButtonsTest do
       # Click the button
       {:ok, _click} = Buttons.click_button(button.id, friend.id)
 
-      # Check notification to creator
-      alerts = Alerts.get_user_alerts(creator.id)
-      # Should have the gift click notification
-      click_alert = Enum.find(alerts, &(&1.alert_type == "gift_button_clicked"))
+      # Check notification to creator (now stored in notifications table)
+      notifications = Notifications.get_user_notifications(creator.id)
+      # Should have the gift click notification (filter out the gift_button_sent notification)
+      click_notification = Enum.find(notifications, &(&1.notification_type == "gift_button_clicked"))
 
-      assert click_alert != nil
-      assert click_alert.title =~ "clicked"
-      assert click_alert.message =~ "My Friend"
-      assert click_alert.message =~ "Click Test"
+      assert click_notification != nil
+      assert click_notification.title =~ "clicked"
+      assert click_notification.message =~ "My Friend"
+      assert click_notification.message =~ "Click Test"
     end
 
     test "sends notification with correct action for toggle button start" do
@@ -158,13 +159,13 @@ defmodule ButtonLog.GiftButtonsTest do
       # Click to start the timer
       {:ok, _click} = Buttons.click_button(button.id, friend.id)
 
-      alerts = Alerts.get_user_alerts(creator.id)
-      click_alert = Enum.find(alerts, &(&1.alert_type == "gift_button_clicked"))
+      notifications = Notifications.get_user_notifications(creator.id)
+      click_notification = Enum.find(notifications, &(&1.notification_type == "gift_button_clicked"))
 
-      assert click_alert != nil
-      assert click_alert.title =~ "started"
-      assert click_alert.message =~ "Timer Friend"
-      assert click_alert.message =~ "started"
+      assert click_notification != nil
+      assert click_notification.title =~ "started"
+      assert click_notification.message =~ "Timer Friend"
+      assert click_notification.message =~ "started"
     end
 
     test "does not send notification for non-gift buttons" do
@@ -176,10 +177,10 @@ defmodule ButtonLog.GiftButtonsTest do
       {:ok, _click} = Buttons.click_button(button.id, user.id)
 
       # No gift click notification should exist (button has no created_by_friend_id)
-      alerts = Alerts.get_user_alerts(user.id)
-      gift_alerts = Enum.filter(alerts, &(&1.alert_type == "gift_button_clicked"))
+      notifications = Notifications.get_user_notifications(user.id)
+      gift_notifications = Enum.filter(notifications, &(&1.notification_type == "gift_button_clicked"))
 
-      assert Enum.empty?(gift_alerts)
+      assert Enum.empty?(gift_notifications)
     end
   end
 
@@ -199,14 +200,14 @@ defmodule ButtonLog.GiftButtonsTest do
       # Delete the button
       {:ok, _deleted} = Buttons.delete_button(button.id, friend.id)
 
-      # Check notification to creator
-      alerts = Alerts.get_user_alerts(creator.id)
-      delete_alert = Enum.find(alerts, &(&1.alert_type == "gift_button_deleted"))
+      # Check notification to creator (now stored in notifications table)
+      notifications = Notifications.get_user_notifications(creator.id)
+      delete_notification = Enum.find(notifications, &(&1.notification_type == "gift_button_deleted"))
 
-      assert delete_alert != nil
-      assert delete_alert.title == "Button Removed"
-      assert delete_alert.message =~ "Deleting Friend"
-      assert delete_alert.message =~ "Button To Delete"
+      assert delete_notification != nil
+      assert delete_notification.title == "Button Removed"
+      assert delete_notification.message =~ "Deleting Friend"
+      assert delete_notification.message =~ "Button To Delete"
     end
   end
 
@@ -308,17 +309,17 @@ defmodule ButtonLog.GiftButtonsTest do
       # Click the button
       {:ok, _click} = Buttons.click_button(button.id, friend.id)
 
-      # Check notification was sent to creator (gift_button_clicked)
-      creator_alerts = Alerts.get_user_alerts(creator.id)
-      creator_alert = Enum.find(creator_alerts, &(&1.alert_type == "gift_button_clicked"))
+      # Check notification was sent to creator (gift_button_clicked) - now in notifications table
+      creator_notifications = Notifications.get_user_notifications(creator.id)
+      creator_notification = Enum.find(creator_notifications, &(&1.notification_type == "gift_button_clicked"))
 
-      assert creator_alert != nil
-      assert creator_alert.title =~ "completed"
-      assert creator_alert.message =~ "One Time Friend"
-      assert creator_alert.message =~ "One-Time Gift"
-      assert creator_alert.message =~ "completed"
+      assert creator_notification != nil
+      assert creator_notification.title =~ "completed"
+      assert creator_notification.message =~ "One Time Friend"
+      assert creator_notification.message =~ "One-Time Gift"
+      assert creator_notification.message =~ "completed"
 
-      # Check notification was sent to owner (one_time_button_completed)
+      # Check notification was sent to owner (one_time_button_completed) - still in alerts table
       owner_alerts = Alerts.get_user_alerts(friend.id)
       owner_alert = Enum.find(owner_alerts, &(&1.alert_type == "one_time_button_completed"))
 

@@ -614,7 +614,7 @@ defmodule ButtonLog.Buttons do
   """
   def create_button_for_friend(attrs, friend_id, creator_id, message \\ nil) do
     alias ButtonLog.Social
-    alias ButtonLog.Alerts
+    alias ButtonLog.Notifications
 
     if Social.are_friends?(creator_id, friend_id) do
       # Create the button owned by the friend
@@ -626,16 +626,51 @@ defmodule ButtonLog.Buttons do
         {:ok, button} ->
           # Send notification to the friend about their new button
           creator = ButtonLog.Accounts.get_user!(creator_id)
-          Alerts.create_alert(%{
-            alert_type: "gift_button_received",
-            title: "New Button Gift!",
-            message: "#{creator.display_name || creator.username} created a button for you: #{button.name}",
+          title = "New Button Gift!"
+          notification_message = "#{creator.display_name || creator.username} created a button for you: #{button.name}"
+
+          # Create in-app notification (stored in notifications table, fetched by mobile apps)
+          Notifications.create_notification(%{
+            notification_type: "gift_button_received",
+            title: title,
+            message: notification_message,
+            clicked_at: DateTime.utc_now(),
             metadata: %{
               button_id: button.id,
               button_name: button.name,
               creator_id: creator_id
             }
           }, friend_id, creator_id, button.id)
+
+          # Send push notification to the friend's mobile devices
+          Task.start(fn ->
+            ButtonLog.PushNotifications.send_to_user(
+              friend_id,
+              title,
+              notification_message,
+              %{
+                "type" => "gift_button_received",
+                "button_id" => button.id,
+                "action" => "view_button"
+              }
+            )
+          end)
+
+          # Broadcast via WebSocket for real-time update on mobile apps
+          ButtonLogWeb.Endpoint.broadcast(
+            "user:#{friend_id}",
+            "notification_received",
+            %{
+              type: "gift_button_received",
+              title: title,
+              message: notification_message,
+              button_id: button.id,
+              button_name: button.name,
+              creator_id: creator_id,
+              creator_name: creator.display_name || creator.username,
+              timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+            }
+          )
 
           # Also notify the creator that their gift was sent
           notify_gift_button_sent(button, creator_id, friend_id)
@@ -659,7 +694,7 @@ defmodule ButtonLog.Buttons do
   """
   def notify_gift_creator_of_click(button, action, selected_choice \\ nil) do
     if button.created_by_friend_id do
-      alias ButtonLog.Alerts
+      alias ButtonLog.Notifications
 
       owner = ButtonLog.Accounts.get_user!(button.user_id)
       action_past = case action do
@@ -693,11 +728,12 @@ defmodule ButtonLog.Buttons do
         metadata
       end
 
-      # Create in-app alert
-      Alerts.create_alert(%{
-        alert_type: "gift_button_clicked",
+      # Create in-app notification (stored in notifications table, fetched by mobile apps)
+      Notifications.create_notification(%{
+        notification_type: "gift_button_clicked",
         title: title,
         message: message,
+        clicked_at: DateTime.utc_now(),
         metadata: metadata
       }, button.created_by_friend_id, button.user_id, button.id)
 
@@ -739,18 +775,52 @@ defmodule ButtonLog.Buttons do
   """
   def notify_gift_creator_of_deletion(button) do
     if button.created_by_friend_id do
-      alias ButtonLog.Alerts
+      alias ButtonLog.Notifications
 
       owner = ButtonLog.Accounts.get_user!(button.user_id)
 
-      Alerts.create_alert(%{
-        alert_type: "gift_button_deleted",
-        title: "Button Removed",
-        message: "#{owner.display_name || owner.username} deleted the '#{button.name}' button you created for them",
+      title = "Button Removed"
+      message = "#{owner.display_name || owner.username} deleted the '#{button.name}' button you created for them"
+
+      # Create in-app notification (stored in notifications table, fetched by mobile apps)
+      Notifications.create_notification(%{
+        notification_type: "gift_button_deleted",
+        title: title,
+        message: message,
+        clicked_at: DateTime.utc_now(),
         metadata: %{
-          button_name: button.name
+          button_name: button.name,
+          friend_id: button.user_id
         }
       }, button.created_by_friend_id, button.user_id, nil)
+
+      # Send push notification to gift creator's mobile devices
+      Task.start(fn ->
+        ButtonLog.PushNotifications.send_to_user(
+          button.created_by_friend_id,
+          title,
+          message,
+          %{
+            "type" => "gift_button_deleted",
+            "action" => "view_notifications"
+          }
+        )
+      end)
+
+      # Broadcast via WebSocket for real-time update on mobile apps
+      ButtonLogWeb.Endpoint.broadcast(
+        "user:#{button.created_by_friend_id}",
+        "notification_received",
+        %{
+          type: "gift_button_deleted",
+          title: title,
+          message: message,
+          button_name: button.name,
+          friend_id: button.user_id,
+          friend_name: owner.display_name || owner.username,
+          timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+        }
+      )
     end
   end
 
@@ -771,20 +841,40 @@ defmodule ButtonLog.Buttons do
 
   # Sends a notification to the creator when they create a gift button for a friend.
   defp notify_gift_button_sent(button, creator_id, friend_id) do
-    alias ButtonLog.Alerts
+    alias ButtonLog.Notifications
 
     friend = ButtonLog.Accounts.get_user!(friend_id)
+    title = "Gift Button Sent!"
+    message = "You created '#{button.name}' for #{friend.display_name || friend.username}"
 
-    Alerts.create_alert(%{
-      alert_type: "gift_button_sent",
-      title: "Gift Button Sent!",
-      message: "You created '#{button.name}' for #{friend.display_name || friend.username}",
+    # Create in-app notification (stored in notifications table, fetched by mobile apps)
+    Notifications.create_notification(%{
+      notification_type: "gift_button_sent",
+      title: title,
+      message: message,
+      clicked_at: DateTime.utc_now(),
       metadata: %{
         button_id: button.id,
         button_name: button.name,
         friend_id: friend_id
       }
     }, creator_id, creator_id, button.id)
+
+    # Broadcast via WebSocket for real-time update (no push notification for self-actions)
+    ButtonLogWeb.Endpoint.broadcast(
+      "user:#{creator_id}",
+      "notification_received",
+      %{
+        type: "gift_button_sent",
+        title: title,
+        message: message,
+        button_id: button.id,
+        button_name: button.name,
+        friend_id: friend_id,
+        friend_name: friend.display_name || friend.username,
+        timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+      }
+    )
   end
 
   # Sends a notification to the user when they complete a one-time button.
