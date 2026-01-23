@@ -53,78 +53,80 @@ defmodule ButtonLogWeb.AuthController do
   end
 
   # OAuth Methods
-  def request(conn, %{"provider" => provider}) do
-    IO.puts "=== OAUTH REQUEST DEBUG ==="
-    IO.puts "Provider: #{provider}"
-    IO.puts "Conn: #{inspect(conn)}"
-    IO.puts "==========================="
+  def request(conn, %{"provider" => provider} = params) do
+    # Store mobile flag in session for the callback
+    is_mobile = params["mobile"] == "true"
+
+    conn =
+      if is_mobile do
+        put_session(conn, :oauth_mobile, true)
+      else
+        conn
+      end
 
     # Ueberauth will handle the request automatically
     # This function won't be called directly due to Ueberauth plug
     conn
   end
 
-    def callback(conn, %{"provider" => provider}) do
-    IO.puts "=== OAUTH CALLBACK DEBUG ==="
-    IO.puts "Provider: #{provider}"
-    IO.puts "Conn params: #{inspect(conn.params)}"
-    IO.puts "============================="
+  def callback(conn, %{"provider" => provider} = params) do
+    # Check if this is a mobile OAuth request
+    is_mobile = params["mobile"] == "true" || get_session(conn, :oauth_mobile) == true
 
-    case Ueberauth.auth(conn) do
-      %Ueberauth.Auth{provider: auth_provider, info: info, credentials: credentials, uid: uid} = auth ->
-        # Convert provider string to atom for comparison
-        provider_atom = String.to_existing_atom(provider)
+    # Clear the mobile flag from session
+    conn = delete_session(conn, :oauth_mobile)
 
-        if auth_provider == provider_atom do
-        IO.puts "=== OAUTH AUTH DATA ==="
-        IO.puts "Provider: #{auth.provider}"
-        IO.puts "UID: #{uid}"
-        IO.puts "Info: #{inspect(info)}"
-        IO.puts "Credentials: #{inspect(credentials)}"
-        IO.puts "========================"
+    # Validate provider is one of the supported providers (safe, no atom conversion from user input)
+    provider_atom = case provider do
+      "google" -> :google
+      "facebook" -> :facebook
+      "apple" -> :apple
+      _ -> nil
+    end
 
-                  case handle_oauth_callback(auth, provider) do
+    if is_nil(provider_atom) do
+      handle_oauth_error(conn, "Invalid OAuth provider: #{provider}", is_mobile)
+    else
+      case Ueberauth.auth(conn) do
+        %Ueberauth.Auth{provider: auth_provider} = auth when auth_provider == provider_atom ->
+          case handle_oauth_callback(auth, provider) do
             {:ok, user} ->
-              IO.puts "=== OAUTH SUCCESS ==="
-              IO.puts "User object: #{inspect(user)}"
-              IO.puts "User username: #{user.username}"
-              IO.puts "User email: #{user.email}"
-              IO.puts "====================="
-
-              conn
-              |> put_session(:user_id, user.id)
-              |> put_flash(:info, "Successfully authenticated with #{provider}!")
-              |> redirect(to: ~p"/buttons")
+              if is_mobile do
+                # Generate JWT token for mobile and redirect to app
+                token = Token.create_token(user.id)
+                redirect(conn, external: "buttonlog://oauth?token=#{token}")
+              else
+                # Web flow - set session and redirect to buttons
+                conn
+                |> put_session(:user_id, user.id)
+                |> put_flash(:info, "Successfully authenticated with #{provider}!")
+                |> redirect(to: ~p"/buttons")
+              end
 
             {:error, reason} ->
-              IO.puts "=== OAUTH ERROR ==="
-              IO.puts "Error: #{reason}"
-              IO.puts "==================="
-
-              conn
-              |> put_flash(:error, "OAuth authentication failed: #{reason}")
-              |> redirect(to: ~p"/auth/login")
+              handle_oauth_error(conn, "OAuth authentication failed: #{reason}", is_mobile)
           end
-        else
-          IO.puts "=== OAUTH PROVIDER MISMATCH ==="
-          IO.puts "Expected provider: #{provider} (#{provider_atom})"
-          IO.puts "Actual provider: #{auth_provider}"
-          IO.puts "================================"
 
-          conn
-          |> put_flash(:error, "OAuth provider mismatch")
-          |> redirect(to: ~p"/auth/login")
-        end
+        %Ueberauth.Auth{provider: auth_provider} ->
+          handle_oauth_error(conn, "OAuth provider mismatch: expected #{provider}, got #{auth_provider}", is_mobile)
 
-      other ->
-        IO.puts "=== OAUTH UNEXPECTED ==="
-        IO.puts "Unexpected auth result: #{inspect(other)}"
-        IO.puts "========================"
-
-        conn
-        |> put_flash(:error, "OAuth authentication failed")
-        |> redirect(to: ~p"/auth/login")
+        _other ->
+          handle_oauth_error(conn, "OAuth authentication failed", is_mobile)
+      end
     end
+  end
+
+  defp handle_oauth_error(conn, message, true = _is_mobile) do
+    # Mobile error - redirect to app with error
+    encoded_error = URI.encode(message)
+    redirect(conn, external: "buttonlog://oauth?error=#{encoded_error}")
+  end
+
+  defp handle_oauth_error(conn, message, false = _is_mobile) do
+    # Web error - flash and redirect to login
+    conn
+    |> put_flash(:error, message)
+    |> redirect(to: ~p"/auth/login")
   end
 
   def delete(conn, %{"provider" => provider}) do
@@ -146,17 +148,6 @@ defmodule ButtonLogWeb.AuthController do
 
   # Private OAuth helper functions
   defp handle_oauth_callback(auth, provider) do
-    IO.puts "=== HANDLE OAUTH CALLBACK DEBUG ==="
-    IO.puts "Provider: #{provider}"
-    IO.puts "Auth UID: #{auth.uid}"
-    IO.puts "Auth email: #{auth.info.email}"
-    IO.puts "================================"
-
-    result = Accounts.find_or_create_oauth_user(auth, provider)
-    IO.puts "=== OAUTH RESULT ==="
-    IO.puts "Result: #{inspect(result)}"
-    IO.puts "==================="
-
-    result
+    Accounts.find_or_create_oauth_user(auth, provider)
   end
 end

@@ -37,6 +37,8 @@ import com.buttonlog.app.ui.viewmodels.AuthViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import android.util.Base64
 
 // Google OAuth Web Client ID from Google Cloud Console
 private const val GOOGLE_WEB_CLIENT_ID = "789726851913-bmttjvlpaatgv2dde08vs05ihndkskfd.apps.googleusercontent.com"
@@ -90,12 +92,27 @@ fun LoginScreen(
 
                 // Extract user info from the Google credential
                 val userEmail = googleIdTokenCredential.id
-                val userId = googleIdTokenCredential.id // Use email as UID for Google
                 val displayName = googleIdTokenCredential.displayName
                 val givenName = googleIdTokenCredential.givenName
                 val familyName = googleIdTokenCredential.familyName
                 val profilePictureUri = googleIdTokenCredential.profilePictureUri?.toString()
                 val idToken = googleIdTokenCredential.idToken
+
+                // Extract the 'sub' claim from the ID token for a stable unique user ID
+                // The ID token is a JWT with format: header.payload.signature
+                val userId = try {
+                    val parts = idToken.split(".")
+                    if (parts.size >= 2) {
+                        val payload = String(Base64.decode(parts[1], Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP))
+                        val json = JSONObject(payload)
+                        json.optString("sub", userEmail) // Use 'sub' claim, fallback to email
+                    } else {
+                        userEmail
+                    }
+                } catch (e: Exception) {
+                    Log.w("LoginScreen", "Failed to extract sub from ID token, using email as UID", e)
+                    userEmail
+                }
 
                 // Send to backend
                 viewModel.loginWithOAuth(
