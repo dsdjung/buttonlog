@@ -90,15 +90,27 @@ defmodule ButtonLog.PushNotifications do
   @doc """
   Sends a button click notification to a friend.
   The action_past parameter specifies the action verb (started, stopped, clicked).
+  The selected_choice parameter is for one-time buttons with multiple choice options.
   """
-  def send_button_click_notification(recipient_id, sender_name, button_name, button_id, action_past \\ "clicked") do
-    title = "#{sender_name} #{action_past} a button"
-    body = "#{sender_name} just #{action_past} '#{button_name}'"
+  def send_button_click_notification(recipient_id, sender_name, button_name, button_id, action_past \\ "clicked", selected_choice \\ nil) do
+    {title, body} = if selected_choice do
+      {
+        "#{button_name}: #{selected_choice}",
+        "#{sender_name} answered '#{selected_choice}' on '#{button_name}'"
+      }
+    else
+      {
+        "#{sender_name} #{action_past} a button",
+        "#{sender_name} just #{action_past} '#{button_name}'"
+      }
+    end
+
     data = %{
       "type" => "button_click",
       "button_id" => button_id,
       "action" => "view_button",
-      "action_type" => action_past
+      "action_type" => action_past,
+      "selected_choice" => selected_choice
     }
 
     send_to_user(recipient_id, title, body, data)

@@ -263,6 +263,22 @@ defmodule ButtonLog.Alerts do
         action = click_data[:action] || click_data["action"] || "click"
         {_action_verb, action_past} = get_action_verbs(action)
 
+        # Get selected choice if present (for one-time buttons with choices)
+        selected_choice = click_data[:selected_choice] || click_data["selected_choice"]
+
+        # Build title and message including choice if present
+        {title, message} = if selected_choice do
+          {
+            "#{button_data.name}: #{selected_choice}",
+            "#{button_owner.display_name} answered '#{selected_choice}' on '#{button_data.name}'"
+          }
+        else
+          {
+            "#{button_data.name} was #{action_past}!",
+            "#{button_owner.display_name} just #{action_past} their '#{button_data.name}' button"
+          }
+        end
+
         # Send alerts to each recipient
         results =
           Enum.map(recipients, fn friend ->
@@ -271,9 +287,8 @@ defmodule ButtonLog.Alerts do
               create_alert(
                 %{
                   alert_type: "button_click",
-                  title: "#{button_data.name} was #{action_past}!",
-                  message:
-                    "#{button_owner.display_name} just #{action_past} their '#{button_data.name}' button",
+                  title: title,
+                  message: message,
                   clicked_at: click_data[:clicked_at] || DateTime.utc_now(),
                   metadata: click_data
                 },
@@ -289,7 +304,8 @@ defmodule ButtonLog.Alerts do
                 button_owner.display_name,
                 button_data.name,
                 button_id,
-                action_past
+                action_past,
+                selected_choice
               )
             end)
 
@@ -299,13 +315,13 @@ defmodule ButtonLog.Alerts do
               "alert_received",
               %{
                 type: "button_click",
-                title: "#{button_data.name} was #{action_past}!",
-                message:
-                  "#{button_owner.display_name} just #{action_past} their '#{button_data.name}' button",
+                title: title,
+                message: message,
                 button_id: button_id,
                 sender_id: user_id,
                 sender_name: button_owner.display_name,
-                action: action
+                action: action,
+                selected_choice: selected_choice
               }
             )
 
