@@ -38,8 +38,8 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
 
-// Google OAuth Web Client ID - replace with your actual client ID from Google Cloud Console
-private const val GOOGLE_WEB_CLIENT_ID = "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com"
+// Google OAuth Web Client ID from Google Cloud Console
+private const val GOOGLE_WEB_CLIENT_ID = "789726851913-bmttjvlpaatgv2dde08vs05ihndkskfd.apps.googleusercontent.com"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
