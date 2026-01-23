@@ -210,6 +210,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 }
                 composable("notifications") {
                     NotificationsScreen(
+                        viewModel = notificationsViewModel,
                         onNavigate = { destination ->
                             when (destination) {
                                 is NotificationNavigation.Button -> {
