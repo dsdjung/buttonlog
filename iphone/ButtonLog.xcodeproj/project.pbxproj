@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		1A5727A42F22518300C2C16A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5727A32F22518300C2C16A /* OnboardingView.swift */; };
+		1A5727A72F243BE300C2C16A /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 1A5727A62F243BE300C2C16A /* GoogleSignIn */; };
+		1A5727A92F243BE300C2C16A /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1A5727A82F243BE300C2C16A /* GoogleSignInSwift */; };
 		CD01234567890ABC /* ButtonLogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD01234567890ABB /* ButtonLogApp.swift */; };
 		CD01234567890ABE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD01234567890ABD /* ContentView.swift */; };
 		CD01234567890AC0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD01234567890ABF /* Assets.xcassets */; };
@@ -96,6 +98,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A5727A72F243BE300C2C16A /* GoogleSignIn in Frameworks */,
+				1A5727A92F243BE300C2C16A /* GoogleSignInSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,14 +136,6 @@
 				CD01234567890AC1 /* Preview Content */,
 			);
 			path = ButtonLog;
-			sourceTree = "<group>";
-		};
-		CD11234567890104 /* Theme */ = {
-			isa = PBXGroup;
-			children = (
-				CD11234567890062 /* DesignTokens.swift */,
-			);
-			path = Theme;
 			sourceTree = "<group>";
 		};
 		CD01234567890AC1 /* Preview Content */ = {
@@ -212,6 +208,14 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		CD11234567890104 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				CD11234567890062 /* DesignTokens.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -256,6 +260,9 @@
 				Base,
 			);
 			mainGroup = CD01234567890AAF;
+			packageReferences = (
+				1A5727A52F243BE300C2C16A /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			productRefGroup = CD01234567890AB9 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -450,12 +457,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ButtonLog/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ButtonLog/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -478,12 +481,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ButtonLog/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ButtonLog/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -519,6 +518,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1A5727A52F243BE300C2C16A /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1A5727A62F243BE300C2C16A /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A5727A52F243BE300C2C16A /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		1A5727A82F243BE300C2C16A /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A5727A52F243BE300C2C16A /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CD01234567890AB0 /* Project object */;
 }

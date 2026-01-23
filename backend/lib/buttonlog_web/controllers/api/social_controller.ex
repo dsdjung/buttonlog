@@ -78,7 +78,10 @@ defmodule ButtonLogWeb.API.SocialController do
           nil ->
             # User not found - send invitation email
             {:invitation, params["email"]}
-          friend -> {:ok, friend.id}
+          friend ->
+            # User found - send friend request
+            # Response format is identical to invitation to prevent email enumeration
+            {:existing_user, friend.id, params["email"]}
         end
 
       Map.has_key?(params, "username") ->
@@ -93,7 +96,7 @@ defmodule ButtonLogWeb.API.SocialController do
 
     case friend_result do
       {:ok, friend_id} ->
-        # Don't allow sending friend request to yourself
+        # Friend request by friend_id (not email) - return detailed response
         if friend_id == user.id do
           conn
           |> put_status(:bad_request)
@@ -142,8 +145,65 @@ defmodule ButtonLogWeb.API.SocialController do
           end
         end
 
+      {:existing_user, friend_id, email} ->
+        # Friend request by email - user exists
+        # Return unified response (same as invitation) to prevent email enumeration
+        if friend_id == user.id do
+          conn
+          |> put_status(:bad_request)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "INVALID_REQUEST",
+              message: "Cannot send friend request to yourself"
+            }
+          })
+        else
+          case Social.send_friend_request(user.id, friend_id) do
+            {:ok, _friendship} ->
+              # Return same format as invitation to prevent enumeration
+              conn
+              |> put_status(:created)
+              |> json(%{
+                success: true,
+                data: %{
+                  request_sent: true,
+                  email: email,
+                  message: "Friend request sent to #{email}"
+                }
+              })
+
+            {:error, :already_friends} ->
+              # Still return success to prevent enumeration
+              conn
+              |> put_status(:created)
+              |> json(%{
+                success: true,
+                data: %{
+                  request_sent: true,
+                  email: email,
+                  message: "Friend request sent to #{email}"
+                }
+              })
+
+            {:error, :user_not_found} ->
+              # Shouldn't happen, but handle gracefully
+              conn
+              |> put_status(:created)
+              |> json(%{
+                success: true,
+                data: %{
+                  request_sent: true,
+                  email: email,
+                  message: "Friend request sent to #{email}"
+                }
+              })
+          end
+        end
+
       {:invitation, email} ->
         # Send invitation email to unregistered user
+        # Response format matches existing user to prevent email enumeration
         case Social.send_friend_invitation(user.id, email) do
           {:ok, :invitation_sent} ->
             conn
@@ -151,20 +211,25 @@ defmodule ButtonLogWeb.API.SocialController do
             |> json(%{
               success: true,
               data: %{
-                invitation_sent: true,
+                request_sent: true,
                 email: email,
-                message: "Invitation email sent to #{email}"
+                message: "Friend request sent to #{email}"
               }
             })
 
           {:error, :email_failed} ->
+            # Even on email failure, return success to prevent enumeration
+            # Log the error server-side instead
+            require Logger
+            Logger.error("Failed to send invitation email to #{email}")
             conn
-            |> put_status(:internal_server_error)
+            |> put_status(:created)
             |> json(%{
-              success: false,
-              error: %{
-                code: "EMAIL_FAILED",
-                message: "Failed to send invitation email"
+              success: true,
+              data: %{
+                request_sent: true,
+                email: email,
+                message: "Friend request sent to #{email}"
               }
             })
         end

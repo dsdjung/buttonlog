@@ -70,18 +70,35 @@ defmodule ButtonLogWeb.API.SocialControllerTest do
     end
 
     test "sends a friend request by email", %{conn: conn, user: _user, token: token} do
-      other_user = insert_user(%{email: "byemail@test.com", username: "byemail"})
+      _other_user = insert_user(%{email: "byemail@test.com", username: "byemail"})
 
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{token}")
         |> post("/api/friends/request", %{email: "byemail@test.com"})
 
+      # Response format is unified (same for existing users and invitations)
+      # to prevent email enumeration attacks
       assert %{"success" => true, "data" => data} = json_response(conn, 201)
-      assert data["friend_id"] == other_user.id
+      assert data["request_sent"] == true
+      assert data["email"] == "byemail@test.com"
     end
 
-    test "returns error for non-existent user", %{conn: conn, token: token} do
+    test "sends invitation for unregistered email (same response as registered)", %{conn: conn, token: token} do
+      # When sending friend request to an unregistered email,
+      # the response should be identical to a registered user
+      # to prevent email enumeration attacks
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/friends/request", %{email: "unregistered@example.com"})
+
+      assert %{"success" => true, "data" => data} = json_response(conn, 201)
+      assert data["request_sent"] == true
+      assert data["email"] == "unregistered@example.com"
+    end
+
+    test "returns error for non-existent user by friend_id", %{conn: conn, token: token} do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{token}")

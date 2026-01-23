@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import AuthenticationServices
+import GoogleSignIn
 
 @MainActor
 class AuthenticationManager: NSObject, ObservableObject {
@@ -13,7 +14,6 @@ class AuthenticationManager: NSObject, ObservableObject {
 
     private let apiService = APIService.shared
     private var cancellables = Set<AnyCancellable>()
-    private var webAuthSession: ASWebAuthenticationSession?
 
     // UserDefaults key for persisting onboarding state
     private let onboardingCompletedKey = "buttonlog_onboarding_completed"
@@ -96,102 +96,75 @@ class AuthenticationManager: NSObject, ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        let baseURL = apiService.oauthBaseURL
-        let callbackURLScheme = "buttonlog"
-
-        guard let url = URL(string: "\(baseURL)/auth/google?mobile=true") else {
-            errorMessage = "Failed to create OAuth URL"
+        // Use native Google Sign-In SDK (same approach as Android)
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            errorMessage = "Unable to get root view controller"
             isLoading = false
             return
         }
 
-        // Use ASWebAuthenticationSession for OAuth flow
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            webAuthSession = ASWebAuthenticationSession(
-                url: url,
-                callbackURLScheme: callbackURLScheme
-            ) { [weak self] callbackURL, error in
-                Task { @MainActor in
-                    defer { continuation.resume() }
+        // Ensure Google Sign-In is configured
+        if GIDSignIn.sharedInstance.configuration == nil {
+            guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String else {
+                errorMessage = "Google Sign-In not configured: Missing GIDClientID in Info.plist"
+                isLoading = false
+                return
+            }
+            GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+        }
 
-                    if let error = error {
-                        if (error as NSError).code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
-                            self?.errorMessage = nil // User cancelled, no error
-                        } else {
-                            self?.errorMessage = error.localizedDescription
-                        }
-                        self?.isLoading = false
-                        return
-                    }
+        do {
+            // Use the Google Sign-In SDK to authenticate natively
+            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
 
-                    guard let callbackURL = callbackURL else {
-                        self?.errorMessage = "No callback URL received"
-                        self?.isLoading = false
-                        return
-                    }
-
-                    // Parse the callback URL for token or code
-                    await self?.handleOAuthCallback(callbackURL)
-                }
+            guard let idToken = result.user.idToken?.tokenString else {
+                errorMessage = "Failed to get ID token from Google"
+                isLoading = false
+                return
             }
 
-            webAuthSession?.presentationContextProvider = self
-            webAuthSession?.prefersEphemeralWebBrowserSession = false
-            webAuthSession?.start()
-        }
-    }
+            let user = result.user
+            let email = user.profile?.email ?? ""
+            let uid = user.userID ?? email
+            let name = user.profile?.name
+            let givenName = user.profile?.givenName
+            let familyName = user.profile?.familyName
+            let imageURL = user.profile?.imageURL(withDimension: 200)?.absoluteString
 
-    private func handleOAuthCallback(_ url: URL) async {
-        // Parse URL components
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            errorMessage = "Failed to parse callback URL"
-            isLoading = false
-            return
-        }
+            // Build user info dictionary, filtering out nil values
+            var userInfo: [String: Any] = [
+                "email": email,
+                "uid": uid,
+                "access_token": idToken
+            ]
+            if let name = name { userInfo["name"] = name }
+            if let givenName = givenName { userInfo["first_name"] = givenName }
+            if let familyName = familyName { userInfo["last_name"] = familyName }
+            if let imageURL = imageURL { userInfo["image"] = imageURL }
 
-        let queryItems = components.queryItems ?? []
+            // Send user info to backend (same as Android does)
+            let response = try await apiService.authenticateWithOAuth(
+                provider: "google",
+                userInfo: userInfo
+            )
 
-        // Check for direct token (if server returns token directly)
-        if let token = queryItems.first(where: { $0.name == "token" })?.value {
-            KeychainManager.shared.saveToken(token)
+            KeychainManager.shared.saveToken(response.token)
             isAuthenticated = true
-            await loadCurrentUser()
-            isLoading = false
-            return
-        }
+            currentUser = response.user
+            setOnboardingCompleted(response.user.onboardingCompleted)
 
-        // Check for authorization code (if server uses code flow)
-        if let code = queryItems.first(where: { $0.name == "code" })?.value {
-            let state = queryItems.first(where: { $0.name == "state" })?.value
-
-            do {
-                let response = try await apiService.exchangeOAuthCode(
-                    provider: "google",
-                    code: code,
-                    state: state
-                )
-
-                KeychainManager.shared.saveToken(response.token)
-                isAuthenticated = true
-                currentUser = response.user
-                setOnboardingCompleted(response.user.onboardingCompleted)
-            } catch {
+        } catch let error as GIDSignInError {
+            if error.code == .canceled {
+                // User cancelled, no error message needed
+                errorMessage = nil
+            } else {
                 errorMessage = error.localizedDescription
             }
-
-            isLoading = false
-            return
+        } catch {
+            errorMessage = error.localizedDescription
         }
 
-        // Check for error
-        if let error = queryItems.first(where: { $0.name == "error" })?.value {
-            let errorDescription = queryItems.first(where: { $0.name == "error_description" })?.value
-            errorMessage = errorDescription ?? error
-            isLoading = false
-            return
-        }
-
-        errorMessage = "Invalid OAuth callback"
         isLoading = false
     }
 
@@ -270,18 +243,6 @@ class AuthenticationManager: NSObject, ObservableObject {
             // Still mark as completed locally to not block the user
             setOnboardingCompleted(true)
         }
-    }
-}
-
-// MARK: - ASWebAuthenticationPresentationContextProviding
-
-extension AuthenticationManager: ASWebAuthenticationPresentationContextProviding {
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first else {
-            return ASPresentationAnchor()
-        }
-        return window
     }
 }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import GoogleSignIn
 
 @main
 struct ButtonLogApp: App {
@@ -47,7 +48,27 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         // Set push notification delegate
         UNUserNotificationCenter.current().delegate = PushNotificationManager.shared
+
+        // Configure Google Sign-In with client ID from Info.plist
+        if let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String {
+            print("DEBUG: Found GIDClientID: \(clientID)")
+            let config = GIDConfiguration(clientID: clientID)
+            GIDSignIn.sharedInstance.configuration = config
+            print("DEBUG: Google Sign-In configured successfully")
+        } else {
+            print("DEBUG: GIDClientID not found in Info.plist!")
+        }
+
         return true
+    }
+
+    // Handle Google Sign-In URL callback
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        return GIDSignIn.sharedInstance.handle(url)
     }
 
     func application(
