@@ -30,6 +30,7 @@ import com.buttonlog.app.ui.screens.ButtonsScreen
 import com.buttonlog.app.ui.screens.DiaryScreen
 import com.buttonlog.app.ui.screens.CreateButtonScreen
 import com.buttonlog.app.ui.screens.CreateGiftButtonScreen
+import com.buttonlog.app.ui.screens.CreatedGiftButtonsScreen
 import com.buttonlog.app.ui.screens.EditButtonScreen
 import com.buttonlog.app.ui.screens.FriendDetailScreen
 import com.buttonlog.app.ui.screens.FriendsScreen
@@ -94,6 +95,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var showTeamsScreen by remember { mutableStateOf(false) }
     var showOrganizationsScreen by remember { mutableStateOf(false) }
     var showSubscriptionScreen by remember { mutableStateOf(false) }
+    var showCreatedGiftButtonsScreen by remember { mutableStateOf(false) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
     val notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -201,6 +203,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onFriendSelected = { friend ->
                             selectedFriend = friend
                             friendsViewModel.selectFriend(friend)
+                        },
+                        onCreatedGiftButtonsClick = {
+                            showCreatedGiftButtonsScreen = true
                         },
                         viewModel = friendsViewModel
                     )
@@ -447,6 +452,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     if (showSubscriptionScreen) {
         SubscriptionScreen(
             onBackClick = { showSubscriptionScreen = false }
+        )
+    }
+
+    // Created Gift Buttons Screen
+    if (showCreatedGiftButtonsScreen) {
+        CreatedGiftButtonsScreen(
+            onNavigateBack = { showCreatedGiftButtonsScreen = false }
         )
     }
 }

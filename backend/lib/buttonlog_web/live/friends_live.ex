@@ -2,6 +2,7 @@ defmodule ButtonLogWeb.FriendsLive do
   use ButtonLogWeb, :live_view
   alias ButtonLog.Social
   alias ButtonLog.Accounts
+  alias ButtonLog.Buttons
 
   @impl true
   def mount(_params, session, socket) do
@@ -14,6 +15,7 @@ defmodule ButtonLogWeb.FriendsLive do
       friends = Social.get_user_friends(user_id)
       pending_requests = Social.get_pending_friend_requests(user_id)
       sent_requests = Social.get_sent_friend_requests(user_id)
+      created_gift_buttons = Buttons.list_created_gift_buttons(user_id)
 
       {:ok,
        socket
@@ -21,6 +23,9 @@ defmodule ButtonLogWeb.FriendsLive do
        |> assign(:friends, friends)
        |> assign(:pending_requests, pending_requests)
        |> assign(:sent_requests, sent_requests)
+       |> assign(:created_gift_buttons, created_gift_buttons)
+       |> assign(:show_gift_buttons, false)
+       |> assign(:editing_gift_button, nil)
        |> assign(:search_query, "")
        |> assign(:search_results, [])
        |> assign(:page_title, "Friends")}
@@ -31,6 +36,9 @@ defmodule ButtonLogWeb.FriendsLive do
        |> assign(:friends, [])
        |> assign(:pending_requests, [])
        |> assign(:sent_requests, [])
+       |> assign(:created_gift_buttons, [])
+       |> assign(:show_gift_buttons, false)
+       |> assign(:editing_gift_button, nil)
        |> assign(:search_query, "")
        |> assign(:search_results, [])
        |> assign(:page_title, "Friends")}
@@ -145,6 +153,72 @@ defmodule ButtonLogWeb.FriendsLive do
 
       {:error, _reason} ->
         {:noreply, socket |> put_flash(:error, "Failed to cancel friend request")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_gift_buttons", _params, socket) do
+    {:noreply, assign(socket, :show_gift_buttons, !socket.assigns.show_gift_buttons)}
+  end
+
+  @impl true
+  def handle_event("edit_gift_button", %{"button_id" => button_id}, socket) do
+    button = Enum.find(socket.assigns.created_gift_buttons, &(&1.id == button_id))
+    {:noreply, assign(socket, :editing_gift_button, button)}
+  end
+
+  @impl true
+  def handle_event("cancel_edit_gift_button", _params, socket) do
+    {:noreply, assign(socket, :editing_gift_button, nil)}
+  end
+
+  @impl true
+  def handle_event("save_gift_button", %{"button" => button_params}, socket) do
+    user_id = socket.assigns.current_user.id
+    button = socket.assigns.editing_gift_button
+
+    case Buttons.get_button_for_edit(button.id, user_id) do
+      {:ok, db_button} ->
+        case Buttons.update_button(db_button, button_params) do
+          {:ok, _updated_button} ->
+            created_gift_buttons = Buttons.list_created_gift_buttons(user_id)
+
+            {:noreply,
+             socket
+             |> put_flash(:info, "Gift button updated!")
+             |> assign(:created_gift_buttons, created_gift_buttons)
+             |> assign(:editing_gift_button, nil)}
+
+          {:error, _changeset} ->
+            {:noreply, socket |> put_flash(:error, "Failed to update gift button")}
+        end
+
+      {:error, _reason} ->
+        {:noreply, socket |> put_flash(:error, "Button not found or not authorized")}
+    end
+  end
+
+  @impl true
+  def handle_event("delete_gift_button", %{"button_id" => button_id}, socket) do
+    user_id = socket.assigns.current_user.id
+
+    case Buttons.get_button_for_edit(button_id, user_id) do
+      {:ok, button} ->
+        case Buttons.delete_button(button) do
+          {:ok, _deleted} ->
+            created_gift_buttons = Buttons.list_created_gift_buttons(user_id)
+
+            {:noreply,
+             socket
+             |> put_flash(:info, "Gift button deleted")
+             |> assign(:created_gift_buttons, created_gift_buttons)}
+
+          {:error, _reason} ->
+            {:noreply, socket |> put_flash(:error, "Failed to delete gift button")}
+        end
+
+      {:error, _reason} ->
+        {:noreply, socket |> put_flash(:error, "Button not found or not authorized")}
     end
   end
 end
