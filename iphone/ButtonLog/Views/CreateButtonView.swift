@@ -3,8 +3,12 @@ import SwiftUI
 struct CreateButtonView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject private var appState: AppState
-    
-    @State private var formData = ButtonFormData()
+
+    @State private var formData: ButtonFormData = {
+        var data = ButtonFormData()
+        data.choices = ["", ""]  // Initialize with 2 empty choices for one-time buttons
+        return data
+    }()
     @State private var isLoading = false
     @State private var showingColorPicker = false
     
