@@ -499,7 +499,11 @@ struct CreateGiftButtonView: View {
 
     let friend: Friend
 
-    @State private var formData = ButtonFormData(type: .oneTime)
+    @State private var formData: ButtonFormData = {
+        var data = ButtonFormData(type: .oneTime)
+        data.choices = ["", ""]  // Initialize with 2 empty choices for one-time buttons
+        return data
+    }()
     @State private var giftMessage: String = ""
     @State private var isLoading = false
 
@@ -741,19 +745,46 @@ struct GiftButtonPreview: View {
                 Spacer()
             }
 
-            SwiftUI.Button("Click!") {
-                // Preview button - no action
+            // Show choice buttons if valid choices exist, otherwise show single button
+            if formData.type == .oneTime && formData.hasValidChoices {
+                VStack(spacing: 8) {
+                    Text("Select an option:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        ForEach(formData.choices.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, id: \.self) { choice in
+                            SwiftUI.Button(choice) {
+                                // Preview button - no action
+                            }
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(hex: formData.color))
+                            )
+                            .disabled(true)
+                        }
+                    }
+                }
+            } else {
+                SwiftUI.Button("Click!") {
+                    // Preview button - no action
+                }
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(hex: formData.color))
+                )
+                .disabled(true)
             }
-            .font(.headline)
-            .fontWeight(.semibold)
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(hex: formData.color))
-            )
-            .disabled(true)
         }
         .padding()
         .background(Color(.systemBackground))
