@@ -177,6 +177,15 @@ defmodule ButtonLogWeb.FriendsLive do
     user_id = socket.assigns.current_user.id
     button = socket.assigns.editing_gift_button
 
+    # Filter out empty choices
+    button_params = case button_params do
+      %{"choices" => choices} when is_list(choices) ->
+        filtered_choices = Enum.filter(choices, &(String.trim(&1) != ""))
+        Map.put(button_params, "choices", filtered_choices)
+      _ ->
+        button_params
+    end
+
     case Buttons.update_button(button.id, button_params, user_id) do
       {:ok, _updated_button} ->
         created_gift_buttons = Buttons.list_created_gift_buttons(user_id)
