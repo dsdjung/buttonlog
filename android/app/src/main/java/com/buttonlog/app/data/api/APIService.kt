@@ -437,6 +437,7 @@ data class ButtonUpdateData(
     val description: String?,
     val icon: String?,
     val color: String?,
+    val choices: List<String>?,
     @SerializedName("alerts_enabled")
     val alertsEnabled: Boolean?,
     @SerializedName("auto_stop_enabled")

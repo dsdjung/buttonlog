@@ -87,6 +87,7 @@ class ButtonRepository @Inject constructor(
                 description = button.description,
                 icon = button.icon,
                 color = button.color,
+                choices = button.choices,
                 alertsEnabled = button.alertsEnabled,
                 autoStopEnabled = button.autoStopEnabled,
                 calendarSyncEnabled = button.calendarSyncEnabled
@@ -261,6 +262,7 @@ class ButtonRepository @Inject constructor(
                 description = buttonData.description.ifEmpty { null },
                 icon = buttonData.icon,
                 color = buttonData.color,
+                choices = buttonData.choices.ifEmpty { null },
                 alertsEnabled = buttonData.alertsEnabled,
                 autoStopEnabled = buttonData.autoStopEnabled,
                 calendarSyncEnabled = buttonData.calendarSyncEnabled
