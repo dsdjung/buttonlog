@@ -177,24 +177,18 @@ defmodule ButtonLogWeb.FriendsLive do
     user_id = socket.assigns.current_user.id
     button = socket.assigns.editing_gift_button
 
-    case Buttons.get_button_for_edit(button.id, user_id) do
-      {:ok, db_button} ->
-        case Buttons.update_button(db_button, button_params) do
-          {:ok, _updated_button} ->
-            created_gift_buttons = Buttons.list_created_gift_buttons(user_id)
+    case Buttons.update_button(button.id, button_params, user_id) do
+      {:ok, _updated_button} ->
+        created_gift_buttons = Buttons.list_created_gift_buttons(user_id)
 
-            {:noreply,
-             socket
-             |> put_flash(:info, "Gift button updated!")
-             |> assign(:created_gift_buttons, created_gift_buttons)
-             |> assign(:editing_gift_button, nil)}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Gift button updated!")
+         |> assign(:created_gift_buttons, created_gift_buttons)
+         |> assign(:editing_gift_button, nil)}
 
-          {:error, _changeset} ->
-            {:noreply, socket |> put_flash(:error, "Failed to update gift button")}
-        end
-
-      {:error, _reason} ->
-        {:noreply, socket |> put_flash(:error, "Button not found or not authorized")}
+      {:error, _changeset} ->
+        {:noreply, socket |> put_flash(:error, "Failed to update gift button")}
     end
   end
 
@@ -202,23 +196,17 @@ defmodule ButtonLogWeb.FriendsLive do
   def handle_event("delete_gift_button", %{"button_id" => button_id}, socket) do
     user_id = socket.assigns.current_user.id
 
-    case Buttons.get_button_for_edit(button_id, user_id) do
-      {:ok, button} ->
-        case Buttons.delete_button(button) do
-          {:ok, _deleted} ->
-            created_gift_buttons = Buttons.list_created_gift_buttons(user_id)
+    case Buttons.delete_button(button_id, user_id) do
+      {:ok, _deleted} ->
+        created_gift_buttons = Buttons.list_created_gift_buttons(user_id)
 
-            {:noreply,
-             socket
-             |> put_flash(:info, "Gift button deleted")
-             |> assign(:created_gift_buttons, created_gift_buttons)}
-
-          {:error, _reason} ->
-            {:noreply, socket |> put_flash(:error, "Failed to delete gift button")}
-        end
+        {:noreply,
+         socket
+         |> put_flash(:info, "Gift button deleted")
+         |> assign(:created_gift_buttons, created_gift_buttons)}
 
       {:error, _reason} ->
-        {:noreply, socket |> put_flash(:error, "Button not found or not authorized")}
+        {:noreply, socket |> put_flash(:error, "Failed to delete gift button")}
     end
   end
 end
