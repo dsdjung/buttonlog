@@ -24,6 +24,15 @@ class AuthViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    init {
+        // Register FCM token if user is already logged in
+        if (authRepository.hasToken()) {
+            viewModelScope.launch {
+                authRepository.registerFcmToken()
+            }
+        }
+    }
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _isLoading.value = true
