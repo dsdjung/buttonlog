@@ -60,14 +60,18 @@ class AppState: ObservableObject {
     func loadButtons() async {
         isLoadingButtons = true
         errorMessage = nil
-        
+
         do {
             let buttons = try await apiService.getButtons()
             self.buttons = buttons
+        } catch is CancellationError {
+            // Task was cancelled (e.g., pull-to-refresh released early), ignore silently
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            // URLSession request was cancelled, ignore silently
         } catch {
             errorMessage = "Failed to load buttons: \(error.localizedDescription)"
         }
-        
+
         isLoadingButtons = false
     }
     
