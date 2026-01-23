@@ -690,8 +690,16 @@ fun CreateGiftButtonScreen(
     var selectedIcon by remember { mutableStateOf("star") }
     var selectedColor by remember { mutableStateOf("#007AFF") }
     var giftMessage by remember { mutableStateOf("") }
+    var choices by remember { mutableStateOf(mutableListOf("", "")) }
 
     val scrollState = rememberScrollState()
+
+    // Reset choices when type changes
+    LaunchedEffect(selectedType) {
+        if (selectedType != ButtonType.ONE_TIME) {
+            choices = mutableListOf("", "")
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -713,7 +721,12 @@ fun CreateGiftButtonScreen(
                                 color = selectedColor,
                                 alertsEnabled = true,
                                 autoStopEnabled = false,
-                                calendarSyncEnabled = false
+                                calendarSyncEnabled = false,
+                                choices = if (selectedType == ButtonType.ONE_TIME) {
+                                    choices.filter { it.trim().isNotEmpty() }.toMutableList()
+                                } else {
+                                    mutableListOf()
+                                }
                             )
                             onCreateButton(formData, giftMessage.ifEmpty { null })
                         },
@@ -818,6 +831,14 @@ fun CreateGiftButtonScreen(
                 selectedType = selectedType,
                 onTypeSelected = { selectedType = it }
             )
+
+            // Choices section (only for one-time buttons)
+            if (selectedType == ButtonType.ONE_TIME) {
+                ChoicesSection(
+                    choices = choices,
+                    onChoicesChange = { choices = it.toMutableList() }
+                )
+            }
 
             // Icon selector
             Text(

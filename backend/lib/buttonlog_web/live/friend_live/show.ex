@@ -54,6 +54,7 @@ defmodule ButtonLogWeb.FriendLive.Show do
            |> assign(:gift_button_icon, "star")
            |> assign(:gift_button_color, "#00BFA5")
            |> assign(:gift_button_message, "")
+           |> assign(:gift_button_choices, ["", ""])
            |> assign(:my_permissions, my_permissions)
            |> assign(:show_permissions_form, false)
            |> assign(:page_title, "#{friend.display_name}'s Profile")}
@@ -105,12 +106,29 @@ defmodule ButtonLogWeb.FriendLive.Show do
      |> assign(:gift_button_type, "one-time")
      |> assign(:gift_button_icon, "star")
      |> assign(:gift_button_color, "#00BFA5")
-     |> assign(:gift_button_message, "")}
+     |> assign(:gift_button_message, "")
+     |> assign(:gift_button_choices, ["", ""])}
   end
 
   @impl true
   def handle_event("select_button_type", %{"type" => type}, socket) do
+    # Reset choices when switching away from one-time type
+    socket = if type != "one-time" do
+      socket |> assign(:gift_button_choices, ["", ""])
+    else
+      socket
+    end
     {:noreply, socket |> assign(:gift_button_type, type)}
+  end
+
+  @impl true
+  def handle_event("update-gift-choices", %{"choices_json" => choices_json}, socket) do
+    # Parse JSON from the hidden input
+    choices = case Jason.decode(choices_json) do
+      {:ok, list} when is_list(list) -> Enum.map(list, &to_string/1)
+      _ -> ["", ""]
+    end
+    {:noreply, socket |> assign(:gift_button_choices, choices)}
   end
 
   @impl true
@@ -133,11 +151,24 @@ defmodule ButtonLogWeb.FriendLive.Show do
     user_id = socket.assigns.current_user.id
     friend_id = socket.assigns.friend.id
 
+    # Filter out empty choices and only include if we have at least 2
+    choices = socket.assigns.gift_button_choices
+    |> Enum.map(&String.trim/1)
+    |> Enum.filter(&(&1 != ""))
+
+    # Only include choices for one-time buttons with at least 2 valid choices
+    choices_for_button = if socket.assigns.gift_button_type == "one-time" && length(choices) >= 2 do
+      choices
+    else
+      nil
+    end
+
     button_attrs = %{
       "name" => socket.assigns.gift_button_name,
       "type" => socket.assigns.gift_button_type,
       "icon" => socket.assigns.gift_button_icon,
-      "color" => socket.assigns.gift_button_color
+      "color" => socket.assigns.gift_button_color,
+      "choices" => choices_for_button
     }
 
     message = case socket.assigns.gift_button_message do
@@ -159,7 +190,8 @@ defmodule ButtonLogWeb.FriendLive.Show do
          |> assign(:gift_button_type, "one-time")
          |> assign(:gift_button_icon, "star")
          |> assign(:gift_button_color, "#00BFA5")
-         |> assign(:gift_button_message, "")}
+         |> assign(:gift_button_message, "")
+         |> assign(:gift_button_choices, ["", ""])}
 
       {:error, :not_friends} ->
         {:noreply, socket |> put_flash(:error, "You can only create buttons for friends")}
