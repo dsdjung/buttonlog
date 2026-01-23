@@ -47,15 +47,27 @@ class ButtonLogFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        Log.d(TAG, "Message received from: ${message.from}")
+        Log.d(TAG, "=== FCM MESSAGE RECEIVED ===")
+        Log.d(TAG, "Message from: ${message.from}")
+        Log.d(TAG, "Message notification: ${message.notification}")
+        Log.d(TAG, "Message data: ${message.data}")
 
         // Handle notification payload
         message.notification?.let { notification ->
+            Log.d(TAG, "Showing notification: title=${notification.title}, body=${notification.body}")
             showNotification(
                 title = notification.title ?: "ButtonLog",
                 body = notification.body ?: "",
                 data = message.data
             )
+        }
+
+        // If no notification payload but has data, still show notification
+        if (message.notification == null && message.data.isNotEmpty()) {
+            Log.d(TAG, "No notification payload, showing from data")
+            val title = message.data["title"] ?: "ButtonLog"
+            val body = message.data["body"] ?: ""
+            showNotification(title, body, message.data)
         }
 
         // Handle data payload (for silent notifications)
