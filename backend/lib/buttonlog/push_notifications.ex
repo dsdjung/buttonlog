@@ -18,6 +18,9 @@ defmodule ButtonLog.PushNotifications do
   alias ButtonLog.Mobile
 
   @fcm_host "fcm.googleapis.com"
+  @apns_host_sandbox "api.sandbox.push.apple.com"
+  @apns_host_production "api.push.apple.com"
+  @apns_port 443
 
   @doc """
   Sends a push notification to all devices for a given user.
@@ -59,18 +62,190 @@ defmodule ButtonLog.PushNotifications do
 
   @doc """
   Sends a push notification via Apple Push Notification service (APNs).
-  Currently simulates success when APNs is not fully configured.
+  Uses HTTP/2 via Finch to send notifications to iOS devices.
   """
   def send_apns(connection, title, body, data) do
     if apns_configured?() do
-      _payload = build_apns_payload(title, body, data)
-      # TODO: Implement actual APNs HTTP/2 request when credentials are configured
-      # For now, simulate success
-      Logger.debug("APNs push simulated to #{String.slice(connection.device_token, 0, 10)}...")
-      {:ok, :simulated}
+      payload = build_apns_payload(title, body, data)
+      send_apns_request(connection, payload)
     else
       Logger.debug("APNs not configured, skipping push notification")
       {:ok, :skipped}
+    end
+  end
+
+  defp send_apns_request(connection, payload) do
+    config = Application.get_env(:buttonlog, :apns, [])
+    environment = Keyword.get(config, :environment, :sandbox)
+    topic = Keyword.get(config, :topic, "com.buttonlog.app")
+
+    host = if environment == :production, do: @apns_host_production, else: @apns_host_sandbox
+    url = "https://#{host}:#{@apns_port}/3/device/#{connection.device_token}"
+
+    case get_apns_jwt() do
+      {:ok, jwt} ->
+        headers = [
+          {"authorization", "bearer #{jwt}"},
+          {"apns-topic", topic},
+          {"apns-push-type", "alert"},
+          {"apns-priority", "10"},
+          {"apns-expiration", "0"},
+          {"content-type", "application/json"}
+        ]
+
+        body = Jason.encode!(payload)
+
+        request = Finch.build(:post, url, headers, body)
+
+        case Finch.request(request, ButtonLog.Finch, receive_timeout: 30_000) do
+          {:ok, %Finch.Response{status: 200}} ->
+            Logger.debug("APNs push success to #{String.slice(connection.device_token, 0, 10)}...")
+            {:ok, :sent}
+
+          {:ok, %Finch.Response{status: 400, body: resp_body}} ->
+            Logger.warning("APNs bad request: #{resp_body}")
+            {:error, :bad_request}
+
+          {:ok, %Finch.Response{status: 403, body: resp_body}} ->
+            Logger.warning("APNs authentication error: #{resp_body}")
+            {:error, :authentication_error}
+
+          {:ok, %Finch.Response{status: 404, body: _resp_body}} ->
+            Logger.warning("APNs invalid device token, deactivating connection")
+            Mobile.deactivate_connection(connection.id)
+            {:error, :invalid_token}
+
+          {:ok, %Finch.Response{status: 410, body: _resp_body}} ->
+            Logger.warning("APNs device token is no longer active, deactivating connection")
+            Mobile.deactivate_connection(connection.id)
+            {:error, :unregistered}
+
+          {:ok, %Finch.Response{status: status, body: resp_body}} ->
+            Logger.error("APNs request failed with status #{status}: #{resp_body}")
+            {:error, {:http_error, status}}
+
+          {:error, reason} ->
+            Logger.error("APNs HTTP request failed: #{inspect(reason)}")
+            {:error, reason}
+        end
+
+      {:error, reason} ->
+        Logger.error("Failed to generate APNs JWT: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp get_apns_jwt do
+    # Check cache first
+    case :persistent_term.get({__MODULE__, :apns_token}, nil) do
+      {token, expires_at} when is_binary(token) ->
+        # APNs tokens are valid for 1 hour, refresh 5 minutes before expiry
+        if DateTime.compare(DateTime.utc_now(), expires_at) == :lt do
+          {:ok, token}
+        else
+          generate_new_apns_jwt()
+        end
+
+      _ ->
+        generate_new_apns_jwt()
+    end
+  end
+
+  defp generate_new_apns_jwt do
+    config = Application.get_env(:buttonlog, :apns, [])
+    key_id = Keyword.get(config, :key_id)
+    team_id = Keyword.get(config, :team_id)
+    key_path = Keyword.get(config, :key_path)
+
+    with {:ok, private_key_pem} <- read_apns_key(key_path),
+         {:ok, jwt} <- build_apns_jwt(key_id, team_id, private_key_pem) do
+      # Cache for 50 minutes (tokens valid for 60 minutes)
+      expires_at = DateTime.add(DateTime.utc_now(), 50 * 60, :second)
+      :persistent_term.put({__MODULE__, :apns_token}, {jwt, expires_at})
+      {:ok, jwt}
+    end
+  end
+
+  defp read_apns_key(key_path) when is_binary(key_path) do
+    # Support both file path and direct key content
+    cond do
+      String.starts_with?(key_path, "-----BEGIN") ->
+        {:ok, key_path}
+
+      File.exists?(key_path) ->
+        File.read(key_path)
+
+      true ->
+        {:error, :key_not_found}
+    end
+  end
+
+  defp read_apns_key(_), do: {:error, :invalid_key_path}
+
+  defp build_apns_jwt(key_id, team_id, private_key_pem) do
+    now = DateTime.utc_now() |> DateTime.to_unix()
+
+    header = %{
+      "alg" => "ES256",
+      "typ" => "JWT",
+      "kid" => key_id
+    }
+
+    claims = %{
+      "iss" => team_id,
+      "iat" => now
+    }
+
+    header_b64 = Base.url_encode64(Jason.encode!(header), padding: false)
+    claims_b64 = Base.url_encode64(Jason.encode!(claims), padding: false)
+    signing_input = "#{header_b64}.#{claims_b64}"
+
+    case sign_with_es256(signing_input, private_key_pem) do
+      {:ok, signature} ->
+        signature_b64 = Base.url_encode64(signature, padding: false)
+        {:ok, "#{signing_input}.#{signature_b64}"}
+
+      error ->
+        error
+    end
+  end
+
+  defp sign_with_es256(data, pem_key) do
+    try do
+      [entry] = :public_key.pem_decode(pem_key)
+      key = :public_key.pem_entry_decode(entry)
+      # Sign with ECDSA SHA-256
+      signature = :public_key.sign(data, :sha256, key)
+      # Convert from DER format to raw R||S format (64 bytes)
+      {:ok, der_to_raw_signature(signature)}
+    rescue
+      e ->
+        Logger.error("ES256 signing failed: #{inspect(e)}")
+        {:error, :signing_failed}
+    end
+  end
+
+  # APNs requires the ECDSA signature in raw R||S format (64 bytes)
+  # Erlang's :public_key.sign returns DER-encoded format
+  defp der_to_raw_signature(der_signature) do
+    # DER format: 0x30 <total_len> 0x02 <r_len> <r> 0x02 <s_len> <s>
+    <<0x30, _total_len, 0x02, r_len, rest::binary>> = der_signature
+    <<r::binary-size(r_len), 0x02, s_len, s::binary-size(s_len), _::binary>> = rest
+
+    # Pad or trim R and S to exactly 32 bytes each
+    r_padded = pad_or_trim(r, 32)
+    s_padded = pad_or_trim(s, 32)
+
+    r_padded <> s_padded
+  end
+
+  defp pad_or_trim(binary, target_size) do
+    size = byte_size(binary)
+
+    cond do
+      size == target_size -> binary
+      size > target_size -> binary_part(binary, size - target_size, target_size)
+      size < target_size -> String.duplicate(<<0>>, target_size - size) <> binary
     end
   end
 

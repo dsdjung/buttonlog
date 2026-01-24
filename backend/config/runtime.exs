@@ -102,11 +102,30 @@ end
 
 # APNs (Apple Push Notification Service) for iOS
 if apns_key_id = System.get_env("APNS_KEY_ID") do
+  # Support both APNS_KEY_PATH (file path) and APNS_KEY_CONTENT (inline PEM)
+  key_path =
+    cond do
+      key_content = System.get_env("APNS_KEY_CONTENT") ->
+        # Inline key content (replace literal \n with actual newlines)
+        String.replace(key_content, "\\n", "\n")
+
+      key_path = System.get_env("APNS_KEY_PATH") ->
+        key_path
+
+      true ->
+        nil
+    end
+
+  environment =
+    case System.get_env("APNS_ENVIRONMENT", "sandbox") do
+      "production" -> :production
+      _ -> :sandbox
+    end
+
   config :buttonlog, :apns,
     key_id: apns_key_id,
     team_id: System.get_env("APNS_TEAM_ID"),
-    key_path: System.get_env("APNS_KEY_PATH"),
-    key_content: System.get_env("APNS_KEY_CONTENT"),
+    key_path: key_path,
     topic: System.get_env("APNS_BUNDLE_ID", "com.buttonlog.app"),
-    environment: System.get_env("APNS_ENVIRONMENT", "sandbox")
+    environment: environment
 end

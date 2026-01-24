@@ -92,6 +92,10 @@ defmodule ButtonLog.Mobile do
   def register_device(attrs, user_id) do
     device_token = attrs[:device_token] || attrs["device_token"]
 
+    IO.puts "=== MOBILE.REGISTER_DEVICE DEBUG ==="
+    IO.puts "attrs: #{inspect(attrs)}"
+    IO.puts "device_token: #{inspect(device_token)}"
+
     # If device_token is nil/missing, just try to create (will fail validation)
     if is_nil(device_token) do
       create_connection(attrs, user_id)
@@ -99,13 +103,20 @@ defmodule ButtonLog.Mobile do
       # Check if device token already exists
       case get_connection_by_token(device_token) do
         nil ->
+          IO.puts "Creating new connection"
           # Create new connection
           create_connection(attrs, user_id)
 
         existing_connection ->
-          # Update existing connection
+          IO.puts "Updating existing connection: #{existing_connection.id}"
+          # Update existing connection - also update user_id, is_active, last_seen_at
+          updated_attrs = Map.merge(attrs, %{
+            is_active: true,
+            last_seen_at: DateTime.utc_now() |> DateTime.truncate(:second),
+            user_id: user_id
+          })
           existing_connection
-          |> Connection.changeset(attrs)
+          |> Connection.changeset(updated_attrs)
           |> Repo.update()
       end
     end

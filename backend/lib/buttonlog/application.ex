@@ -14,6 +14,25 @@ defmodule ButtonLog.Application do
       ButtonLog.Repo,
       # Start the PubSub system
       {Phoenix.PubSub, name: ButtonLog.PubSub},
+      # Start Finch for HTTP/2 requests (APNs push notifications)
+      {Finch,
+       name: ButtonLog.Finch,
+       pools: %{
+         # APNs sandbox (HTTP/2)
+         "https://api.sandbox.push.apple.com" => [
+           size: 5,
+           count: 1,
+           protocol: :http2
+         ],
+         # APNs production (HTTP/2)
+         "https://api.push.apple.com" => [
+           size: 5,
+           count: 1,
+           protocol: :http2
+         ],
+         # Default HTTP/1.1 pool for other requests
+         :default => [size: 10, count: 1]
+       }},
       # Start the Endpoint (http/https)
       ButtonLogWeb.Endpoint,
       # Start the Auto-Stop worker for toggle buttons

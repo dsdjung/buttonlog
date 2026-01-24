@@ -87,12 +87,18 @@ defmodule ButtonLogWeb.AuthController do
     if is_nil(provider_atom) do
       handle_oauth_error(conn, "Invalid OAuth provider: #{provider}", is_mobile)
     else
-      case Ueberauth.auth(conn) do
-        %Ueberauth.Auth{provider: auth_provider} = auth when auth_provider == provider_atom ->
+      # Check for Ueberauth failure first
+      case conn.assigns do
+        %{ueberauth_failure: %Ueberauth.Failure{errors: errors}} ->
+          error_messages = Enum.map(errors, fn %Ueberauth.Failure.Error{message: msg} -> msg end)
+          handle_oauth_error(conn, "OAuth failed: #{Enum.join(error_messages, ", ")}", is_mobile)
+
+        %{ueberauth_auth: %Ueberauth.Auth{provider: ^provider_atom} = auth} ->
           case handle_oauth_callback(auth, provider) do
             {:ok, user} ->
               if is_mobile do
-                # Generate JWT token for mobile and redirect to app
+                # Generate JWT token for mobile and redirect to app URL scheme
+                # ASWebAuthenticationSession intercepts redirects to the registered callback scheme
                 token = Token.create_token(user.id)
                 redirect(conn, external: "buttonlog://oauth?token=#{token}")
               else
@@ -107,11 +113,11 @@ defmodule ButtonLogWeb.AuthController do
               handle_oauth_error(conn, "OAuth authentication failed: #{reason}", is_mobile)
           end
 
-        %Ueberauth.Auth{provider: auth_provider} ->
+        %{ueberauth_auth: %Ueberauth.Auth{provider: auth_provider}} ->
           handle_oauth_error(conn, "OAuth provider mismatch: expected #{provider}, got #{auth_provider}", is_mobile)
 
-        _other ->
-          handle_oauth_error(conn, "OAuth authentication failed", is_mobile)
+        _ ->
+          handle_oauth_error(conn, "OAuth authentication failed - no auth data received", is_mobile)
       end
     end
   end
