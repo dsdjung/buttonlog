@@ -49,6 +49,7 @@ defmodule ButtonLogWeb.Router do
     live "/diary", DiaryLive, :index
     live "/support", SupportLive, :index
     live "/support/:id", SupportLive, :show
+    live "/pricing", PricingLive, :index
 
     # Debug route to test basic connectivity
     get "/debug", PageController, :debug

@@ -29,8 +29,15 @@ defmodule ButtonLog.Subscriptions do
 
   @doc """
   Gets a single subscription plan by ID.
+  Raises if the plan is not found.
   """
   def get_subscription_plan!(id), do: Repo.get!(SubscriptionPlan, id)
+
+  @doc """
+  Gets a single subscription plan by ID.
+  Returns nil if the plan is not found.
+  """
+  def get_subscription_plan(id), do: Repo.get(SubscriptionPlan, id)
 
   @doc """
   Gets a single subscription plan by slug.

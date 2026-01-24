@@ -115,6 +115,26 @@ if fcm_project_id = System.get_env("FCM_PROJECT_ID") do
     service_account_json: System.get_env("FCM_SERVICE_ACCOUNT_JSON")
 end
 
+# Stripe configuration (all environments)
+if stripe_secret_key = System.get_env("STRIPE_SECRET_KEY") do
+  config :stripity_stripe,
+    api_key: stripe_secret_key,
+    webhook_secret: System.get_env("STRIPE_WEBHOOK_SECRET")
+
+  # Update Stripe URLs based on host
+  base_url =
+    if config_env() == :prod do
+      "https://#{System.get_env("PHX_HOST", "buttonlog.com")}"
+    else
+      "http://localhost:#{System.get_env("PORT", "14015")}"
+    end
+
+  config :buttonlog,
+    stripe_success_url: "#{base_url}/account?payment=success",
+    stripe_cancel_url: "#{base_url}/account?payment=cancelled",
+    stripe_return_url: "#{base_url}/account"
+end
+
 # APNs (Apple Push Notification Service) for iOS
 if apns_key_id = System.get_env("APNS_KEY_ID") do
   # Support both APNS_KEY_PATH (file path) and APNS_KEY_CONTENT (inline PEM)

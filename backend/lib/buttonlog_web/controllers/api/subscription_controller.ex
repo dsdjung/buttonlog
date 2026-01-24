@@ -270,28 +270,43 @@ defmodule ButtonLogWeb.API.SubscriptionController do
     user = conn.assigns.current_user
     billing_cycle = String.to_atom(billing_cycle)
 
-    with plan when not is_nil(plan) <- Subscriptions.get_subscription_plan!(plan_id),
-         opts <- build_checkout_opts(params),
-         {:ok, session} <- StripeService.create_checkout_session(user, plan, billing_cycle, opts) do
-      conn
-      |> put_status(:ok)
-      |> json(%{
-        success: true,
-        data: %{
-          checkout_url: session.url,
-          session_id: session.id
-        }
-      })
-    else
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{success: false, error: %{message: "Plan not found"}})
+    # Use get without ! to avoid raising an exception
+    plan = Subscriptions.get_subscription_plan(plan_id)
 
-      {:error, message} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{success: false, error: %{message: message}})
+    if is_nil(plan) do
+      conn
+      |> put_status(:not_found)
+      |> json(%{success: false, error: %{message: "Plan not found"}})
+    else
+      opts = build_checkout_opts(params)
+
+      case StripeService.create_checkout_session(user, plan, billing_cycle, opts) do
+        {:ok, session} ->
+          conn
+          |> put_status(:ok)
+          |> json(%{
+            success: true,
+            data: %{
+              checkout_url: session.url,
+              session_id: session.id
+            }
+          })
+
+        {:error, :price_not_configured} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{success: false, error: %{message: "Stripe pricing is not configured for this plan"}})
+
+        {:error, message} when is_binary(message) ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{success: false, error: %{message: message}})
+
+        {:error, message} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{success: false, error: %{message: to_string(message)}})
+      end
     end
   end
 
