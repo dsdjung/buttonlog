@@ -14,7 +14,7 @@ config :buttonlog, ButtonLog.Repo,
 # you can enable the server option below.
 config :buttonlog, ButtonLogWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 14016],
-  secret_key_base: "test-secret-key-base-here",
+  secret_key_base: "test-secret-key-base-that-is-at-least-64-bytes-long-for-testing-purposes-only-do-not-use-in-production",
   server: false
 
 # In test we don't send emails.
