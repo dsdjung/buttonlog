@@ -67,6 +67,12 @@ defmodule ButtonLog.MixProject do
       {:finch, "~> 0.13"},
       {:httpoison, "~> 2.0"},
 
+      # AWS SES for email delivery
+      {:ex_aws, "~> 2.5"},
+      {:ex_aws_ses, "~> 2.4"},
+      {:hackney, "~> 1.18"},
+      {:sweet_xml, "~> 0.7"},
+
       # Payment processing
       {:stripity_stripe, "~> 3.2"},
 

@@ -33,7 +33,19 @@ config :buttonlog, ButtonLogWeb.Endpoint,
 config :joken, default_signer: "Kh7LIE0FWdaQ/ThYYCasCt7AUPeIPkfgOp0oPWAfUH7ig2y0ukEFTMIjofcXolgh"
 
 # Configure Swoosh for email
+# In dev/test, we use the Local adapter (no actual emails sent)
+# In production, this is overridden to use the Finch API client
 config :swoosh, :api_client, false
+
+# Configure Swoosh mailer - defaults to Local adapter for dev/test
+# Production uses AWS SES via runtime.exs configuration
+config :buttonlog, ButtonLog.Mailer,
+  adapter: Swoosh.Adapters.Local
+
+# ExAws configuration for AWS services (SES email)
+# AWS credentials are loaded from environment variables in runtime.exs
+config :ex_aws,
+  json_codec: Jason
 
 # Do not print debug messages in production
 config :logger, level: :info

@@ -1,12 +1,33 @@
 defmodule ButtonLog.Emails do
   @moduledoc """
   Email templates for ButtonLog.
+
+  Email sender configuration can be set via environment variables:
+  - SES_FROM_EMAIL: The sender email address (must be verified in AWS SES)
+  - SES_FROM_NAME: The display name for the sender
+
+  Default values are used if not configured.
   """
 
   import Swoosh.Email
 
-  @from_email "noreply@buttonlog.app"
-  @from_name "ButtonLog"
+  # Default values - can be overridden via config
+  @default_from_email "noreply@buttonlog.app"
+  @default_from_name "ButtonLog"
+
+  @doc """
+  Returns the configured sender email address.
+  """
+  def from_email do
+    get_in(Application.get_env(:buttonlog, :email, []), [:from_address]) || @default_from_email
+  end
+
+  @doc """
+  Returns the configured sender display name.
+  """
+  def from_name do
+    get_in(Application.get_env(:buttonlog, :email, []), [:from_name]) || @default_from_name
+  end
 
   # App store URLs (update these with actual store links when published)
   @app_store_url "https://apps.apple.com/app/buttonlog"
@@ -18,7 +39,7 @@ defmodule ButtonLog.Emails do
   def friend_invitation(to_email, inviter_name) do
     new()
     |> to(to_email)
-    |> from({@from_name, @from_email})
+    |> from({from_name(), from_email()})
     |> subject("#{inviter_name} invited you to join ButtonLog!")
     |> html_body(friend_invitation_html(inviter_name))
     |> text_body(friend_invitation_text(inviter_name))

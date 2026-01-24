@@ -74,22 +74,37 @@ if config_env() == :prod do
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
 
-  # ## Configuring the mailer
+  # ## Configuring the mailer with AWS SES
   #
-  # In production you need to configure the mailer to use a different adapter.
-  # Also, you may need to configure the Swoosh API client of your choice if you
-  # are not using SMTP. Here is an example of the configuration:
+  # AWS SES is used for sending transactional emails in production.
+  # Required environment variables:
+  #   - AWS_ACCESS_KEY_ID: AWS access key with SES permissions
+  #   - AWS_SECRET_ACCESS_KEY: AWS secret key
+  #   - AWS_REGION: AWS region where SES is configured (e.g., "us-east-1")
+  #   - SES_FROM_EMAIL: Verified sender email address (optional, defaults to noreply@buttonlog.com)
   #
-  #     config :buttonlog, ButtonLog.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # For more information, see the Swoosh documentation for your chosen adapter.
-  #
-  # config :buttonlog, ButtonLog.Mailer,
-  #   adapter: Swoosh.Adapters.SendGrid,
-  #   api_key: System.get_env("SENDGRID_API_KEY")
+  if System.get_env("AWS_ACCESS_KEY_ID") && System.get_env("AWS_SECRET_ACCESS_KEY") do
+    aws_region = System.get_env("AWS_REGION", "us-east-1")
+
+    # Configure ExAws with credentials
+    config :ex_aws,
+      access_key_id: System.get_env("AWS_ACCESS_KEY_ID"),
+      secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY"),
+      region: aws_region
+
+    # Configure Swoosh to use AWS SES adapter
+    config :buttonlog, ButtonLog.Mailer,
+      adapter: Swoosh.Adapters.ExAwsAmazonSES,
+      region: aws_region
+
+    # Enable Swoosh API client with Finch for HTTP requests
+    config :swoosh, :api_client, Swoosh.ApiClient.Finch
+
+    # Store the from email for use in email templates
+    config :buttonlog, :email,
+      from_address: System.get_env("SES_FROM_EMAIL", "noreply@buttonlog.com"),
+      from_name: System.get_env("SES_FROM_NAME", "ButtonLog")
+  end
 end
 
 # Push notification configuration (all environments)

@@ -35,3 +35,12 @@ export APNS_KEY_PATH="/path/to/AuthKey_XXXXXX.p8"
 export APNS_BUNDLE_ID="com.buttonlog.app"
 # Use "api.sandbox.push.apple.com" for development, "api.push.apple.com" for production
 export APNS_ENVIRONMENT="sandbox"
+
+# AWS SES Email Configuration (Production only)
+# These credentials need SendEmail permission in AWS SES
+# The from email address must be verified in AWS SES
+export AWS_ACCESS_KEY_ID="your-aws-access-key-id"
+export AWS_SECRET_ACCESS_KEY="your-aws-secret-access-key"
+export AWS_REGION="us-east-1"
+export SES_FROM_EMAIL="noreply@yourdomain.com"
+export SES_FROM_NAME="ButtonLog"
