@@ -427,6 +427,7 @@ struct SubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var authManager: AuthenticationManager
 
     @State private var selectedBillingCycle: BillingCycle = .monthly
     @State private var isLoading = false
@@ -456,6 +457,7 @@ struct SubscriptionView: View {
                     PlansSection(
                         plans: appState.subscriptionPlans,
                         currentSubscription: appState.currentSubscription,
+                        userSubscriptionTier: authManager.currentUser?.subscriptionTier,
                         selectedCycle: selectedBillingCycle,
                         isLoading: isLoading,
                         onSelectPlan: { plan in
@@ -654,6 +656,7 @@ struct BillingCycleSelector: View {
 struct PlansSection: View {
     let plans: [SubscriptionPlan]
     let currentSubscription: UserSubscription?
+    let userSubscriptionTier: SubscriptionTier?
     let selectedCycle: BillingCycle
     let isLoading: Bool
     let onSelectPlan: (SubscriptionPlan) -> Void
@@ -677,7 +680,15 @@ struct PlansSection: View {
     }
 
     private func isCurrentPlan(_ plan: SubscriptionPlan) -> Bool {
-        currentSubscription?.subscriptionPlanId == plan.id
+        // Check if user has an active subscription for this plan
+        if let subscriptionPlanId = currentSubscription?.subscriptionPlanId {
+            return subscriptionPlanId == plan.id
+        }
+        // For free users without a subscription, check if this is the free plan
+        if let tier = userSubscriptionTier, tier == .free, plan.slug == "free" {
+            return true
+        }
+        return false
     }
 }
 
