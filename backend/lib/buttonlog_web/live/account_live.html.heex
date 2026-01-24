@@ -46,10 +46,10 @@
               %>
               <div class="mb-6">
                 <!-- Current Plan -->
-                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-lg border border-teal-200 mb-4">
+                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200 mb-4">
                   <div>
                     <div class="flex items-center gap-2">
-                      <h3 class="text-lg font-medium text-teal-900"><%= @subscription_info.plan.name %> Plan</h3>
+                      <h3 class="text-lg font-medium text-primary-900"><%= @subscription_info.plan.name %> Plan</h3>
                       <%= if subscription && subscription.status == "active" do %>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Active
@@ -61,21 +61,21 @@
                         </span>
                       <% end %>
                     </div>
-                    <p class="text-teal-700 text-sm mt-1"><%= @subscription_info.plan.description %></p>
+                    <p class="text-primary-700 text-sm mt-1"><%= @subscription_info.plan.description %></p>
                     <%= if subscription && subscription.current_period_end do %>
-                      <p class="text-teal-600 text-xs mt-2">
+                      <p class="text-primary-600 text-xs mt-2">
                         Next billing: <%= Calendar.strftime(subscription.current_period_end, "%B %d, %Y") %>
                       </p>
                     <% end %>
                   </div>
                   <div class="text-right">
                     <%= if @subscription_info.plan.slug != "free" && subscription do %>
-                      <div class="text-2xl font-bold text-teal-900">
+                      <div class="text-2xl font-bold text-primary-900">
                         $<%= Decimal.to_string(subscription.amount) %>
                       </div>
-                      <div class="text-sm text-teal-600">/<%= subscription.billing_cycle %></div>
+                      <div class="text-sm text-primary-600">/<%= subscription.billing_cycle %></div>
                     <% else %>
-                      <div class="text-2xl font-bold text-teal-900">Free</div>
+                      <div class="text-2xl font-bold text-primary-900">Free</div>
                     <% end %>
                   </div>
                 </div>
@@ -108,7 +108,7 @@
               <!-- Upgrade/Manage Buttons -->
               <div class="flex gap-4">
                 <%= if @subscription_info.plan.slug == "free" do %>
-                  <a href={~p"/pricing"} class="flex-1 text-center bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium">
+                  <a href={~p"/pricing"} class="flex-1 text-center bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors font-medium">
                     Upgrade to Premium
                   </a>
                 <% else %>
@@ -125,7 +125,7 @@
               <div class="text-center p-6 bg-gray-50 rounded-lg">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">Free Plan</h3>
                 <p class="text-gray-600 mb-4">You're currently on the free plan. Upgrade for more features!</p>
-                <a href={~p"/pricing"} class="inline-block bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium">
+                <a href={~p"/pricing"} class="inline-block bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-600 transition-colors font-medium">
                   View Plans & Pricing
                 </a>
               </div>
