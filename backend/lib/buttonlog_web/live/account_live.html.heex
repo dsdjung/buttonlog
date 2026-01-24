@@ -115,10 +115,10 @@
                   <button phx-click="manage_subscription" class="flex-1 text-center bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium">
                     Manage Subscription
                   </button>
+                  <a href={~p"/pricing"} class="flex-1 text-center bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                    View All Plans
+                  </a>
                 <% end %>
-                <a href={~p"/pricing"} class="flex-1 text-center bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium">
-                  View All Plans
-                </a>
               </div>
             <% else %>
               <!-- No subscription info - show upgrade prompt -->
