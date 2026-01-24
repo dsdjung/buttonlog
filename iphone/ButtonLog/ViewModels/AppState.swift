@@ -24,6 +24,9 @@ class AppState: ObservableObject {
 
     @Published var errorMessage: String?
 
+    // Upgrade prompt handling
+    @Published var pendingUpgradeInfo: UpgradeInfo?
+
     // Track buttons currently being clicked (to disable them during the request)
     @Published var clickingButtonIds: Set<String> = []
 
@@ -85,6 +88,13 @@ class AppState: ObservableObject {
             let newButton = try await apiService.createButton(formData)
             buttons.append(newButton)
             return true
+        } catch let error as APIError {
+            if case .upgradeRequired(let info) = error {
+                pendingUpgradeInfo = info
+            } else {
+                errorMessage = "Failed to create button: \(error.localizedDescription)"
+            }
+            return false
         } catch {
             errorMessage = "Failed to create button: \(error.localizedDescription)"
             return false
@@ -170,6 +180,13 @@ class AppState: ObservableObject {
             try await apiService.sendFriendRequest(request)
             await loadFriends() // Refresh friends list
             return true
+        } catch let error as APIError {
+            if case .upgradeRequired(let info) = error {
+                pendingUpgradeInfo = info
+            } else {
+                errorMessage = "Failed to send friend request: \(error.localizedDescription)"
+            }
+            return false
         } catch {
             errorMessage = "Failed to send friend request: \(error.localizedDescription)"
             return false

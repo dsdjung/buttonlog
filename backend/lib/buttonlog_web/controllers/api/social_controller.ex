@@ -1,6 +1,7 @@
 defmodule ButtonLogWeb.API.SocialController do
   use ButtonLogWeb, :controller
   alias ButtonLog.Social
+  alias ButtonLog.Subscriptions.SubscriptionService
 
   def friends(conn, _params) do
     user = conn.assigns.current_user
@@ -101,15 +102,40 @@ defmodule ButtonLogWeb.API.SocialController do
         }
       })
     else
-      # Check if user exists
-      case ButtonLog.Accounts.get_user_by_email(email) do
-        nil ->
-          # User not registered - send invitation email
-          handle_invitation(conn, user, email)
+      # Check subscription limit before adding friend
+      current_friend_count = Social.count_user_friends(user.id)
 
-        friend ->
-          # User exists - send friend request
-          handle_friend_request(conn, user, friend.id, email)
+      case SubscriptionService.check_action_with_upgrade_info(user.id, :add_friend, %{current_friend_count: current_friend_count}) do
+        {:ok, :allowed} ->
+          # Check if user exists
+          case ButtonLog.Accounts.get_user_by_email(email) do
+            nil ->
+              # User not registered - send invitation email
+              handle_invitation(conn, user, email)
+
+            friend ->
+              # User exists - send friend request
+              handle_friend_request(conn, user, friend.id, email)
+          end
+
+        {:error, upgrade_info} ->
+          conn
+          |> put_status(:payment_required)
+          |> json(%{
+            success: false,
+            error: %{
+              code: "UPGRADE_REQUIRED",
+              message: upgrade_info.message,
+              upgrade_info: %{
+                reason: upgrade_info.reason,
+                current_plan: upgrade_info.current_plan,
+                current_usage: upgrade_info[:current_usage],
+                limit: upgrade_info[:limit],
+                recommended_plan: upgrade_info.recommended_plan,
+                upgrade_benefit: upgrade_info.upgrade_benefit
+              }
+            }
+          })
       end
     end
   end

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.buttonlog.app.data.api.ButtonAlertPreference
 import com.buttonlog.app.data.api.DiaryData
+import com.buttonlog.app.data.api.UpgradeInfo
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonSharingSetting
@@ -56,6 +57,15 @@ class ButtonsViewModel @Inject constructor(
         buttonRepository.error.onEach { error ->
             _uiState.update { it.copy(error = error) }
         }.launchIn(viewModelScope)
+
+        // Observe upgrade required
+        buttonRepository.upgradeRequired.onEach { upgradeInfo ->
+            _uiState.update { it.copy(upgradeRequired = upgradeInfo) }
+        }.launchIn(viewModelScope)
+    }
+
+    fun clearUpgradeRequired() {
+        buttonRepository.clearUpgradeRequired()
     }
     
     fun fetchButtons() {
@@ -323,6 +333,8 @@ data class ButtonsUiState(
     // Diary
     val diaryData: DiaryData? = null,
     val isLoadingDiary: Boolean = false,
-    val diaryError: String? = null
+    val diaryError: String? = null,
+    // Upgrade prompt
+    val upgradeRequired: UpgradeInfo? = null
 )
 

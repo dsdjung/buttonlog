@@ -104,6 +104,10 @@ struct MainTabView: View {
         } message: {
             Text(appState.errorMessage ?? "")
         }
+        .upgradePrompt(upgradeInfo: $appState.pendingUpgradeInfo) {
+            // Navigate to subscription page
+            selectedTab = 4 // Account tab
+        }
     }
 }
 

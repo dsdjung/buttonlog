@@ -1,6 +1,8 @@
 package com.buttonlog.app.data.repository
 
 import com.buttonlog.app.data.api.APIService
+import com.buttonlog.app.data.api.ApiErrorWithUpgrade
+import com.buttonlog.app.data.api.ApiException
 import com.buttonlog.app.data.api.ButtonAlertPreference
 import com.buttonlog.app.data.api.ButtonUpdateData
 import com.buttonlog.app.data.api.ClickButtonRequest
@@ -9,6 +11,7 @@ import com.buttonlog.app.data.api.CreateGiftButtonRequest
 import com.buttonlog.app.data.api.DiaryData
 import com.buttonlog.app.data.api.SetAlertPreferenceRequest
 import com.buttonlog.app.data.api.UpdateButtonRequest
+import com.buttonlog.app.data.api.UpgradeInfo
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonClick
@@ -16,24 +19,51 @@ import com.buttonlog.app.data.model.ButtonSharingSetting
 import com.buttonlog.app.data.model.ButtonSharingUpdateRequest
 import com.buttonlog.app.data.model.ButtonSharingUpdate
 import com.buttonlog.app.data.model.CreatedGiftButton
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ButtonRepository @Inject constructor(
-    private val apiService: APIService
+    private val apiService: APIService,
+    private val gson: Gson
 ) {
-    
+
     private val _buttons = MutableStateFlow<List<Button>>(emptyList())
     val buttons: StateFlow<List<Button>> = _buttons.asStateFlow()
-    
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-    
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _upgradeRequired = MutableStateFlow<UpgradeInfo?>(null)
+    val upgradeRequired: StateFlow<UpgradeInfo?> = _upgradeRequired.asStateFlow()
+
+    fun clearUpgradeRequired() {
+        _upgradeRequired.value = null
+    }
+
+    private fun parseUpgradeError(httpException: HttpException): UpgradeInfo? {
+        return try {
+            val errorBody = httpException.response()?.errorBody()?.string()
+            if (errorBody != null) {
+                val errorResponse = gson.fromJson(errorBody, UpgradeErrorResponse::class.java)
+                errorResponse.error?.upgradeInfo
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private data class UpgradeErrorResponse(
+        val success: Boolean,
+        val error: ApiErrorWithUpgrade?
+    )
     
     suspend fun fetchButtons() {
         try {
@@ -69,6 +99,21 @@ class ButtonRepository @Inject constructor(
                 Result.failure(Exception(errorMessage))
             }
 
+        } catch (e: HttpException) {
+            if (e.code() == 402) {
+                // Payment Required - upgrade needed
+                val upgradeInfo = parseUpgradeError(e)
+                if (upgradeInfo != null) {
+                    _upgradeRequired.value = upgradeInfo
+                    Result.failure(ApiException.UpgradeRequired(upgradeInfo.message, upgradeInfo))
+                } else {
+                    _error.value = "Upgrade required to create more buttons"
+                    Result.failure(e)
+                }
+            } else {
+                _error.value = e.message ?: "Failed to create button"
+                Result.failure(e)
+            }
         } catch (e: Exception) {
             _error.value = e.message ?: "Failed to create button"
             Result.failure(e)

@@ -64,6 +64,24 @@ class APIService {
             } else {
                 throw APIError.serverError(apiResponse.error?.message ?? "Unknown error")
             }
+        } else if httpResponse.statusCode == 402 {
+            // Payment Required - upgrade needed
+            let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
+            if let upgradeInfo = errorResponse?.error?.upgradeInfo {
+                throw APIError.upgradeRequired(upgradeInfo)
+            } else {
+                // Fallback if upgrade info not parsed correctly
+                let info = UpgradeInfo(
+                    reason: "limit_reached",
+                    currentPlan: "Free",
+                    currentUsage: nil,
+                    limit: nil,
+                    recommendedPlan: "premium",
+                    upgradeBenefit: "Upgrade to access more features.",
+                    message: errorResponse?.error?.message ?? "Upgrade required"
+                )
+                throw APIError.upgradeRequired(info)
+            }
         } else {
             let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
             throw APIError.serverError(errorResponse?.error?.message ?? "HTTP \(httpResponse.statusCode)")
@@ -106,12 +124,28 @@ class APIService {
             } else {
                 throw APIError.serverError(apiResponse.error?.message ?? "Unknown error")
             }
+        } else if httpResponse.statusCode == 402 {
+            let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
+            if let upgradeInfo = errorResponse?.error?.upgradeInfo {
+                throw APIError.upgradeRequired(upgradeInfo)
+            } else {
+                let info = UpgradeInfo(
+                    reason: "limit_reached",
+                    currentPlan: "Free",
+                    currentUsage: nil,
+                    limit: nil,
+                    recommendedPlan: "premium",
+                    upgradeBenefit: "Upgrade to access more features.",
+                    message: errorResponse?.error?.message ?? "Upgrade required"
+                )
+                throw APIError.upgradeRequired(info)
+            }
         } else {
             let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
             throw APIError.serverError(errorResponse?.error?.message ?? "HTTP \(httpResponse.statusCode)")
         }
     }
-    
+
     private func makeOptionalRequest<T: Codable>(
         endpoint: String,
         method: HTTPMethod = .GET,
@@ -1010,7 +1044,8 @@ enum APIError: Error, LocalizedError {
     case serverError(String)
     case networkError
     case decodingError
-    
+    case upgradeRequired(UpgradeInfo)
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
@@ -1023,7 +1058,39 @@ enum APIError: Error, LocalizedError {
             return "Network error occurred"
         case .decodingError:
             return "Failed to decode response"
+        case .upgradeRequired(let info):
+            return info.message
         }
+    }
+
+    var isUpgradeRequired: Bool {
+        if case .upgradeRequired = self { return true }
+        return false
+    }
+
+    var upgradeInfo: UpgradeInfo? {
+        if case .upgradeRequired(let info) = self { return info }
+        return nil
+    }
+}
+
+struct UpgradeInfo: Codable {
+    let reason: String
+    let currentPlan: String
+    let currentUsage: Int?
+    let limit: Int?
+    let recommendedPlan: String
+    let upgradeBenefit: String
+    let message: String
+
+    enum CodingKeys: String, CodingKey {
+        case reason
+        case currentPlan = "current_plan"
+        case currentUsage = "current_usage"
+        case limit
+        case recommendedPlan = "recommended_plan"
+        case upgradeBenefit = "upgrade_benefit"
+        case message
     }
 }
 
@@ -1044,6 +1111,14 @@ struct APIErrorDetail: Codable {
     let code: String
     let message: String
     let details: [ValidationError]?
+    let upgradeInfo: UpgradeInfo?
+
+    enum CodingKeys: String, CodingKey {
+        case code
+        case message
+        case details
+        case upgradeInfo = "upgrade_info"
+    }
 }
 
 struct ValidationError: Codable {

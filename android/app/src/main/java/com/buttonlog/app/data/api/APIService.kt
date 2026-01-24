@@ -596,7 +596,31 @@ sealed class ApiException(message: String) : Exception(message) {
     data class ServerError(override val message: String, val code: Int) : ApiException(message)
     data class NetworkError(override val message: String) : ApiException(message)
     data class DecodingError(override val message: String) : ApiException(message)
+    data class UpgradeRequired(override val message: String, val upgradeInfo: UpgradeInfo) : ApiException(message)
 }
+
+// MARK: - Upgrade Info Model
+
+data class UpgradeInfo(
+    val reason: String,
+    @SerializedName("current_plan")
+    val currentPlan: String,
+    @SerializedName("current_usage")
+    val currentUsage: Int?,
+    val limit: Int?,
+    @SerializedName("recommended_plan")
+    val recommendedPlan: String,
+    @SerializedName("upgrade_benefit")
+    val upgradeBenefit: String,
+    val message: String
+)
+
+data class ApiErrorWithUpgrade(
+    val code: String,
+    val message: String,
+    @SerializedName("upgrade_info")
+    val upgradeInfo: UpgradeInfo?
+)
 
 // MARK: - Button Alert Preferences Models
 

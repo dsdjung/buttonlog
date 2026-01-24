@@ -8,6 +8,19 @@ defmodule ButtonLog.Buttons do
   alias ButtonLog.Buttons.{Button, ButtonClick, ButtonSharing}
 
   @doc """
+  Returns the count of buttons owned by a user (for subscription limit checks).
+  """
+  def count_user_buttons(user_id) do
+    Repo.aggregate(
+      from(b in Button,
+        where: b.user_id == ^user_id and (is_nil(b.archived) or b.archived == false)
+      ),
+      :count,
+      :id
+    )
+  end
+
+  @doc """
   Returns the list of buttons for a user with latest click time.
   """
   def list_user_buttons(user_id) do

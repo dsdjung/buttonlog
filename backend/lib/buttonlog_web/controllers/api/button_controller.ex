@@ -4,6 +4,7 @@ defmodule ButtonLogWeb.API.ButtonController do
   alias ButtonLog.Buttons.Button
   alias ButtonLog.Social
   alias ButtonLog.Alerts
+  alias ButtonLog.Subscriptions.SubscriptionService
 
   def index(conn, _params) do
     user = conn.assigns.current_user
@@ -53,31 +54,63 @@ defmodule ButtonLogWeb.API.ButtonController do
   def create(conn, %{"button" => button_params}) do
     user = conn.assigns.current_user
 
-    # Parse friend_alerts configuration if provided
-    friend_alert_config = parse_friend_alert_config(button_params["friend_alerts"])
+    # Check subscription limit before creating
+    current_button_count = Buttons.count_user_buttons(user.id)
 
-    case Buttons.create_button(button_params, user.id, friend_alert_config) do
-      {:ok, button} ->
-        conn
-        |> put_status(:created)
-        |> json(%{
-          success: true,
-          data: serialize_button(button),
-          meta: %{
-            timestamp: DateTime.utc_now(),
-            request_id: generate_request_id()
-          }
-        })
+    case SubscriptionService.check_action_with_upgrade_info(user.id, :create_button, %{current_button_count: current_button_count}) do
+      {:ok, :allowed} ->
+        # Parse friend_alerts configuration if provided
+        friend_alert_config = parse_friend_alert_config(button_params["friend_alerts"])
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+        case Buttons.create_button(button_params, user.id, friend_alert_config) do
+          {:ok, button} ->
+            # Track usage after successful creation
+            SubscriptionService.track_usage(user.id, :create_button, %{})
+
+            conn
+            |> put_status(:created)
+            |> json(%{
+              success: true,
+              data: serialize_button(button),
+              meta: %{
+                timestamp: DateTime.utc_now(),
+                request_id: generate_request_id()
+              }
+            })
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              success: false,
+              error: %{
+                code: "VALIDATION_ERROR",
+                message: "Invalid input data",
+                details: format_changeset_errors(changeset)
+              },
+              meta: %{
+                timestamp: DateTime.utc_now(),
+                request_id: generate_request_id()
+              }
+            })
+        end
+
+      {:error, upgrade_info} ->
         conn
-        |> put_status(:unprocessable_entity)
+        |> put_status(:payment_required)
         |> json(%{
           success: false,
           error: %{
-            code: "VALIDATION_ERROR",
-            message: "Invalid input data",
-            details: format_changeset_errors(changeset)
+            code: "UPGRADE_REQUIRED",
+            message: upgrade_info.message,
+            upgrade_info: %{
+              reason: upgrade_info.reason,
+              current_plan: upgrade_info.current_plan,
+              current_usage: upgrade_info[:current_usage],
+              limit: upgrade_info[:limit],
+              recommended_plan: upgrade_info.recommended_plan,
+              upgrade_benefit: upgrade_info.upgrade_benefit
+            }
           },
           meta: %{
             timestamp: DateTime.utc_now(),
@@ -635,43 +668,68 @@ defmodule ButtonLogWeb.API.ButtonController do
     user = conn.assigns.current_user
     message = Map.get(params, "message")
 
-    case Buttons.create_button_for_friend(button_params, friend_id, user.id, message) do
-      {:ok, button} ->
-        conn
-        |> put_status(:created)
-        |> json(%{
-          success: true,
-          data: serialize_button(button),
-          meta: %{
-            timestamp: DateTime.utc_now(),
-            request_id: generate_request_id()
-          }
-        })
+    # Check if user can send gift buttons (Premium feature)
+    case SubscriptionService.check_action_with_upgrade_info(user.id, :send_gift_button, %{}) do
+      {:ok, :allowed} ->
+        case Buttons.create_button_for_friend(button_params, friend_id, user.id, message) do
+          {:ok, button} ->
+            conn
+            |> put_status(:created)
+            |> json(%{
+              success: true,
+              data: serialize_button(button),
+              meta: %{
+                timestamp: DateTime.utc_now(),
+                request_id: generate_request_id()
+              }
+            })
 
-      {:error, :not_friends} ->
+          {:error, :not_friends} ->
+            conn
+            |> put_status(:forbidden)
+            |> json(%{
+              success: false,
+              error: %{
+                code: "NOT_FRIENDS",
+                message: "You can only create buttons for your friends"
+              },
+              meta: %{
+                timestamp: DateTime.utc_now(),
+                request_id: generate_request_id()
+              }
+            })
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              success: false,
+              error: %{
+                code: "VALIDATION_ERROR",
+                message: "Invalid input data",
+                details: format_changeset_errors(changeset)
+              },
+              meta: %{
+                timestamp: DateTime.utc_now(),
+                request_id: generate_request_id()
+              }
+            })
+        end
+
+      {:error, upgrade_info} ->
         conn
-        |> put_status(:forbidden)
+        |> put_status(:payment_required)
         |> json(%{
           success: false,
           error: %{
-            code: "NOT_FRIENDS",
-            message: "You can only create buttons for your friends"
-          },
-          meta: %{
-            timestamp: DateTime.utc_now(),
-            request_id: generate_request_id()
-          }
-        })
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{
-          success: false,
-          error: %{
-            code: "VALIDATION_ERROR",
-            message: "Invalid input data",
-            details: format_changeset_errors(changeset)
+            code: "UPGRADE_REQUIRED",
+            message: upgrade_info.message,
+            upgrade_info: %{
+              reason: upgrade_info.reason,
+              current_plan: upgrade_info.current_plan,
+              recommended_plan: upgrade_info.recommended_plan,
+              upgrade_benefit: upgrade_info.upgrade_benefit
+            }
           },
           meta: %{
             timestamp: DateTime.utc_now(),

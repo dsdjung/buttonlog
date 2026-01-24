@@ -56,6 +56,147 @@ defmodule ButtonLog.Subscriptions.SubscriptionService do
   end
 
   @doc """
+  Check if a user can perform an action, returning detailed info for upgrade prompts.
+  Returns {:ok, :allowed} if allowed, or {:error, upgrade_info} with details.
+  """
+  def check_action_with_upgrade_info(user_id, action, context \\ %{}) do
+    subscription_data = get_user_subscription(user_id)
+    plan = subscription_data.plan
+    subscription = Map.get(subscription_data, :subscription)
+    usage = Map.get(subscription_data, :usage, %{})
+
+    allowed = check_action_permission(plan, subscription, action, context)
+
+    if allowed do
+      {:ok, :allowed}
+    else
+      upgrade_info = build_upgrade_info(action, plan, usage, context)
+      {:error, upgrade_info}
+    end
+  end
+
+  defp build_upgrade_info(action, plan, usage, context) do
+    base_info = %{
+      action: action,
+      current_plan: plan.name,
+      current_plan_slug: plan.slug,
+      upgrade_required: true,
+      recommended_plan: recommend_plan_for_action(action)
+    }
+
+    case action do
+      :create_button ->
+        current = context[:current_button_count] || 0
+        Map.merge(base_info, %{
+          reason: :limit_reached,
+          message: "You've reached the maximum of #{plan.max_buttons} buttons on the #{plan.name} plan.",
+          current_usage: current,
+          limit: plan.max_buttons,
+          upgrade_benefit: "Upgrade to Premium for up to 50 buttons, or Enterprise for unlimited buttons."
+        })
+
+      :add_friend ->
+        current = context[:current_friend_count] || 0
+        Map.merge(base_info, %{
+          reason: :limit_reached,
+          message: "You've reached the maximum of #{plan.max_friends} friends on the #{plan.name} plan.",
+          current_usage: current,
+          limit: plan.max_friends,
+          upgrade_benefit: "Upgrade to Premium for up to 100 friends, or Enterprise for unlimited friends."
+        })
+
+      :click_button ->
+        current = usage[:clicks_this_month] || context[:current_clicks] || 0
+        Map.merge(base_info, %{
+          reason: :limit_reached,
+          message: "You've reached #{plan.max_button_clicks_per_month} button clicks this month.",
+          current_usage: current,
+          limit: plan.max_button_clicks_per_month,
+          upgrade_benefit: "Upgrade to Premium for 10,000 clicks/month, or Enterprise for unlimited clicks."
+        })
+
+      :access_analytics ->
+        days = context[:days_back] || 30
+        Map.merge(base_info, %{
+          reason: :feature_limited,
+          message: "Analytics history is limited to #{plan.max_analytics_history_days} days on the #{plan.name} plan.",
+          requested_days: days,
+          limit: plan.max_analytics_history_days,
+          upgrade_benefit: "Upgrade to Premium for 1 year of history, or Enterprise for unlimited history."
+        })
+
+      :export_data ->
+        days = context[:days_back] || 30
+        Map.merge(base_info, %{
+          reason: :feature_limited,
+          message: "Data export is limited to #{plan.max_export_history_days} days on the #{plan.name} plan.",
+          requested_days: days,
+          limit: plan.max_export_history_days,
+          upgrade_benefit: "Upgrade to Premium for 1 year of export history, or Enterprise for unlimited."
+        })
+
+      :use_calendar_sync ->
+        Map.merge(base_info, %{
+          reason: :feature_unavailable,
+          message: "Calendar sync is a Premium feature.",
+          upgrade_benefit: "Upgrade to Premium or Enterprise to sync your buttons with your calendar."
+        })
+
+      :use_api ->
+        Map.merge(base_info, %{
+          reason: :feature_unavailable,
+          message: "API access is a Premium feature.",
+          upgrade_benefit: "Upgrade to Premium or Enterprise to access the ButtonLog API."
+        })
+
+      :use_custom_themes ->
+        Map.merge(base_info, %{
+          reason: :feature_unavailable,
+          message: "Custom themes are a Premium feature.",
+          upgrade_benefit: "Upgrade to Premium or Enterprise to customize your button themes."
+        })
+
+      :use_team_features ->
+        Map.merge(base_info, %{
+          reason: :feature_unavailable,
+          message: "Team features are an Enterprise feature.",
+          recommended_plan: "enterprise",
+          upgrade_benefit: "Upgrade to Enterprise for team collaboration features."
+        })
+
+      :use_white_label ->
+        Map.merge(base_info, %{
+          reason: :feature_unavailable,
+          message: "White-label options are an Enterprise feature.",
+          recommended_plan: "enterprise",
+          upgrade_benefit: "Upgrade to Enterprise for white-label branding options."
+        })
+
+      :send_gift_button ->
+        Map.merge(base_info, %{
+          reason: :feature_unavailable,
+          message: "Gift buttons are a Premium feature.",
+          upgrade_benefit: "Upgrade to Premium or Enterprise to send gift buttons to friends."
+        })
+
+      _ ->
+        Map.merge(base_info, %{
+          reason: :unknown,
+          message: "This feature requires an upgrade.",
+          upgrade_benefit: "Upgrade your plan to access more features."
+        })
+    end
+  end
+
+  defp recommend_plan_for_action(action) do
+    case action do
+      :use_team_features -> "enterprise"
+      :use_white_label -> "enterprise"
+      _ -> "premium"
+    end
+  end
+
+  @doc """
   Track usage for a specific action.
   """
   def track_usage(user_id, action, context \\ %{}) do
@@ -267,6 +408,10 @@ defmodule ButtonLog.Subscriptions.SubscriptionService do
 
       :use_white_label ->
         plan.has_white_label
+
+      :send_gift_button ->
+        # Gift buttons are a Premium feature
+        plan.slug != "free"
 
       _ ->
         false

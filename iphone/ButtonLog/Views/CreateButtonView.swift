@@ -804,6 +804,15 @@ struct CreateGiftButtonView: View {
                     isLoading = false
                     presentationMode.wrappedValue.dismiss()
                 }
+            } catch let error as APIError {
+                await MainActor.run {
+                    if case .upgradeRequired(let info) = error {
+                        appState.pendingUpgradeInfo = info
+                    } else {
+                        appState.errorMessage = "Failed to create button: \(error.localizedDescription)"
+                    }
+                    isLoading = false
+                }
             } catch {
                 await MainActor.run {
                     appState.errorMessage = "Failed to create button: \(error.localizedDescription)"

@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.buttonlog.app.ui.components.ButtonCard
+import com.buttonlog.app.ui.components.UpgradePromptDialog
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,6 +23,7 @@ fun ButtonsScreen(
     onCreateButton: () -> Unit,
     onEditButton: (com.buttonlog.app.data.model.Button) -> Unit = {},
     onViewHistory: (com.buttonlog.app.data.model.Button) -> Unit = {},
+    onNavigateToAccount: () -> Unit = {},
     viewModel: ButtonsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -170,6 +172,20 @@ fun ButtonsScreen(
                 )
             }
         }
+    }
+
+    // Upgrade prompt dialog
+    uiState.upgradeRequired?.let { upgradeInfo ->
+        UpgradePromptDialog(
+            upgradeInfo = upgradeInfo,
+            onUpgrade = {
+                viewModel.clearUpgradeRequired()
+                onNavigateToAccount()
+            },
+            onDismiss = {
+                viewModel.clearUpgradeRequired()
+            }
+        )
     }
 }
 

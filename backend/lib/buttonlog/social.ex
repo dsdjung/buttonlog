@@ -10,6 +10,30 @@ defmodule ButtonLog.Social do
   alias ButtonLog.Notifications
 
   @doc """
+  Returns the count of friends for a user (for subscription limit checks).
+  """
+  def count_user_friends(user_id) do
+    # Count friends from both directions
+    count_as_user = Repo.aggregate(
+      from(f in Friendship,
+        where: f.user_id == ^user_id and f.status == "accepted"
+      ),
+      :count,
+      :id
+    )
+
+    count_as_friend = Repo.aggregate(
+      from(f in Friendship,
+        where: f.friend_id == ^user_id and f.status == "accepted"
+      ),
+      :count,
+      :id
+    )
+
+    count_as_user + count_as_friend
+  end
+
+  @doc """
   Returns the list of friendships for a user.
   """
   def list_user_friendships(user_id) do
