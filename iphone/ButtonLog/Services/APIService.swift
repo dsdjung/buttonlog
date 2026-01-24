@@ -12,6 +12,21 @@ class APIService {
     
     // MARK: - Generic Request Method
     
+    // MARK: - Version Headers
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+
+    private func addCommonHeaders(to request: inout URLRequest) {
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
+        request.setValue("ios", forHTTPHeaderField: "X-Platform")
+        if let deviceId = UIDevice.current.identifierForVendor?.uuidString {
+            request.setValue(deviceId, forHTTPHeaderField: "X-Device-Id")
+        }
+    }
+
     private func makeRequest<T: Codable>(
         endpoint: String,
         method: HTTPMethod = .GET,
@@ -24,7 +39,7 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        addCommonHeaders(to: &request)
 
         // Add auth token if required
         if requiresAuth, let token = KeychainManager.shared.getToken() {
@@ -68,7 +83,7 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        addCommonHeaders(to: &request)
 
         if requiresAuth, let token = KeychainManager.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -106,19 +121,19 @@ class APIService {
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             throw APIError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+        addCommonHeaders(to: &request)
+
         if requiresAuth, let token = KeychainManager.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        
+
         if let body = body {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
-        
+
         let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -157,19 +172,19 @@ class APIService {
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             throw APIError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+        addCommonHeaders(to: &request)
+
         if requiresAuth, let token = KeychainManager.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        
+
         if let body = body {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
-        
+
         let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -182,8 +197,35 @@ class APIService {
         }
     }
     
+    // MARK: - App Configuration
+
+    /// Fetch app configuration from server
+    /// Returns version requirements, feature flags, and maintenance status
+    func getConfig() async throws -> AppConfig {
+        guard let url = URL(string: "\(baseURL)/config") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = HTTPMethod.GET.rawValue
+        addCommonHeaders(to: &request)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+            // Config endpoint returns data directly, not wrapped in APIResponse
+            return try JSONDecoder.iso8601.decode(AppConfig.self, from: data)
+        } else {
+            throw APIError.serverError("Failed to fetch config: HTTP \(httpResponse.statusCode)")
+        }
+    }
+
     // MARK: - Authentication
-    
+
     func login(email: String, password: String) async throws -> AuthResponse {
         let body = [
             "email": email,

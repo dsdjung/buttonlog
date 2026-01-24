@@ -1,7 +1,11 @@
 package com.buttonlog.app.di
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
+import android.provider.Settings
+import com.buttonlog.app.BuildConfig
 import com.buttonlog.app.data.api.APIService
 import com.buttonlog.app.data.api.ApiConfig
 import com.google.gson.Gson
@@ -17,6 +21,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -40,9 +45,20 @@ object AppModule {
             .create()
     }
 
+    @SuppressLint("HardwareIds")
     @Provides
     @Singleton
-    fun provideAuthInterceptor(sharedPreferences: SharedPreferences): Interceptor {
+    @Named("deviceId")
+    fun provideDeviceId(@ApplicationContext context: Context): String {
+        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown"
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(
+        sharedPreferences: SharedPreferences,
+        @Named("deviceId") deviceId: String
+    ): Interceptor {
         return Interceptor { chain ->
             val original = chain.request()
             val token = sharedPreferences.getString(KEY_AUTH_TOKEN, null)
@@ -50,6 +66,10 @@ object AppModule {
             val requestBuilder = original.newBuilder()
                 .header(ApiConfig.HEADER_CONTENT_TYPE, ApiConfig.CONTENT_TYPE_JSON)
                 .header(ApiConfig.HEADER_ACCEPT, ApiConfig.CONTENT_TYPE_JSON)
+                // Client version tracking headers
+                .header(ApiConfig.HEADER_APP_VERSION, BuildConfig.VERSION_NAME)
+                .header(ApiConfig.HEADER_PLATFORM, "android")
+                .header(ApiConfig.HEADER_DEVICE_ID, deviceId)
 
             if (!token.isNullOrEmpty()) {
                 requestBuilder.header(ApiConfig.HEADER_AUTHORIZATION, "Bearer $token")

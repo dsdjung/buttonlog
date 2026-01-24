@@ -5,9 +5,14 @@ import com.google.gson.annotations.SerializedName
 import retrofit2.http.*
 
 interface APIService {
-    
+
+    // MARK: - App Configuration
+
+    @GET("config")
+    suspend fun getConfig(): AppConfig
+
     // MARK: - Authentication Endpoints
-    
+
     @POST("auth/login")
     suspend fun login(@Body credentials: LoginCredentials): AuthResponse
 
@@ -689,6 +694,85 @@ data class DiaryClick(
     val selectedChoice: String?
 )
 
+// MARK: - App Configuration Model
+
+/**
+ * App configuration from the server.
+ * Used for version requirements, feature flags, and maintenance status.
+ */
+data class AppConfig(
+    @SerializedName("min_supported_version")
+    val minSupportedVersion: VersionInfo,
+    @SerializedName("latest_version")
+    val latestVersion: VersionInfo,
+    val features: FeatureFlags,
+    @SerializedName("maintenance_mode")
+    val maintenanceMode: Boolean,
+    @SerializedName("maintenance_message")
+    val maintenanceMessage: String?,
+    @SerializedName("api_version")
+    val apiVersion: String,
+    @SerializedName("server_time")
+    val serverTime: String
+) {
+    /**
+     * Check if the current app version is supported.
+     */
+    fun isCurrentVersionSupported(currentVersion: String): Boolean {
+        return compareVersions(currentVersion, minSupportedVersion.android) >= 0
+    }
+
+    /**
+     * Check if an update is available.
+     */
+    fun isUpdateAvailable(currentVersion: String): Boolean {
+        return compareVersions(latestVersion.android, currentVersion) > 0
+    }
+
+    /**
+     * Compare two semantic version strings.
+     * Returns: negative if v1 < v2, 0 if equal, positive if v1 > v2
+     */
+    private fun compareVersions(v1: String, v2: String): Int {
+        val parts1 = v1.split(".").mapNotNull { it.toIntOrNull() }
+        val parts2 = v2.split(".").mapNotNull { it.toIntOrNull() }
+
+        val maxLength = maxOf(parts1.size, parts2.size)
+
+        for (i in 0 until maxLength) {
+            val p1 = parts1.getOrElse(i) { 0 }
+            val p2 = parts2.getOrElse(i) { 0 }
+
+            if (p1 != p2) {
+                return p1 - p2
+            }
+        }
+
+        return 0
+    }
+}
+
+data class VersionInfo(
+    val ios: String,
+    val android: String
+)
+
+data class FeatureFlags(
+    @SerializedName("push_notifications")
+    val pushNotifications: Boolean,
+    @SerializedName("friend_alerts")
+    val friendAlerts: Boolean,
+    val subscriptions: Boolean,
+    val teams: Boolean,
+    val organizations: Boolean,
+    @SerializedName("diary_view")
+    val diaryView: Boolean,
+    @SerializedName("button_sharing")
+    val buttonSharing: Boolean,
+    @SerializedName("gift_buttons")
+    val giftButtons: Boolean
+)
+
 // MARK: - API Configuration
 
 object ApiConfig {
@@ -699,6 +783,11 @@ object ApiConfig {
     const val HEADER_AUTHORIZATION = "Authorization"
     const val HEADER_CONTENT_TYPE = "Content-Type"
     const val HEADER_ACCEPT = "Accept"
+
+    // Client version tracking headers
+    const val HEADER_APP_VERSION = "X-App-Version"
+    const val HEADER_PLATFORM = "X-Platform"
+    const val HEADER_DEVICE_ID = "X-Device-Id"
 
     // Content types
     const val CONTENT_TYPE_JSON = "application/json"
