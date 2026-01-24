@@ -1,0 +1,140 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to deploy (tag or commit SHA)"
+        required: false
+        default: "latest"
+
+env:
+  ELIXIR_VERSION: "1.18"
+  OTP_VERSION: "27"
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version != 'latest' && github.event.inputs.version || github.ref }}
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: backend/assets/package-lock.json
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(git describe --tags --always)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        working-directory: backend
+        env:
+          MIX_ENV: prod
+        run: mix deps.get --only prod
+
+      - name: Install Node dependencies
+        working-directory: backend/assets
+        run: npm ci
+
+      - name: Build assets
+        working-directory: backend/assets
+        run: npm run deploy
+
+      - name: Digest assets
+        working-directory: backend
+        env:
+          MIX_ENV: prod
+        run: mix phx.digest
+
+      - name: Compile
+        working-directory: backend
+        env:
+          MIX_ENV: prod
+        run: mix compile
+
+      - name: Build release
+        working-directory: backend
+        env:
+          MIX_ENV: prod
+        run: mix release
+
+      - name: Create release tarball
+        run: |
+          tar -czf buttonlog-${{ steps.version.outputs.version }}.tar.gz \
+            -C backend/_build/prod/rel buttonlog
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ vars.DEPLOY_PORT || 22 }} ${{ vars.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        run: |
+          scp -P ${{ vars.DEPLOY_PORT || 22 }} \
+            buttonlog-${{ steps.version.outputs.version }}.tar.gz \
+            ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:/tmp/
+
+      - name: Deploy release
+        run: |
+          ssh -p ${{ vars.DEPLOY_PORT || 22 }} ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }} << 'SCRIPT'
+          set -e
+
+          VERSION="${{ steps.version.outputs.version }}"
+          APP_DIR="/opt/buttonlog"
+          RELEASE_DIR="${APP_DIR}/releases/buttonlog-${VERSION}"
+
+          # Extract release
+          mkdir -p ${RELEASE_DIR}
+          tar -xzf /tmp/buttonlog-${VERSION}.tar.gz -C ${RELEASE_DIR}
+          rm /tmp/buttonlog-${VERSION}.tar.gz
+
+          # Run migrations
+          source ${APP_DIR}/config/.env
+          ${RELEASE_DIR}/buttonlog/bin/buttonlog eval "ButtonLog.Release.migrate()"
+
+          # Update symlink
+          ln -sfn ${RELEASE_DIR}/buttonlog ${APP_DIR}/current
+
+          # Restart service
+          sudo systemctl restart buttonlog
+
+          # Cleanup old releases (keep last 5)
+          cd ${APP_DIR}/releases
+          ls -t | tail -n +6 | xargs -r rm -rf
+
+          echo "Deployment complete!"
+          SCRIPT
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          ssh -p ${{ vars.DEPLOY_PORT || 22 }} ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }} \
+            "curl -sf http://localhost:4000/health"
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "✅ Deployed ${{ steps.version.outputs.version }} to production"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "❌ Deployment of ${{ steps.version.outputs.version }} failed"

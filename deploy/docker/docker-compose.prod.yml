@@ -1,0 +1,29 @@
+# Production overrides - use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+version: "3.8"
+
+services:
+  app:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/buttonlog/buttonlog:${VERSION:-latest}
+    build: []  # Don't build in production, use pre-built image
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  db:
+    # In production, use managed PostgreSQL (Linode, AWS RDS)
+    # Remove this service and set DATABASE_URL to managed instance
+    profiles:
+      - local-db-only
+
+  nginx:
+    profiles:
+      - with-nginx
+    deploy:
+      replicas: 1

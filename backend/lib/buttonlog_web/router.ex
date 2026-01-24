@@ -279,6 +279,11 @@ defmodule ButtonLogWeb.Router do
     post "/webhooks/stripe", API.StripeWebhookController, :handle
   end
 
+  # Health check endpoint (no auth, no pipeline)
+  scope "/", ButtonLogWeb do
+    get "/health", HealthController, :check
+  end
+
   # Enable LiveDashboard in development
   if Application.compile_env(:buttonlog, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
