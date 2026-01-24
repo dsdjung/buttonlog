@@ -26,8 +26,7 @@ defmodule ButtonLogWeb.FriendsLive do
        |> assign(:created_gift_buttons, created_gift_buttons)
        |> assign(:show_gift_buttons, false)
        |> assign(:editing_gift_button, nil)
-       |> assign(:search_query, "")
-       |> assign(:search_results, [])
+       |> assign(:invite_email, "")
        |> assign(:page_title, "Friends")}
     else
       {:ok,
@@ -39,53 +38,58 @@ defmodule ButtonLogWeb.FriendsLive do
        |> assign(:created_gift_buttons, [])
        |> assign(:show_gift_buttons, false)
        |> assign(:editing_gift_button, nil)
-       |> assign(:search_query, "")
-       |> assign(:search_results, [])
+       |> assign(:invite_email, "")
        |> assign(:page_title, "Friends")}
     end
   end
 
   @impl true
-  def handle_event("search_users", %{"query" => query}, socket) do
-    if String.length(query) >= 3 do
-      results = Accounts.search_users(query, socket.assigns.current_user.id)
-      {:noreply, socket |> assign(:search_results, results) |> assign(:search_query, query)}
+  def handle_event("send_invite", %{"email" => email}, socket) do
+    user = socket.assigns.current_user
+    email = String.trim(email)
+
+    # Check if inviting self
+    if String.downcase(email) == String.downcase(user.email) do
+      {:noreply, socket |> put_flash(:error, "You cannot invite yourself")}
     else
-      {:noreply, socket |> assign(:search_results, []) |> assign(:search_query, query)}
-    end
-  end
+      # Check if user exists
+      case Accounts.get_user_by_email(email) do
+        nil ->
+          # User not registered - send invitation email
+          case Social.send_friend_invitation(user.id, email) do
+            {:ok, :invitation_sent} ->
+              {:noreply,
+               socket
+               |> put_flash(:info, "Invite sent to #{email}")
+               |> assign(:invite_email, "")}
 
-  @impl true
-  def handle_event("send_friend_request", %{"user_id" => friend_id}, socket) do
-    user_id = socket.assigns.current_user.id
+            {:error, _} ->
+              # Still show success to prevent enumeration
+              {:noreply,
+               socket
+               |> put_flash(:info, "Invite sent to #{email}")
+               |> assign(:invite_email, "")}
+          end
 
-    IO.puts "=== FRIEND REQUEST EVENT DEBUG ==="
-    IO.puts "user_id from socket: #{user_id}"
-    IO.puts "friend_id from params: #{friend_id}"
-    IO.puts "current_user: #{inspect(socket.assigns.current_user)}"
+        friend ->
+          # User exists - send friend request
+          case Social.send_friend_request(user.id, friend.id) do
+            {:ok, _friendship} ->
+              sent_requests = Social.get_sent_friend_requests(user.id)
+              {:noreply,
+               socket
+               |> put_flash(:info, "Invite sent to #{email}")
+               |> assign(:sent_requests, sent_requests)
+               |> assign(:invite_email, "")}
 
-    case Social.send_friend_request(user_id, friend_id) do
-      {:ok, _friendship} ->
-        IO.puts "Friend request successful"
-        # Refresh sent requests
-        sent_requests = Social.get_sent_friend_requests(user_id)
-        {:noreply,
-         socket
-         |> put_flash(:info, "Friend request sent!")
-         |> assign(:sent_requests, sent_requests)
-         |> assign(:search_results, [])}
-
-      {:error, :already_friends} ->
-        IO.puts "Already friends error"
-        {:noreply, socket |> put_flash(:error, "You are already friends with this user")}
-
-      {:error, :user_not_found} ->
-        IO.puts "User not found error"
-        {:noreply, socket |> put_flash(:error, "User not found")}
-
-      {:error, reason} ->
-        IO.puts "Other error: #{inspect(reason)}"
-        {:noreply, socket |> put_flash(:error, "Failed to send friend request: #{inspect(reason)}")}
+            {:error, _} ->
+              # Still show success to prevent enumeration
+              {:noreply,
+               socket
+               |> put_flash(:info, "Invite sent to #{email}")
+               |> assign(:invite_email, "")}
+          end
+      end
     end
   end
 
