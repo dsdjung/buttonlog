@@ -1,5 +1,70 @@
 <div class="min-h-screen bg-gray-50">
   <div id="timezone-detector-index" phx-hook="TimezoneDetector" style="display: none;"></div>
+
+  <!-- Upgrade Prompt Modal -->
+  <%= if @upgrade_info do %>
+    <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="upgrade-modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" phx-click="dismiss_upgrade"></div>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+          <div class="bg-white px-6 pt-6 pb-4">
+            <!-- Crown Icon -->
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 mb-4">
+              <svg class="h-10 w-10 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/>
+                <path d="M19 19H5v-2h14v2z"/>
+              </svg>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-xl font-bold text-gray-900 text-center mb-2" id="upgrade-modal-title">
+              Upgrade Required
+            </h3>
+
+            <!-- Message -->
+            <p class="text-gray-600 text-center mb-4">
+              <%= @upgrade_info.message %>
+            </p>
+
+            <!-- Usage Info -->
+            <%= if Map.get(@upgrade_info, :current_usage) && Map.get(@upgrade_info, :limit) do %>
+              <div class="flex justify-between items-center px-4 py-3 bg-gray-50 rounded-lg mb-4">
+                <span class="text-sm text-gray-600">Current usage:</span>
+                <span class="text-sm font-semibold text-gray-900">
+                  <%= @upgrade_info.current_usage %> / <%= @upgrade_info.limit %>
+                </span>
+              </div>
+            <% end %>
+
+            <!-- Upgrade Benefit -->
+            <div class="flex items-start gap-2 text-sm text-gray-500 mb-6">
+              <svg class="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span><%= @upgrade_info.upgrade_benefit %></span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="bg-gray-50 px-6 py-4 flex flex-col gap-3">
+            <a href={~p"/account"} class="w-full flex items-center justify-center px-4 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary-600 transition-colors">
+              <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+              </svg>
+              Upgrade to <%= String.capitalize(@upgrade_info.recommended_plan || "Premium") %>
+            </a>
+            <button phx-click="dismiss_upgrade" class="w-full px-4 py-2 text-gray-600 font-medium hover:text-gray-800 transition-colors">
+              Maybe Later
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
   <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
     <div class="py-8">
       <!-- Header with New Button -->

@@ -2,6 +2,7 @@ defmodule ButtonLogWeb.ButtonLive.Index do
   use ButtonLogWeb, :live_view
   alias ButtonLog.Buttons
   alias ButtonLog.Alerts
+  alias ButtonLog.Subscriptions.SubscriptionService
 
 
   @impl true
@@ -28,7 +29,8 @@ defmodule ButtonLogWeb.ButtonLive.Index do
        |> assign(:page_title, "ButtonLog")
        |> assign(:authenticated, true)
        |> assign(:search_query, "")
-       |> assign(:filter_type, "all")}
+       |> assign(:filter_type, "all")
+       |> assign(:upgrade_info, nil)}
     else
       {:ok,
        socket
@@ -41,7 +43,8 @@ defmodule ButtonLogWeb.ButtonLive.Index do
        |> assign(:page_title, "ButtonLog")
        |> assign(:authenticated, false)
        |> assign(:search_query, "")
-       |> assign(:filter_type, "all")}
+       |> assign(:filter_type, "all")
+       |> assign(:upgrade_info, nil)}
     end
   end
 
@@ -96,6 +99,11 @@ defmodule ButtonLogWeb.ButtonLive.Index do
   end
 
   @impl true
+  def handle_event("dismiss_upgrade", _, socket) do
+    {:noreply, socket |> assign(:upgrade_info, nil)}
+  end
+
+  @impl true
   def handle_event("validate_button", %{"button" => button_params}, socket) do
     changeset =
       ButtonLog.Buttons.Button.create_changeset(%ButtonLog.Buttons.Button{}, button_params, socket.assigns.current_user.id)
@@ -114,51 +122,61 @@ defmodule ButtonLogWeb.ButtonLive.Index do
   def handle_event("create_button", %{"button" => button_params}, socket) do
     user = socket.assigns.current_user
 
-    # Process choices if present - convert indexed map to list and filter empty
-    button_params = case Map.get(button_params, "choices") do
-      nil -> button_params
-      choices when is_map(choices) ->
-        # Convert {"0" => "Yes", "1" => "No"} to ["Yes", "No"]
-        choices_list = choices
-        |> Enum.sort_by(fn {k, _v} -> String.to_integer(k) end)
-        |> Enum.map(fn {_k, v} -> v end)
-        |> Enum.filter(fn c -> c != nil and String.trim(c) != "" end)
+    # Check subscription limits first
+    current_button_count = Buttons.count_user_buttons(user.id)
 
-        # Only set choices if we have at least 2 valid options
-        if length(choices_list) >= 2 do
-          Map.put(button_params, "choices", choices_list)
-        else
-          Map.delete(button_params, "choices")
+    case SubscriptionService.check_action_with_upgrade_info(user.id, :create_button, %{current_button_count: current_button_count}) do
+      {:error, upgrade_info} ->
+        # User has reached their button limit - show upgrade prompt
+        {:noreply, socket |> assign(:upgrade_info, upgrade_info)}
+
+      {:ok, :allowed} ->
+        # Process choices if present - convert indexed map to list and filter empty
+        button_params = case Map.get(button_params, "choices") do
+          nil -> button_params
+          choices when is_map(choices) ->
+            # Convert {"0" => "Yes", "1" => "No"} to ["Yes", "No"]
+            choices_list = choices
+            |> Enum.sort_by(fn {k, _v} -> String.to_integer(k) end)
+            |> Enum.map(fn {_k, v} -> v end)
+            |> Enum.filter(fn c -> c != nil and String.trim(c) != "" end)
+
+            # Only set choices if we have at least 2 valid options
+            if length(choices_list) >= 2 do
+              Map.put(button_params, "choices", choices_list)
+            else
+              Map.delete(button_params, "choices")
+            end
+          _ -> button_params
         end
-      _ -> button_params
-    end
 
-    # Parse friend_alerts configuration
-    friend_alert_config = parse_friend_alert_config(button_params["friend_alerts"])
+        # Parse friend_alerts configuration
+        friend_alert_config = parse_friend_alert_config(button_params["friend_alerts"])
 
-    case Buttons.create_button(button_params, user.id, friend_alert_config) do
-      {:ok, button} ->
-        # Refresh the buttons list to get proper structure with latest_click_at
-        updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
-        filtered_buttons = filter_buttons(updated_buttons, socket.assigns.search_query, socket.assigns.filter_type)
+        case Buttons.create_button(button_params, user.id, friend_alert_config) do
+          {:ok, button} ->
+            # Refresh the buttons list to get proper structure with latest_click_at
+            updated_buttons = ButtonLog.Buttons.list_user_buttons(user.id)
+            filtered_buttons = filter_buttons(updated_buttons, socket.assigns.search_query, socket.assigns.filter_type)
 
-        # Broadcast to all connected clients
-        Phoenix.PubSub.broadcast!(
-          ButtonLog.PubSub,
-          "buttons",
-          {:button_created, button}
-        )
+            # Broadcast to all connected clients
+            Phoenix.PubSub.broadcast!(
+              ButtonLog.PubSub,
+              "buttons",
+              {:button_created, button}
+            )
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Button created successfully!")
-         |> assign(:show_create_form, false)
-         |> assign(:button_changeset, nil)
-         |> assign(:all_buttons, updated_buttons)
-         |> assign(:buttons, filtered_buttons)}
+            {:noreply,
+             socket
+             |> put_flash(:info, "Button created successfully!")
+             |> assign(:show_create_form, false)
+             |> assign(:button_changeset, nil)
+             |> assign(:all_buttons, updated_buttons)
+             |> assign(:buttons, filtered_buttons)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, socket |> put_flash(:error, "Failed to create button") |> assign(:button_changeset, changeset)}
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, socket |> put_flash(:error, "Failed to create button") |> assign(:button_changeset, changeset)}
+        end
     end
   end
 
