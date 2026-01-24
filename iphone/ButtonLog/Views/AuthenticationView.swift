@@ -103,6 +103,7 @@ struct AppleSignInButton: View {
 
 struct GoogleSignInButton: View {
     let authManager: AuthenticationManager
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         SwiftUI.Button(action: {
@@ -110,25 +111,19 @@ struct GoogleSignInButton: View {
                 await authManager.loginWithGoogle()
             }
         }) {
-            HStack(spacing: BLSpacing.md) {
+            HStack(spacing: BLSpacing.sm) {
                 // Google "G" logo
                 GoogleLogo()
-                    .frame(width: 20, height: 20)
+                    .frame(width: 18, height: 18)
 
-                Text("Continue with Google")
-                    .font(BLTypography.labelLarge)
-
-                Spacer()
+                Text("Sign in with Google")
+                    .font(.system(size: 17, weight: .medium))
             }
-            .foregroundColor(.blTextPrimary)
-            .padding(BLSpacing.lg)
-            .background(Color.blSurface)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .foregroundColor(colorScheme == .dark ? .black : .white)
+            .background(colorScheme == .dark ? Color.white : Color.black)
             .cornerRadius(BLRadius.md)
-            .overlay(
-                RoundedRectangle(cornerRadius: BLRadius.md)
-                    .stroke(Color.blTextTertiary.opacity(0.3), lineWidth: 1)
-            )
-            .blShadow(BLShadow.small)
         }
         .disabled(authManager.isLoading)
     }
