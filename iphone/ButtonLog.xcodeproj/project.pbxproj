@@ -48,6 +48,7 @@
 		CD11234567890063 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890062 /* DesignTokens.swift */; };
 		CD11234567890065 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890064 /* SplashView.swift */; };
 		CD11234567890067 /* CreatedGiftButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890066 /* CreatedGiftButtonsView.swift */; };
+		CD11234567890069 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890068 /* AppConfig.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -92,6 +93,7 @@
 		CD11234567890062 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		CD11234567890064 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		CD11234567890066 /* CreatedGiftButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatedGiftButtonsView.swift; sourceTree = "<group>"; };
+		CD11234567890068 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -151,6 +153,7 @@
 		CD11234567890100 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				CD11234567890068 /* AppConfig.swift */,
 				CD11234567890000 /* Button.swift */,
 				CD11234567890002 /* User.swift */,
 				CD11234567890004 /* Subscription.swift */,
@@ -328,6 +331,7 @@
 				CD11234567890063 /* DesignTokens.swift in Sources */,
 				CD11234567890065 /* SplashView.swift in Sources */,
 				CD11234567890067 /* CreatedGiftButtonsView.swift in Sources */,
+				CD11234567890069 /* AppConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
