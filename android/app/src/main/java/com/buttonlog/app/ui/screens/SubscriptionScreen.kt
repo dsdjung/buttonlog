@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.buttonlog.app.data.model.*
 import com.buttonlog.app.ui.viewmodels.FaqItem
+import java.util.Locale
 import com.buttonlog.app.ui.viewmodels.SubscriptionUiState
 import com.buttonlog.app.ui.viewmodels.SubscriptionViewModel
 import com.buttonlog.app.ui.viewmodels.subscriptionFaqs
@@ -482,7 +483,7 @@ private fun PlanCard(
     onSubscribe: () -> Unit
 ) {
     val price = if (billingCycle == BillingCycle.MONTHLY) plan.monthlyPrice else plan.yearlyPrice
-    val formattedPrice = String.format("$%.2f", price)
+    val formattedPrice = String.format(Locale.US, "$%.2f", price)
     val isFreePlan = plan.monthlyPrice == 0.0
 
     Card(

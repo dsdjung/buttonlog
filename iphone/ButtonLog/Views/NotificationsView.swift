@@ -127,51 +127,38 @@ struct NotificationsView: View {
                 }
             }
         }
-        .background(
-            Group {
-                NavigationLink(destination: FriendsView(), isActive: $navigateToFriends) {
-                    EmptyView()
-                }
-                NavigationLink(destination: SupportView(), isActive: $navigateToSupport) {
-                    EmptyView()
-                }
-                if let buttonId = selectedButtonId,
-                   let button = appState.buttons.first(where: { $0.id == buttonId }) {
-                    NavigationLink(
-                        destination: ButtonHistoryView(button: button),
-                        isActive: Binding(
-                            get: { selectedButtonId != nil },
-                            set: { if !$0 { selectedButtonId = nil } }
-                        )
-                    ) {
-                        EmptyView()
-                    }
-                }
-                if let ticketId = selectedTicketId {
-                    NavigationLink(
-                        destination: SupportTicketView(ticketId: ticketId),
-                        isActive: Binding(
-                            get: { selectedTicketId != nil },
-                            set: { if !$0 { selectedTicketId = nil } }
-                        )
-                    ) {
-                        EmptyView()
-                    }
-                }
-                if let friendId = selectedFriendId,
-                   let friend = appState.friends.first(where: { $0.friendId == friendId }) {
-                    NavigationLink(
-                        destination: FriendDetailView(friend: friend),
-                        isActive: Binding(
-                            get: { selectedFriendId != nil },
-                            set: { if !$0 { selectedFriendId = nil } }
-                        )
-                    ) {
-                        EmptyView()
-                    }
-                }
+        .navigationDestination(isPresented: $navigateToFriends) {
+            FriendsView()
+        }
+        .navigationDestination(isPresented: $navigateToSupport) {
+            SupportView()
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedButtonId != nil },
+            set: { if !$0 { selectedButtonId = nil } }
+        )) {
+            if let buttonId = selectedButtonId,
+               let button = appState.buttons.first(where: { $0.id == buttonId }) {
+                ButtonHistoryView(button: button)
             }
-        )
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedTicketId != nil },
+            set: { if !$0 { selectedTicketId = nil } }
+        )) {
+            if let ticketId = selectedTicketId {
+                SupportTicketView(ticketId: ticketId)
+            }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedFriendId != nil },
+            set: { if !$0 { selectedFriendId = nil } }
+        )) {
+            if let friendId = selectedFriendId,
+               let friend = appState.friends.first(where: { $0.friendId == friendId }) {
+                FriendDetailView(friend: friend)
+            }
+        }
     }
 
     private func handleNavigation(_ destination: NotificationDestination) {
@@ -195,7 +182,7 @@ struct NotificationsView: View {
         Task {
             for index in offsets {
                 let notification = filteredNotifications[index]
-                await appState.deleteNotification(id: notification.id)
+                _ = await appState.deleteNotification(id: notification.id)
             }
         }
     }

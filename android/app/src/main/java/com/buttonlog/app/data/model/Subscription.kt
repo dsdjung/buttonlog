@@ -1,6 +1,7 @@
 package com.buttonlog.app.data.model
 
 import com.google.gson.annotations.SerializedName
+import java.util.Locale
 
 // MARK: - Subscription Plans
 
@@ -25,10 +26,10 @@ data class SubscriptionPlan(
     val updatedAt: String
 ) {
     val formattedMonthlyPrice: String
-        get() = String.format("$%.2f", monthlyPrice)
+        get() = String.format(Locale.US, "$%.2f", monthlyPrice)
 
     val formattedYearlyPrice: String
-        get() = String.format("$%.2f", yearlyPrice)
+        get() = String.format(Locale.US, "$%.2f", yearlyPrice)
 }
 
 data class SubscriptionFeatures(
@@ -95,7 +96,7 @@ data class UserSubscription(
         get() = status == SubscriptionStatus.ACTIVE
 
     val formattedAmount: String
-        get() = String.format("$%.2f", amount)
+        get() = String.format(Locale.US, "$%.2f", amount)
 }
 
 enum class SubscriptionStatus(val displayName: String) {
@@ -215,7 +216,7 @@ data class PaymentMethod(
         get() {
             val month = cardExpMonth ?: return null
             val year = cardExpYear ?: return null
-            return String.format("%02d/%02d", month, year % 100)
+            return String.format(Locale.US, "%02d/%02d", month, year % 100)
         }
 
     val isExpired: Boolean
@@ -264,10 +265,10 @@ data class Invoice(
     val updatedAt: String
 ) {
     val formattedAmountDue: String
-        get() = String.format("$%.2f", amountDue)
+        get() = String.format(Locale.US, "$%.2f", amountDue)
 
     val formattedAmountPaid: String
-        get() = String.format("$%.2f", amountPaid)
+        get() = String.format(Locale.US, "$%.2f", amountPaid)
 
     val balance: Double
         get() = amountDue - amountPaid
@@ -323,7 +324,7 @@ data class CouponCode(
     val discountDisplay: String
         get() = when (discountType) {
             DiscountType.PERCENTAGE -> "${discountValue.toInt()}% off"
-            DiscountType.FIXED_AMOUNT -> String.format("$%.2f off", discountValue)
+            DiscountType.FIXED_AMOUNT -> String.format(Locale.US, "$%.2f off", discountValue)
         }
 }
 

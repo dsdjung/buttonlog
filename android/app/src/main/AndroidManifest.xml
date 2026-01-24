@@ -34,7 +34,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.ButtonLog"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -43,13 +42,11 @@
             </intent-filter>
 
             <!-- OAuth callback deep link -->
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="buttonlog"
-                    android:host="oauth" />
+                <data android:scheme="buttonlog" />
             </intent-filter>
         </activity>
 

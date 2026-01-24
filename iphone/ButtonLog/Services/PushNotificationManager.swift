@@ -137,14 +137,22 @@ class PushNotificationManager: NSObject, ObservableObject {
     // MARK: - Badge Management
 
     func clearBadge() {
-        DispatchQueue.main.async {
-            UIApplication.shared.applicationIconBadgeNumber = 0
+        Task {
+            do {
+                try await UNUserNotificationCenter.current().setBadgeCount(0)
+            } catch {
+                print("Failed to clear badge: \(error)")
+            }
         }
     }
 
     func setBadge(count: Int) {
-        DispatchQueue.main.async {
-            UIApplication.shared.applicationIconBadgeNumber = count
+        Task {
+            do {
+                try await UNUserNotificationCenter.current().setBadgeCount(count)
+            } catch {
+                print("Failed to set badge count: \(error)")
+            }
         }
     }
 }

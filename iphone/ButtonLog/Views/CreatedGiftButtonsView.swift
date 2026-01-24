@@ -54,7 +54,7 @@ struct CreatedGiftButtonsView: View {
             SwiftUI.Button("Delete", role: .destructive) {
                 if let button = buttonToDelete {
                     Task {
-                        await appState.deleteCreatedGiftButton(id: button.id)
+                        _ = await appState.deleteCreatedGiftButton(id: button.id)
                         buttonToDelete = nil
                     }
                 }

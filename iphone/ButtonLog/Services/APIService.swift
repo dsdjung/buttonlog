@@ -266,12 +266,13 @@ class APIService {
             "password": password
         ]
         
-        return try await makeRequest<AuthResponse>(
+        let response: AuthResponse = try await makeRequest(
             endpoint: "/auth/login",
             method: .POST,
             body: body,
             requiresAuth: false
         )
+        return response
     }
     
     func register(email: String, password: String, confirmPassword: String) async throws -> AuthResponse {
@@ -294,12 +295,13 @@ class APIService {
     func refreshToken(_ token: String) async throws -> TokenResponse {
         let body = ["token": token]
         
-        return try await makeRequest<TokenResponse>(
+        let response: TokenResponse = try await makeRequest(
             endpoint: "/auth/refresh",
             method: .POST,
             body: body,
             requiresAuth: false
         )
+        return response
     }
     
     func logout() async throws {
@@ -638,11 +640,12 @@ class APIService {
     // MARK: - Device Registration (Push Notifications)
 
     func registerDevice(deviceToken: String, platform: String = "iphone") async throws -> DeviceRegistration {
+        let osVersion = await MainActor.run { UIDevice.current.systemVersion }
         let body: [String: Any] = [
             "device_token": deviceToken,
             "platform": platform,
             "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
-            "os_version": UIDevice.current.systemVersion
+            "os_version": osVersion
         ]
 
         return try await makeRequest(

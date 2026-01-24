@@ -27,6 +27,7 @@ import com.buttonlog.app.data.model.FriendButton
 import com.buttonlog.app.data.model.FriendActivity
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.ui.viewmodels.FriendsUiState
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -605,7 +606,7 @@ private fun FriendButtonCard(button: FriendButton) {
 private fun formatCoordinates(lat: Double, lng: Double): String {
     val latDir = if (lat >= 0) "N" else "S"
     val lngDir = if (lng >= 0) "E" else "W"
-    return String.format("%.4f°%s %.4f°%s", kotlin.math.abs(lat), latDir, kotlin.math.abs(lng), lngDir)
+    return String.format(Locale.US, "%.4f°%s %.4f°%s", kotlin.math.abs(lat), latDir, kotlin.math.abs(lng), lngDir)
 }
 
 private fun getPlatformIcon(platform: String?): ImageVector {

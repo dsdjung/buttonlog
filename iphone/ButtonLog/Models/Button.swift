@@ -395,9 +395,10 @@ struct ButtonFormData {
     ]
 
     func toRequestBody() -> [String: Any] {
+        let descriptionValue: String? = description.isEmpty ? nil : description
         var body: [String: Any] = [
             "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
-            "description": description.isEmpty ? nil : description,
+            "description": descriptionValue as Any,
             "type": type.rawValue,
             "icon": icon,
             "color": color,

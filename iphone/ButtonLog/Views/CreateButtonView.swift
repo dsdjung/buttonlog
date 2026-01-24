@@ -89,9 +89,9 @@ struct CreateButtonView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .onChange(of: formData.type) { newType in
+                    .onChange(of: formData.type) { oldValue, newValue in
                         // Initialize choices with 2 empty strings when switching to one-time
-                        if newType == .oneTime && formData.choices.isEmpty {
+                        if newValue == .oneTime && formData.choices.isEmpty {
                             formData.choices = ["", ""]
                         }
                     }
@@ -673,9 +673,9 @@ struct CreateGiftButtonView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .onChange(of: formData.type) { newType in
+                    .onChange(of: formData.type) { oldValue, newValue in
                         // Initialize choices with 2 empty strings when switching to one-time
-                        if newType == .oneTime && formData.choices.isEmpty {
+                        if newValue == .oneTime && formData.choices.isEmpty {
                             formData.choices = ["", ""]
                         }
                     }

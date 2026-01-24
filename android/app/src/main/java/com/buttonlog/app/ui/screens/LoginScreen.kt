@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.buttonlog.app.R
 import com.buttonlog.app.ui.viewmodels.AuthViewModel
@@ -107,6 +108,9 @@ fun LoginScreen(
                     image = profilePictureUri,
                     accessToken = idToken
                 )
+            } catch (e: NoCredentialException) {
+                Log.w("LoginScreen", "No Google credential found - user may need to add account")
+                viewModel.setError("No Google account found. Please add a Google account to your device.")
             } catch (e: GetCredentialException) {
                 Log.e("LoginScreen", "Google Sign-In failed: ${e.type} - ${e.message}", e)
                 viewModel.setError("Google Sign-In failed: ${e.message ?: e.type}")
