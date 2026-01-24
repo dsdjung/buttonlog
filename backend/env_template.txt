@@ -44,3 +44,16 @@ export AWS_SECRET_ACCESS_KEY="your-aws-secret-access-key"
 export AWS_REGION="us-east-1"
 export SES_FROM_EMAIL="noreply@yourdomain.com"
 export SES_FROM_NAME="ButtonLog"
+
+# Stripe Payment Configuration
+# Get these from Stripe Dashboard > Developers > API keys
+export STRIPE_PUBLISHABLE_KEY="pk_test_your-publishable-key"
+export STRIPE_SECRET_KEY="sk_test_your-secret-key"
+# Webhook secret from Stripe Dashboard > Developers > Webhooks
+export STRIPE_WEBHOOK_SECRET="whsec_your-webhook-secret"
+
+# Stripe Price IDs (from Products > Pricing)
+export STRIPE_PRICE_PREMIUM_MONTHLY="price_your-premium-monthly-id"
+export STRIPE_PRICE_PREMIUM_YEARLY="price_your-premium-yearly-id"
+export STRIPE_PRICE_ENTERPRISE_MONTHLY="price_your-enterprise-monthly-id"
+export STRIPE_PRICE_ENTERPRISE_YEARLY="price_your-enterprise-yearly-id"

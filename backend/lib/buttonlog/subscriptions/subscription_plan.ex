@@ -35,6 +35,11 @@ defmodule ButtonLog.Subscriptions.SubscriptionPlan do
     field :trial_days, :integer, default: 0
     field :trial_requires_credit_card, :boolean, default: false
 
+    # Stripe integration
+    field :stripe_product_id, :string
+    field :stripe_price_id_monthly, :string
+    field :stripe_price_id_yearly, :string
+
     timestamps()
   end
 
@@ -45,7 +50,8 @@ defmodule ButtonLog.Subscriptions.SubscriptionPlan do
                     :max_button_clicks_per_month, :max_analytics_history_days, :max_export_history_days,
                     :has_advanced_analytics, :has_calendar_sync, :has_api_access,
                     :has_priority_support, :has_custom_themes, :has_team_features, :has_white_label,
-                    :trial_days, :trial_requires_credit_card])
+                    :trial_days, :trial_requires_credit_card,
+                    :stripe_product_id, :stripe_price_id_monthly, :stripe_price_id_yearly])
     |> validate_required([:name, :slug, :price_monthly, :price_yearly])
     |> validate_length(:name, min: 1, max: 100)
     |> validate_length(:slug, min: 1, max: 50)
