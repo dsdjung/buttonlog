@@ -48,7 +48,7 @@ fun NotificationsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Alerts") },
+                title = { Text("Logs") },
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Menu")
@@ -102,7 +102,7 @@ fun NotificationsScreen(
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "Loading alerts...",
+                            "Loading logs...",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -149,13 +149,13 @@ fun NotificationsScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            if (uiState.showUnreadOnly) "No unread alerts" else "No alerts yet",
+                            if (uiState.showUnreadOnly) "No unread logs" else "No logs yet",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            if (uiState.showUnreadOnly) "All caught up!" else "You'll see alerts here when you have activity from friends",
+                            if (uiState.showUnreadOnly) "All caught up!" else "You'll see logs here when you have activity from friends",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

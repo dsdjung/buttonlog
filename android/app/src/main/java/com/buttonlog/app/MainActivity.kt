@@ -152,8 +152,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 val items = listOf(
                     NavigationItem(
                         route = "home",
-                        title = "Home",
-                        icon = Icons.Default.Home
+                        title = "Buttons",
+                        icon = Icons.Default.GridView
                     ),
                     NavigationItem(
                         route = "friends",
@@ -168,7 +168,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     ),
                     NavigationItem(
                         route = "notifications",
-                        title = "Alerts",
+                        title = "Logs",
                         icon = Icons.Default.Notifications,
                         badgeCount = unreadNotificationsCount
                     ),

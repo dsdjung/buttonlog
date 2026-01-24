@@ -17,11 +17,11 @@ final class ButtonsUITests: XCTestCase {
 
     // MARK: - Navigation Tests
 
-    func testHomeTabIsSelected() throws {
-        // Home tab should be visible and selected by default
-        let homeTab = app.tabBars.buttons["Home"]
-        XCTAssertTrue(homeTab.exists)
-        XCTAssertTrue(homeTab.isSelected)
+    func testButtonsTabIsSelected() throws {
+        // Buttons tab should be visible and selected by default
+        let buttonsTab = app.tabBars.buttons["Buttons"]
+        XCTAssertTrue(buttonsTab.exists)
+        XCTAssertTrue(buttonsTab.isSelected)
     }
 
     func testNavigationBetweenTabs() throws {
@@ -35,20 +35,20 @@ final class ButtonsUITests: XCTestCase {
         diaryTab.tap()
         XCTAssertTrue(diaryTab.isSelected)
 
-        // Navigate to Alerts tab
-        let alertsTab = app.tabBars.buttons["Alerts"]
-        alertsTab.tap()
-        XCTAssertTrue(alertsTab.isSelected)
+        // Navigate to Logs tab
+        let logsTab = app.tabBars.buttons["Logs"]
+        logsTab.tap()
+        XCTAssertTrue(logsTab.isSelected)
 
         // Navigate to Account tab
         let accountTab = app.tabBars.buttons["Account"]
         accountTab.tap()
         XCTAssertTrue(accountTab.isSelected)
 
-        // Navigate back to Home
-        let homeTab = app.tabBars.buttons["Home"]
-        homeTab.tap()
-        XCTAssertTrue(homeTab.isSelected)
+        // Navigate back to Buttons
+        let buttonsTab = app.tabBars.buttons["Buttons"]
+        buttonsTab.tap()
+        XCTAssertTrue(buttonsTab.isSelected)
     }
 
     // MARK: - Search Tests
@@ -77,7 +77,7 @@ final class ButtonsUITests: XCTestCase {
     // MARK: - Create Button Tests
 
     func testFloatingActionButtonExists() throws {
-        // The FAB with + icon should be visible on the Home tab
+        // The FAB with + icon should be visible on the Buttons tab
         let fabButton = app.buttons.matching(identifier: "add_button").firstMatch
         // If identifier not set, look for + symbol
         let plusButtons = app.buttons.containing(.staticText, identifier: "+")

@@ -8,13 +8,13 @@ struct MainTabView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Home Tab - Buttons
+            // Buttons Tab
             NavigationView {
                 ButtonsView()
             }
             .tabItem {
-                Image(systemName: "house.fill")
-                Text("Home")
+                Image(systemName: "square.grid.2x2.fill")
+                Text("Buttons")
             }
             .tag(0)
             
@@ -39,13 +39,13 @@ struct MainTabView: View {
             }
             .tag(2)
             
-            // Alerts Tab
+            // Logs Tab
             NavigationView {
                 NotificationsView()
             }
             .tabItem {
                 Image(systemName: "bell.fill")
-                Text("Alerts")
+                Text("Logs")
             }
             .badge(appState.unreadNotificationCount)
             .tag(3)
