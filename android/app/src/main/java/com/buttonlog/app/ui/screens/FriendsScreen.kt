@@ -52,7 +52,7 @@ fun FriendsScreen(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Friend")
+                Text("Invite")
             }
         }
 
@@ -234,7 +234,7 @@ private fun EmptyFriendsView(onAddFriend: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Add friends to see their buttons and activity",
+            text = "Invite friends to see their buttons and activity",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -252,7 +252,7 @@ private fun EmptyFriendsView(onAddFriend: () -> Unit) {
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Add Friend")
+            Text("Invite Friend")
         }
     }
 }
@@ -367,8 +367,6 @@ private fun AddFriendDialog(
     onSendRequest: (email: String, username: String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var searchByEmail by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -378,52 +376,30 @@ private fun AddFriendDialog(
                 contentDescription = null
             )
         },
-        title = { Text("Add Friend") },
+        title = { Text("Invite Friend") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Toggle between email and username
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    FilterChip(
-                        selected = searchByEmail,
-                        onClick = { searchByEmail = true },
-                        label = { Text("Email") }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FilterChip(
-                        selected = !searchByEmail,
-                        onClick = { searchByEmail = false },
-                        label = { Text("Username") }
-                    )
-                }
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email address") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-                if (searchByEmail) {
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email address") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else {
-                    OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Username") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                Text(
+                    text = "We'll send an invite to this email. If they're already on ButtonLog, they'll get a friend request. If not, they'll receive an invitation to join.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onSendRequest(email, username) },
-                enabled = (searchByEmail && email.isNotBlank()) || (!searchByEmail && username.isNotBlank())
+                onClick = { onSendRequest(email, "") },
+                enabled = email.isNotBlank() && email.contains("@")
             ) {
-                Text("Send Request")
+                Text("Send Invite")
             }
         },
         dismissButton = {

@@ -60,7 +60,7 @@ struct FriendsView: View {
         .navigationTitle("Friends")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                SwiftUI.Button("Add Friend") {
+                SwiftUI.Button("Invite") {
                     showingAddFriend = true
                 }
             }
@@ -149,43 +149,27 @@ struct FriendRow: View {
 struct AddFriendView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject private var appState: AppState
-    
-    @State private var friendRequest = FriendRequest()
+
+    @State private var email = ""
     @State private var isLoading = false
-    @State private var searchBy: SearchBy = .email
-    
-    enum SearchBy: String, CaseIterable {
-        case email = "Email"
-        case username = "Username"
-    }
-    
+
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Find Friend")) {
-                    Picker("Search by", selection: $searchBy) {
-                        ForEach(SearchBy.allCases, id: \.self) { option in
-                            Text(option.rawValue).tag(option)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    
-                    if searchBy == .email {
-                        TextField("Enter email address", text: $friendRequest.email)
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                    } else {
-                        TextField("Enter username", text: $friendRequest.username)
-                            .autocapitalization(.none)
-                    }
+                Section(header: Text("Invite by Email")) {
+                    TextField("Enter email address", text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .textContentType(.emailAddress)
                 }
-                
-                Section(header: Text("Message (Optional)")) {
-                    TextField("Add a personal message", text: $friendRequest.message, axis: .vertical)
-                        .lineLimit(3)
+
+                Section {
+                    Text("We'll send an invite to this email address. If they're already on ButtonLog, they'll get a friend request. If not, they'll receive an invitation to join.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
             }
-            .navigationTitle("Add Friend")
+            .navigationTitle("Invite Friend")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden()
             .toolbar {
@@ -194,24 +178,30 @@ struct AddFriendView: View {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    SwiftUI.Button("Send Request") {
-                        sendFriendRequest()
+                    SwiftUI.Button("Send Invite") {
+                        sendInvite()
                     }
-                    .disabled(!friendRequest.isValid || isLoading)
+                    .disabled(!isValidEmail || isLoading)
                 }
             }
         }
         .disabled(isLoading)
     }
-    
-    private func sendFriendRequest() {
+
+    private var isValidEmail: Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        return email.range(of: emailRegex, options: .regularExpression) != nil
+    }
+
+    private func sendInvite() {
         isLoading = true
-        
+
         Task {
-            let success = await appState.sendFriendRequest(friendRequest)
-            
+            let request = FriendRequest(email: email)
+            let success = await appState.sendFriendRequest(request)
+
             await MainActor.run {
                 isLoading = false
                 if success {

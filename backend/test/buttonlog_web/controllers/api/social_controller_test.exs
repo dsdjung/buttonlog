@@ -44,32 +44,10 @@ defmodule ButtonLogWeb.API.SocialControllerTest do
   end
 
   describe "POST /api/friends/request" do
-    test "sends a friend request by friend_id", %{conn: conn, user: _user, token: token} do
-      other_user = insert_user(%{email: "other@test.com", username: "other"})
+    # Invite-only model: only email is accepted
+    # Whether user is registered or not, the response is identical
 
-      conn =
-        conn
-        |> put_req_header("authorization", "Bearer #{token}")
-        |> post("/api/friends/request", %{friend_id: other_user.id})
-
-      assert %{"success" => true, "data" => data} = json_response(conn, 201)
-      assert data["status"] == "pending"
-      assert data["friend_id"] == other_user.id
-    end
-
-    test "sends a friend request by username", %{conn: conn, user: _user, token: token} do
-      other_user = insert_user(%{email: "other2@test.com", username: "otherusername"})
-
-      conn =
-        conn
-        |> put_req_header("authorization", "Bearer #{token}")
-        |> post("/api/friends/request", %{username: "otherusername"})
-
-      assert %{"success" => true, "data" => data} = json_response(conn, 201)
-      assert data["friend_id"] == other_user.id
-    end
-
-    test "sends a friend request by email", %{conn: conn, user: _user, token: token} do
+    test "sends invite to registered user by email", %{conn: conn, user: _user, token: token} do
       _other_user = insert_user(%{email: "byemail@test.com", username: "byemail"})
 
       conn =
@@ -80,12 +58,12 @@ defmodule ButtonLogWeb.API.SocialControllerTest do
       # Response format is unified (same for existing users and invitations)
       # to prevent email enumeration attacks
       assert %{"success" => true, "data" => data} = json_response(conn, 201)
-      assert data["request_sent"] == true
+      assert data["invite_sent"] == true
       assert data["email"] == "byemail@test.com"
     end
 
-    test "sends invitation for unregistered email (same response as registered)", %{conn: conn, token: token} do
-      # When sending friend request to an unregistered email,
+    test "sends invite to unregistered email (same response as registered)", %{conn: conn, token: token} do
+      # When sending invite to an unregistered email,
       # the response should be identical to a registered user
       # to prevent email enumeration attacks
       conn =
@@ -94,51 +72,42 @@ defmodule ButtonLogWeb.API.SocialControllerTest do
         |> post("/api/friends/request", %{email: "unregistered@example.com"})
 
       assert %{"success" => true, "data" => data} = json_response(conn, 201)
-      assert data["request_sent"] == true
+      assert data["invite_sent"] == true
       assert data["email"] == "unregistered@example.com"
     end
 
-    test "returns error for non-existent user by friend_id", %{conn: conn, token: token} do
-      conn =
-        conn
-        |> put_req_header("authorization", "Bearer #{token}")
-        |> post("/api/friends/request", %{friend_id: Ecto.UUID.generate()})
-
-      assert %{"success" => false, "error" => error} = json_response(conn, 404)
-      assert error["code"] == "USER_NOT_FOUND"
-    end
-
-    test "returns error when already friends", %{conn: conn, user: user, token: token} do
+    test "returns success even if already friends (to prevent enumeration)", %{conn: conn, user: user, token: token} do
       friend = insert_user(%{email: "alreadyfriend@test.com", username: "alreadyfriend"})
       {:ok, _} = Social.send_friend_request(user.id, friend.id)
 
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{token}")
-        |> post("/api/friends/request", %{friend_id: friend.id})
+        |> post("/api/friends/request", %{email: "alreadyfriend@test.com"})
 
-      assert %{"success" => false, "error" => error} = json_response(conn, 409)
-      assert error["code"] == "ALREADY_FRIENDS"
+      # Returns success to prevent enumeration
+      assert %{"success" => true, "data" => data} = json_response(conn, 201)
+      assert data["invite_sent"] == true
     end
 
-    test "returns error for self friend request", %{conn: conn, user: user, token: token} do
-      conn =
-        conn
-        |> put_req_header("authorization", "Bearer #{token}")
-        |> post("/api/friends/request", %{friend_id: user.id})
-
-      assert %{"success" => false, "error" => error} = json_response(conn, 400)
-      assert error["code"] == "INVALID_REQUEST"
-    end
-
-    test "returns error for missing identifier", %{conn: conn, token: token} do
+    test "returns error for missing email", %{conn: conn, token: token} do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{token}")
         |> post("/api/friends/request", %{})
 
       assert %{"success" => false, "error" => error} = json_response(conn, 400)
-      assert error["code"] == "MISSING_IDENTIFIER"
+      assert error["code"] == "MISSING_EMAIL"
+    end
+
+    test "returns error for self invite", %{conn: conn, user: user, token: token} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/friends/request", %{email: user.email})
+
+      assert %{"success" => false, "error" => error} = json_response(conn, 400)
+      assert error["code"] == "INVALID_REQUEST"
     end
   end
 
