@@ -112,8 +112,8 @@ struct GoogleSignInButton: View {
         }) {
             HStack(spacing: BLSpacing.md) {
                 // Google "G" logo
-                Image(systemName: "globe")
-                    .font(.title3)
+                GoogleLogo()
+                    .frame(width: 20, height: 20)
 
                 Text("Continue with Google")
                     .font(BLTypography.labelLarge)
@@ -131,6 +131,57 @@ struct GoogleSignInButton: View {
             .blShadow(BLShadow.small)
         }
         .disabled(authManager.isLoading)
+    }
+}
+
+/// Google "G" logo rendered using SwiftUI
+struct GoogleLogo: View {
+    var body: some View {
+        GeometryReader { geometry in
+            let size = min(geometry.size.width, geometry.size.height)
+
+            ZStack {
+                // Blue arc (top-right)
+                GoogleArc(startAngle: -45, endAngle: 45)
+                    .fill(Color(red: 66/255, green: 133/255, blue: 244/255))
+
+                // Green arc (bottom-right)
+                GoogleArc(startAngle: 45, endAngle: 135)
+                    .fill(Color(red: 52/255, green: 168/255, blue: 83/255))
+
+                // Yellow arc (bottom-left)
+                GoogleArc(startAngle: 135, endAngle: 225)
+                    .fill(Color(red: 251/255, green: 188/255, blue: 5/255))
+
+                // Red arc (top-left)
+                GoogleArc(startAngle: 225, endAngle: 315)
+                    .fill(Color(red: 234/255, green: 67/255, blue: 53/255))
+
+                // Blue horizontal bar
+                Rectangle()
+                    .fill(Color(red: 66/255, green: 133/255, blue: 244/255))
+                    .frame(width: size * 0.45, height: size * 0.18)
+                    .offset(x: size * 0.12)
+            }
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+}
+
+struct GoogleArc: Shape {
+    let startAngle: Double
+    let endAngle: Double
+
+    func path(in rect: CGRect) -> Path {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        let innerRadius = radius * 0.5
+
+        var path = Path()
+        path.addArc(center: center, radius: radius, startAngle: .degrees(startAngle), endAngle: .degrees(endAngle), clockwise: false)
+        path.addArc(center: center, radius: innerRadius, startAngle: .degrees(endAngle), endAngle: .degrees(startAngle), clockwise: true)
+        path.closeSubpath()
+        return path
     }
 }
 
