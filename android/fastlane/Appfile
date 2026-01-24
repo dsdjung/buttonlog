@@ -1,0 +1,8 @@
+# Android Appfile Configuration
+
+# The package name of your app
+package_name("com.buttonlog.app")
+
+# Path to the JSON key file for Google Play Store API access
+# Generate this from Google Play Console > Setup > API access
+json_key_file(ENV["GOOGLE_PLAY_JSON_KEY"] || "fastlane/play-store-credentials.json")

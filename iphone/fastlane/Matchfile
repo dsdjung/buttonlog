@@ -1,0 +1,23 @@
+# Matchfile - Code Signing Configuration
+# match manages your certificates and provisioning profiles in a Git repo
+
+# Git repository to store certificates (create a private repo)
+git_url(ENV["MATCH_GIT_URL"] || "https://github.com/YOUR_ORG/buttonlog-certificates.git")
+
+# Storage mode: git, google_cloud, s3, or gitlab_secure_files
+storage_mode("git")
+
+# App identifiers to match
+app_identifier(["com.buttonlog.app"])
+
+# Your Apple Developer account
+username(ENV["APPLE_ID"] || "your-apple-id@example.com")
+
+# Team ID
+team_id(ENV["APPLE_TEAM_ID"] || "5R2YZH47Y4")
+
+# Types: development, adhoc, appstore, enterprise
+type("appstore")
+
+# Set to true to clone with readonly permissions
+readonly(ENV["CI"] == "true")

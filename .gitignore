@@ -49,3 +49,21 @@ credentials.json
 
 # Firebase config (contains project-specific keys)
 android/app/google-services.json
+
+# Deployment secrets
+android/release-keystore.jks
+android/fastlane/play-store-credentials.json
+android/fastlane/report.xml
+android/fastlane/README.md
+iphone/fastlane/report.xml
+iphone/fastlane/README.md
+iphone/AuthKey*.p8
+iphone/build/
+
+# Ruby/Fastlane
+Gemfile.lock
+vendor/bundle/
+.bundle/
+
+# Environment templates (keep as reference)
+!*.template

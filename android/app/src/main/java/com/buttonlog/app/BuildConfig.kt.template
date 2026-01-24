@@ -1,0 +1,23 @@
+// DO NOT COMMIT THIS FILE WITH ACTUAL VALUES
+// Copy to BuildConfig.kt and fill in values for local development
+// CI/CD will inject these values at build time
+
+package com.buttonlog.app
+
+object AppConfig {
+    // API Configuration
+    const val API_BASE_URL_DEV = "http://10.0.2.2:4000/api"
+    const val API_BASE_URL_STAGING = "https://staging.buttonlog.com/api"
+    const val API_BASE_URL_PROD = "https://buttonlog.com/api"
+
+    // Current environment - set by build variant
+    val API_BASE_URL: String
+        get() = when (BuildConfig.BUILD_TYPE) {
+            "debug" -> API_BASE_URL_DEV
+            "staging" -> API_BASE_URL_STAGING
+            else -> API_BASE_URL_PROD
+        }
+
+    // OAuth Configuration
+    const val GOOGLE_WEB_CLIENT_ID = "789726851913-bmttjvlpaatgv2dde08vs05ihndkskfd.apps.googleusercontent.com"
+}

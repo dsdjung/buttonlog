@@ -1,0 +1,91 @@
+# Android Fastlane Configuration
+# This file configures automated deployment to Google Play Store
+
+default_platform(:android)
+
+platform :android do
+  desc "Run tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  desc "Build debug APK"
+  lane :build_debug do
+    gradle(
+      task: "assemble",
+      build_type: "Debug"
+    )
+  end
+
+  desc "Build release AAB (Android App Bundle)"
+  lane :build_release do
+    # Increment version code
+    android_set_version_code(
+      version_code: ENV["VERSION_CODE"] || (Time.now.to_i / 60).to_s
+    )
+
+    # Set version name if provided
+    if ENV["VERSION_NAME"]
+      android_set_version_name(
+        version_name: ENV["VERSION_NAME"]
+      )
+    end
+
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      properties: {
+        "android.injected.signing.store.file" => ENV["KEYSTORE_FILE"],
+        "android.injected.signing.store.password" => ENV["KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["KEY_PASSWORD"],
+      }
+    )
+  end
+
+  desc "Deploy to internal testing track"
+  lane :deploy_internal do
+    build_release
+
+    upload_to_play_store(
+      track: "internal",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Deploy to beta (closed testing)"
+  lane :deploy_beta do
+    build_release
+
+    upload_to_play_store(
+      track: "beta",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Deploy to production"
+  lane :deploy_production do
+    build_release
+
+    upload_to_play_store(
+      track: "production",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      rollout: "0.1"  # Start with 10% rollout
+    )
+  end
+
+  desc "Promote beta to production"
+  lane :promote_to_production do
+    upload_to_play_store(
+      track: "beta",
+      track_promote_to: "production",
+      rollout: "0.1"
+    )
+  end
+end

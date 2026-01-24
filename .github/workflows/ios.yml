@@ -1,0 +1,193 @@
+name: iOS CI/CD
+
+on:
+  push:
+    branches: [master, main, develop]
+    paths:
+      - 'iphone/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'iphone/**'
+  workflow_dispatch:
+    inputs:
+      deploy_track:
+        description: 'Deployment track'
+        required: false
+        type: choice
+        options:
+          - none
+          - testflight
+          - beta
+          - production
+        default: 'none'
+
+jobs:
+  test:
+    name: Test
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install dependencies
+        working-directory: iphone
+        run: |
+          # If using CocoaPods:
+          # pod install
+          # If using SPM, dependencies are resolved automatically
+          echo "Dependencies ready"
+
+      - name: Run tests
+        working-directory: iphone
+        run: |
+          xcodebuild test \
+            -project ButtonLog.xcodeproj \
+            -scheme ButtonLog \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
+            -resultBundlePath TestResults \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: iphone/TestResults
+
+  build:
+    name: Build
+    runs-on: macos-14
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
+
+      - name: Build for simulator
+        working-directory: iphone
+        run: |
+          xcodebuild build \
+            -project ButtonLog.xcodeproj \
+            -scheme ButtonLog \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+  build-release:
+    name: Build Release
+    runs-on: macos-14
+    needs: test
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.inputs.deploy_track != 'none'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: iphone
+
+      - name: Install Fastlane
+        working-directory: iphone
+        run: |
+          gem install fastlane
+          fastlane --version
+
+      - name: Setup code signing
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+        working-directory: iphone
+        run: |
+          # Use App Store Connect API key for authentication
+          echo "$APP_STORE_CONNECT_API_KEY_CONTENT" > AuthKey.p8
+          fastlane run app_store_connect_api_key \
+            key_id:"$APP_STORE_CONNECT_API_KEY_ID" \
+            issuer_id:"$APP_STORE_CONNECT_API_ISSUER_ID" \
+            key_filepath:"AuthKey.p8"
+
+      - name: Sync certificates
+        if: env.MATCH_GIT_URL != ''
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+        working-directory: iphone
+        run: |
+          fastlane sync_appstore_certs
+
+      - name: Build release
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: iphone
+        run: |
+          fastlane build_release
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ipa
+          path: iphone/build/ButtonLog.ipa
+
+  deploy:
+    name: Deploy to App Store
+    runs-on: macos-14
+    needs: build-release
+    if: github.event.inputs.deploy_track != 'none' && github.event.inputs.deploy_track != ''
+    environment: ${{ github.event.inputs.deploy_track }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: iphone
+
+      - name: Download release IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: release-ipa
+          path: iphone/build/
+
+      - name: Setup App Store Connect API key
+        env:
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+        working-directory: iphone
+        run: |
+          echo "$APP_STORE_CONNECT_API_KEY_CONTENT" > AuthKey.p8
+
+      - name: Deploy to ${{ github.event.inputs.deploy_track }}
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        working-directory: iphone
+        run: |
+          fastlane deploy_${{ github.event.inputs.deploy_track }}

@@ -1,0 +1,59 @@
+// DO NOT COMMIT THIS FILE WITH ACTUAL VALUES
+// Copy to Environment.swift and fill in values for local development
+// CI/CD will inject these values at build time
+
+import Foundation
+
+enum Environment {
+    case development
+    case staging
+    case production
+
+    static var current: Environment {
+        #if DEBUG
+        return .development
+        #else
+        // Check for staging build configuration
+        if Bundle.main.bundleIdentifier?.contains("staging") == true {
+            return .staging
+        }
+        return .production
+        #endif
+    }
+
+    var apiBaseURL: String {
+        switch self {
+        case .development:
+            return "http://localhost:4000/api"
+        case .staging:
+            return "https://staging.buttonlog.com/api"
+        case .production:
+            return "https://buttonlog.com/api"
+        }
+    }
+
+    var websocketURL: String {
+        switch self {
+        case .development:
+            return "ws://localhost:4000/socket/websocket"
+        case .staging:
+            return "wss://staging.buttonlog.com/socket/websocket"
+        case .production:
+            return "wss://buttonlog.com/socket/websocket"
+        }
+    }
+
+    var isDebug: Bool {
+        self == .development
+    }
+}
+
+// App Configuration
+struct AppConfig {
+    static let environment = Environment.current
+    static let apiBaseURL = environment.apiBaseURL
+    static let websocketURL = environment.websocketURL
+
+    // OAuth
+    static let googleClientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String ?? ""
+}

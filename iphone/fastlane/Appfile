@@ -1,0 +1,13 @@
+# iOS Appfile Configuration
+
+# Your Apple Developer Account email
+apple_id(ENV["APPLE_ID"] || "your-apple-id@example.com")
+
+# Your App's Bundle Identifier
+app_identifier("com.buttonlog.app")
+
+# Your Apple Developer Team ID
+team_id(ENV["APPLE_TEAM_ID"] || "5R2YZH47Y4")
+
+# App Store Connect Team ID (if different from Developer Team ID)
+itc_team_id(ENV["ITC_TEAM_ID"] || ENV["APPLE_TEAM_ID"] || "5R2YZH47Y4")
