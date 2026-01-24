@@ -6,27 +6,15 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -50,15 +38,9 @@ fun LoginScreen(
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var isLoginMode by remember { mutableStateOf(true) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
     var isGoogleLoading by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
@@ -164,163 +146,23 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = if (isLoginMode) "Welcome back!" else "Create your account",
+            text = "Track your activities with the tap of a button",
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Email Field
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Down) }
-            ),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Password Field
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
-            trailingIcon = {
-                IconButton(onClick = { showPassword = !showPassword }) {
-                    Icon(
-                        if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (showPassword) "Hide password" else "Show password"
-                    )
-                }
-            },
-            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = if (isLoginMode) ImeAction.Done else ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                onDone = {
-                    if (isLoginMode && email.isNotBlank() && password.isNotBlank()) {
-                        viewModel.login(email, password)
-                    }
-                }
-            ),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        )
-
-        // Confirm Password (only for registration)
-        if (!isLoginMode) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password") },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        if (email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
-                            viewModel.register(email, password, confirmPassword)
-                        }
-                    }
-                ),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading
-            )
-        }
-
         // Error Message
         errorMessage?.let { error ->
-            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = error,
                 color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Login/Register Button
-        Button(
-            onClick = {
-                if (isLoginMode) {
-                    viewModel.login(email, password)
-                } else {
-                    viewModel.register(email, password, confirmPassword)
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank() &&
-                    (isLoginMode || confirmPassword.isNotBlank())
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            } else {
-                Text(if (isLoginMode) "Login" else "Register")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Toggle Login/Register
-        TextButton(
-            onClick = {
-                isLoginMode = !isLoginMode
-                viewModel.clearError()
-            },
-            enabled = !isLoading && !isGoogleLoading
-        ) {
-            Text(
-                if (isLoginMode) "Don't have an account? Register"
-                else "Already have an account? Login"
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Divider with "or"
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HorizontalDivider(modifier = Modifier.weight(1f))
-            Text(
-                text = "or",
-                modifier = Modifier.padding(horizontal = 16.dp),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                modifier = Modifier.padding(bottom = 16.dp)
             )
-            HorizontalDivider(modifier = Modifier.weight(1f))
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
 
         // Google Sign-In Button
         OutlinedButton(
@@ -357,5 +199,15 @@ fun LoginScreen(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Terms and Privacy
+        Text(
+            text = "By continuing, you agree to our Terms of Service and Privacy Policy",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
     }
 }

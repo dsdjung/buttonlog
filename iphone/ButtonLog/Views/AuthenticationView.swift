@@ -1,12 +1,8 @@
 import SwiftUI
+import AuthenticationServices
 
 struct AuthenticationView: View {
     @EnvironmentObject private var authManager: AuthenticationManager
-    @State private var isLoginMode = true
-    @State private var email = ""
-    @State private var password = ""
-    @State private var confirmPassword = ""
-    @State private var showingAlert = false
 
     var body: some View {
         NavigationView {
@@ -30,124 +26,33 @@ struct AuthenticationView: View {
                     }
                     .padding(.top, BLSpacing.xxxl)
 
-                    // Form
-                    VStack(spacing: BLSpacing.lg) {
-                        // Email Field
-                        VStack(alignment: .leading, spacing: BLSpacing.sm) {
-                            Text("Email")
-                                .font(BLTypography.labelLarge)
-                                .foregroundColor(.blTextPrimary)
+                    Spacer(minLength: BLSpacing.xxxl)
 
-                            TextField("Enter your email", text: $email)
-                                .font(BLTypography.bodyLarge)
-                                .padding(BLSpacing.md)
-                                .background(Color.blSurfaceElevated)
-                                .cornerRadius(BLRadius.md)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: BLRadius.md)
-                                        .stroke(Color.blTextTertiary.opacity(0.3), lineWidth: 1)
-                                )
-                                .keyboardType(.emailAddress)
-                                .autocapitalization(.none)
-                                .disabled(authManager.isLoading)
-                        }
+                    // OAuth Login Buttons
+                    VStack(spacing: BLSpacing.md) {
+                        // Apple Sign-In Button
+                        AppleSignInButton(authManager: authManager)
+                            .padding(.horizontal, BLSpacing.xl)
 
-                        // Password Field
-                        VStack(alignment: .leading, spacing: BLSpacing.sm) {
-                            Text("Password")
-                                .font(BLTypography.labelLarge)
-                                .foregroundColor(.blTextPrimary)
-
-                            SecureField("Enter your password", text: $password)
-                                .font(BLTypography.bodyLarge)
-                                .padding(BLSpacing.md)
-                                .background(Color.blSurfaceElevated)
-                                .cornerRadius(BLRadius.md)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: BLRadius.md)
-                                        .stroke(Color.blTextTertiary.opacity(0.3), lineWidth: 1)
-                                )
-                                .disabled(authManager.isLoading)
-                        }
-
-                        // Confirm Password Field (Register only)
-                        if !isLoginMode {
-                            VStack(alignment: .leading, spacing: BLSpacing.sm) {
-                                Text("Confirm Password")
-                                    .font(BLTypography.labelLarge)
-                                    .foregroundColor(.blTextPrimary)
-
-                                SecureField("Confirm your password", text: $confirmPassword)
-                                    .font(BLTypography.bodyLarge)
-                                    .padding(BLSpacing.md)
-                                    .background(Color.blSurfaceElevated)
-                                    .cornerRadius(BLRadius.md)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: BLRadius.md)
-                                            .stroke(Color.blTextTertiary.opacity(0.3), lineWidth: 1)
-                                    )
-                                    .disabled(authManager.isLoading)
-                            }
-                        }
+                        // Google Sign-In Button
+                        GoogleSignInButton(authManager: authManager)
+                            .padding(.horizontal, BLSpacing.xl)
                     }
-                    .padding(.horizontal, BLSpacing.xl)
 
-                    // Action Button
-                    SwiftUI.Button(action: handleAuthAction) {
-                        HStack(spacing: BLSpacing.sm) {
-                            if authManager.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
-                            }
-
-                            Text(isLoginMode ? "Login" : "Create Account")
-                                .font(BLTypography.labelLarge)
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(BLSpacing.lg)
-                        .background(
-                            RoundedRectangle(cornerRadius: BLRadius.md)
-                                .fill((authManager.isLoading || !isFormValid) ? Color.blTextTertiary : Color.blPrimary)
-                        )
+                    // Loading indicator
+                    if authManager.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .padding(.top, BLSpacing.lg)
                     }
-                    .disabled(authManager.isLoading || !isFormValid)
-                    .padding(.horizontal, BLSpacing.xl)
 
-                    // Toggle Mode
-                    SwiftUI.Button(action: {
-                        withAnimation(BLAnimation.normal) {
-                            isLoginMode.toggle()
-                            clearForm()
-                        }
-                    }) {
-                        Text(isLoginMode ? "Don't have an account? Sign up" : "Already have an account? Login")
-                            .font(BLTypography.bodyMedium)
-                            .foregroundColor(.blPrimary)
-                    }
-                    .disabled(authManager.isLoading)
-
-                    // Divider
-                    HStack {
-                        Rectangle()
-                            .fill(Color.blTextTertiary.opacity(0.3))
-                            .frame(height: 1)
-
-                        Text("Or continue with")
-                            .font(BLTypography.labelMedium)
-                            .foregroundColor(.blTextSecondary)
-
-                        Rectangle()
-                            .fill(Color.blTextTertiary.opacity(0.3))
-                            .frame(height: 1)
-                    }
-                    .padding(.horizontal, BLSpacing.xl)
-                    .padding(.top, BLSpacing.lg)
-
-                    // Google Login Button
-                    GoogleSignInButton(authManager: authManager)
+                    // Terms and Privacy
+                    Text("By continuing, you agree to our Terms of Service and Privacy Policy")
+                        .font(BLTypography.labelSmall)
+                        .foregroundColor(.blTextTertiary)
+                        .multilineTextAlignment(.center)
                         .padding(.horizontal, BLSpacing.xl)
+                        .padding(.top, BLSpacing.lg)
 
                     Spacer(minLength: BLSpacing.xxxl)
                 }
@@ -164,36 +69,35 @@ struct AuthenticationView: View {
             Text(authManager.errorMessage ?? "")
         }
     }
+}
 
-    private var isFormValid: Bool {
-        let emailValid = !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let passwordValid = password.count >= 6
+struct AppleSignInButton: View {
+    let authManager: AuthenticationManager
+    @Environment(\.colorScheme) var colorScheme
 
-        if isLoginMode {
-            return emailValid && passwordValid
-        } else {
-            return emailValid && passwordValid && password == confirmPassword
-        }
-    }
-
-    private func handleAuthAction() {
-        Task {
-            if isLoginMode {
-                await authManager.login(email: email, password: password)
-            } else {
-                await authManager.register(
-                    email: email,
-                    password: password,
-                    confirmPassword: confirmPassword
-                )
+    var body: some View {
+        SignInWithAppleButton(
+            onRequest: { request in
+                request.requestedScopes = [.fullName, .email]
+            },
+            onCompletion: { result in
+                switch result {
+                case .success(let authorization):
+                    Task {
+                        await authManager.loginWithApple(authorization: authorization)
+                    }
+                case .failure(let error):
+                    // User cancelled or other error
+                    if (error as NSError).code != ASAuthorizationError.canceled.rawValue {
+                        authManager.errorMessage = error.localizedDescription
+                    }
+                }
             }
-        }
-    }
-
-    private func clearForm() {
-        email = ""
-        password = ""
-        confirmPassword = ""
+        )
+        .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+        .frame(height: 50)
+        .cornerRadius(BLRadius.md)
+        .disabled(authManager.isLoading)
     }
 }
 
@@ -207,6 +111,7 @@ struct GoogleSignInButton: View {
             }
         }) {
             HStack(spacing: BLSpacing.md) {
+                // Google "G" logo
                 Image(systemName: "globe")
                     .font(.title3)
 

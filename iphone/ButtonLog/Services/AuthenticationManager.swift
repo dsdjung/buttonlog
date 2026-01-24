@@ -92,6 +92,68 @@ class AuthenticationManager: NSObject, ObservableObject {
         isLoading = false
     }
 
+    func loginWithApple(authorization: ASAuthorization) async {
+        isLoading = true
+        errorMessage = nil
+
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+            errorMessage = "Invalid Apple credentials"
+            isLoading = false
+            return
+        }
+
+        let userIdentifier = appleIDCredential.user
+
+        // Get the identity token (JWT)
+        guard let identityTokenData = appleIDCredential.identityToken,
+              let identityToken = String(data: identityTokenData, encoding: .utf8) else {
+            errorMessage = "Failed to get Apple identity token"
+            isLoading = false
+            return
+        }
+
+        // Email and name are only provided on first sign-in
+        let email = appleIDCredential.email
+        let fullName = appleIDCredential.fullName
+        let firstName = fullName?.givenName
+        let lastName = fullName?.familyName
+        var displayName: String? = nil
+        if let first = firstName, let last = lastName {
+            displayName = "\(first) \(last)"
+        } else if let first = firstName {
+            displayName = first
+        } else if let last = lastName {
+            displayName = last
+        }
+
+        // Build user info dictionary
+        var userInfo: [String: Any] = [
+            "uid": userIdentifier,
+            "access_token": identityToken
+        ]
+        if let email = email { userInfo["email"] = email }
+        if let displayName = displayName { userInfo["name"] = displayName }
+        if let firstName = firstName { userInfo["first_name"] = firstName }
+        if let lastName = lastName { userInfo["last_name"] = lastName }
+
+        do {
+            let response = try await apiService.authenticateWithOAuth(
+                provider: "apple",
+                userInfo: userInfo
+            )
+
+            KeychainManager.shared.saveToken(response.token)
+            isAuthenticated = true
+            currentUser = response.user
+            setOnboardingCompleted(response.user.onboardingCompleted)
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
     func loginWithGoogle() async {
         isLoading = true
         errorMessage = nil
