@@ -49,6 +49,7 @@
 		CD11234567890065 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890064 /* SplashView.swift */; };
 		CD11234567890067 /* CreatedGiftButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890066 /* CreatedGiftButtonsView.swift */; };
 		CD11234567890069 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890068 /* AppConfig.swift */; };
+		CD11234567890071 /* UpgradePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890072 /* UpgradePromptView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -94,6 +95,7 @@
 		CD11234567890064 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		CD11234567890066 /* CreatedGiftButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatedGiftButtonsView.swift; sourceTree = "<group>"; };
 		CD11234567890068 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		CD11234567890072 /* UpgradePromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpgradePromptView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -209,6 +211,7 @@
 				CD11234567890058 /* OrganizationsView.swift */,
 				CD11234567890060 /* ButtonAlertSettingsView.swift */,
 				CD11234567890064 /* SplashView.swift */,
+				CD11234567890072 /* UpgradePromptView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -332,6 +335,7 @@
 				CD11234567890065 /* SplashView.swift in Sources */,
 				CD11234567890067 /* CreatedGiftButtonsView.swift in Sources */,
 				CD11234567890069 /* AppConfig.swift in Sources */,
+				CD11234567890071 /* UpgradePromptView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
