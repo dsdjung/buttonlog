@@ -582,7 +582,7 @@ defmodule ButtonLogWeb.API.OrganizationController do
       role: member.role,
       status: member.status,
       joined_at: member.joined_at,
-      user: if member.user do
+      user: if Ecto.assoc_loaded?(member.user) && member.user do
         %{
           id: member.user.id,
           username: member.user.username,
@@ -592,7 +592,7 @@ defmodule ButtonLogWeb.API.OrganizationController do
       else
         nil
       end,
-      invited_by: if member.invited_by do
+      invited_by: if Ecto.assoc_loaded?(member.invited_by) && member.invited_by do
         %{
           id: member.invited_by.id,
           username: member.invited_by.username,
@@ -639,7 +639,7 @@ defmodule ButtonLogWeb.API.OrganizationController do
       role: invitation.role,
       email: invitation.email,
       expires_at: invitation.expires_at,
-      organization: if invitation.organization do
+      organization: if Ecto.assoc_loaded?(invitation.organization) && invitation.organization do
         %{
           id: invitation.organization.id,
           name: invitation.organization.name,
@@ -648,7 +648,7 @@ defmodule ButtonLogWeb.API.OrganizationController do
       else
         nil
       end,
-      inviter: if invitation.inviter do
+      inviter: if Ecto.assoc_loaded?(invitation.inviter) && invitation.inviter do
         %{
           id: invitation.inviter.id,
           username: invitation.inviter.username,
@@ -657,7 +657,7 @@ defmodule ButtonLogWeb.API.OrganizationController do
       else
         nil
       end,
-      invitee: if invitation.invitee do
+      invitee: if Ecto.assoc_loaded?(invitation.invitee) && invitation.invitee do
         %{
           id: invitation.invitee.id,
           username: invitation.invitee.username,

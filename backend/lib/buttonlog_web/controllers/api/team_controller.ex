@@ -503,10 +503,10 @@ defmodule ButtonLogWeb.API.TeamController do
     %{
       id: member.id,
       user_id: member.user_id,
-      user: format_user(member.user),
+      user: if(Ecto.assoc_loaded?(member.user), do: format_user(member.user), else: nil),
       role: member.role,
       joined_at: member.joined_at,
-      invited_by: if(member.invited_by, do: format_user(member.invited_by), else: nil)
+      invited_by: if(Ecto.assoc_loaded?(member.invited_by) && member.invited_by, do: format_user(member.invited_by), else: nil)
     }
   end
 
@@ -514,9 +514,9 @@ defmodule ButtonLogWeb.API.TeamController do
     %{
       id: team_button.id,
       button_id: team_button.button_id,
-      button: format_button(team_button.button),
+      button: if(Ecto.assoc_loaded?(team_button.button), do: format_button(team_button.button), else: nil),
       permission: team_button.permission,
-      added_by: if(team_button.added_by, do: format_user(team_button.added_by), else: nil),
+      added_by: if(Ecto.assoc_loaded?(team_button.added_by) && team_button.added_by, do: format_user(team_button.added_by), else: nil),
       added_at: team_button.inserted_at
     }
   end
@@ -543,7 +543,7 @@ defmodule ButtonLogWeb.API.TeamController do
       id: user.id,
       username: user.username,
       display_name: user.display_name,
-      avatar_url: user.avatar_url
+      avatar_url: user.avatar
     }
   end
 

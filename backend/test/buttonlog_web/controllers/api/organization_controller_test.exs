@@ -98,7 +98,8 @@ defmodule ButtonLogWeb.API.OrganizationControllerTest do
 
       conn = put(conn, ~p"/api/organizations/#{org.id}", params)
 
-      assert json_response(conn, 404) or json_response(conn, 403)
+      # Should be not found or forbidden
+      assert conn.status in [403, 404]
     end
   end
 
@@ -117,8 +118,8 @@ defmodule ButtonLogWeb.API.OrganizationControllerTest do
 
       conn = delete(conn, ~p"/api/organizations/#{org.id}")
 
-      # Should be forbidden or not found (depending on implementation)
-      assert json_response(conn, 403) or json_response(conn, 404)
+      # Should be forbidden or not found
+      assert conn.status in [403, 404]
     end
   end
 
@@ -221,7 +222,7 @@ defmodule ButtonLogWeb.API.OrganizationControllerTest do
       {:ok, invitation} = Organizations.create_invitation(org.id, owner.id, user.id, "member")
       Organizations.accept_invitation(invitation.id, user.id)
 
-      conn = delete(conn, ~p"/api/organizations/#{org.id}/leave")
+      conn = post(conn, ~p"/api/organizations/#{org.id}/leave")
 
       assert %{"success" => true} = json_response(conn, 200)
     end
@@ -229,7 +230,7 @@ defmodule ButtonLogWeb.API.OrganizationControllerTest do
     test "owner cannot leave without transferring ownership", %{conn: conn, user: user} do
       {:ok, org} = Organizations.create_organization(%{name: "My Org", slug: "my-org"}, user.id)
 
-      conn = delete(conn, ~p"/api/organizations/#{org.id}/leave")
+      conn = post(conn, ~p"/api/organizations/#{org.id}/leave")
 
       assert %{"success" => false, "error" => %{"message" => msg}} = json_response(conn, 422)
       assert msg =~ "Owner cannot leave" or msg =~ "transfer"

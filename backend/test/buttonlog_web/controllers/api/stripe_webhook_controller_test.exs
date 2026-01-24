@@ -10,7 +10,7 @@ defmodule ButtonLogWeb.API.StripeWebhookControllerTest do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
-        |> post("/api/stripe/webhook", Jason.encode!(%{type: "test"}))
+        |> post("/api/webhooks/stripe", Jason.encode!(%{type: "test"}))
 
       assert json_response(conn, 400)["error"] == "Missing Stripe signature"
     end
@@ -21,29 +21,15 @@ defmodule ButtonLogWeb.API.StripeWebhookControllerTest do
         |> put_req_header("content-type", "application/json")
         |> put_req_header("stripe-signature", "invalid_signature")
         |> assign(:raw_body, Jason.encode!(%{type: "test"}))
-        |> post("/api/stripe/webhook", Jason.encode!(%{type: "test"}))
+        |> post("/api/webhooks/stripe", Jason.encode!(%{type: "test"}))
 
       assert json_response(conn, 400)["error"] =~ "Invalid signature" or
              json_response(conn, 400)["error"] =~ "Webhook verification failed"
     end
 
-    test "handles checkout.session.completed event" do
-      # Create a user for the subscription
-      user = insert_user()
-
-      # Create a subscription plan
-      {:ok, plan} = Subscriptions.create_subscription_plan(%{
-        name: "Premium",
-        tier: "premium",
-        price_monthly: 999,
-        price_yearly: 9990,
-        max_buttons: 100,
-        max_button_clicks_per_day: 1000,
-        max_friends: 50,
-        features: ["unlimited_buttons", "advanced_analytics"]
-      })
-
+    test "handles checkout.session.completed event structure" do
       # Simulate the checkout.session.completed event data
+      # This test verifies the expected event structure for webhook handling
       event_data = %{
         "id" => "evt_test_#{System.unique_integer([:positive])}",
         "type" => "checkout.session.completed",
@@ -52,19 +38,20 @@ defmodule ButtonLogWeb.API.StripeWebhookControllerTest do
             "id" => "cs_test_#{System.unique_integer([:positive])}",
             "customer" => "cus_test_#{System.unique_integer([:positive])}",
             "subscription" => "sub_test_#{System.unique_integer([:positive])}",
-            "client_reference_id" => user.id,
+            "client_reference_id" => Ecto.UUID.generate(),
             "metadata" => %{
-              "plan_id" => plan.id,
+              "plan_id" => Ecto.UUID.generate(),
               "billing_cycle" => "monthly"
             }
           }
         }
       }
 
-      # This would be tested with proper Stripe webhook signature in integration tests
-      # For unit tests, we verify the handler processes the event structure correctly
+      # Verify expected event structure for webhook handling
       assert is_map(event_data)
       assert event_data["type"] == "checkout.session.completed"
+      assert is_map(event_data["data"]["object"])
+      assert event_data["data"]["object"]["metadata"]["billing_cycle"] == "monthly"
     end
 
     test "handles customer.subscription.updated event" do

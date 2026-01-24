@@ -97,7 +97,8 @@ defmodule ButtonLogWeb.API.TeamControllerTest do
 
       conn = put(conn, ~p"/api/teams/#{team.id}", params)
 
-      assert json_response(conn, 404) or json_response(conn, 403)
+      # Should be not found or forbidden
+      assert conn.status in [403, 404]
     end
   end
 
@@ -116,7 +117,8 @@ defmodule ButtonLogWeb.API.TeamControllerTest do
 
       conn = delete(conn, ~p"/api/teams/#{team.id}")
 
-      assert json_response(conn, 403) or json_response(conn, 404)
+      # Should be forbidden or not found
+      assert conn.status in [403, 404]
     end
   end
 
