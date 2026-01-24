@@ -88,16 +88,7 @@ struct ButtonsView: View {
             }
         }
         .background(Color.blBackground)
-        .navigationTitle("ButtonLog")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                SwiftUI.Button("Add") {
-                    showingCreateButton = true
-                }
-                .foregroundColor(.blPrimary)
-            }
-        }
+        .navigationBarHidden(true)
         .sheet(isPresented: $showingCreateButton) {
             CreateButtonView()
         }
