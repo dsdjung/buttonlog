@@ -5,8 +5,9 @@ defmodule ButtonLogWeb.API.SubscriptionController do
   alias ButtonLog.Subscriptions.{SubscriptionService, StripeService}
 
   # Plug to ensure user is authenticated
+  # Note: :index is NOT included - subscription plans are public so users can see pricing before signup
   plug :authenticate_user when action in [
-    :index, :show, :create, :cancel, :pause, :resume, :stats,
+    :show, :create, :cancel, :pause, :resume, :stats,
     :create_checkout_session, :create_portal_session,
     :list_payment_methods, :add_payment_method, :remove_payment_method, :set_default_payment_method,
     :list_invoices, :show_invoice,

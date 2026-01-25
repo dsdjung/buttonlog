@@ -259,7 +259,7 @@ interface APIService {
 
     // MARK: - Subscription Endpoints
 
-    @GET("subscriptions")
+    @GET("subscriptions/plans")
     suspend fun getSubscriptionPlans(): SubscriptionPlansResponse
 
     @GET("subscriptions/current")

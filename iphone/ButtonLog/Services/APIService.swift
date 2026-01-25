@@ -687,7 +687,7 @@ class APIService {
     
     func getSubscriptionPlans() async throws -> [SubscriptionPlan] {
         return try await makeRequest(
-            endpoint: "/subscriptions",
+            endpoint: "/subscriptions/plans",
             requiresAuth: false
         )
     }

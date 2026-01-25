@@ -442,7 +442,15 @@ struct SubscriptionView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Current Subscription Status
+                    // Current Plan Status (for free users without subscription record)
+                    if appState.currentSubscription == nil {
+                        CurrentPlanCard(
+                            userTier: authManager.currentUser?.subscriptionTier ?? .free,
+                            onUpgrade: { }
+                        )
+                    }
+
+                    // Current Subscription Status (for paid users)
                     if let subscription = appState.currentSubscription {
                         CurrentSubscriptionCard(
                             subscription: subscription,
@@ -453,19 +461,45 @@ struct SubscriptionView: View {
                     // Billing Cycle Toggle
                     BillingCycleSelector(selectedCycle: $selectedBillingCycle)
 
-                    // Plans Comparison
-                    PlansSection(
-                        plans: appState.subscriptionPlans,
-                        currentSubscription: appState.currentSubscription,
-                        userSubscriptionTier: authManager.currentUser?.subscriptionTier,
-                        selectedCycle: selectedBillingCycle,
-                        isLoading: isLoading,
-                        onSelectPlan: { plan in
-                            Task {
-                                await subscribeToPlan(plan)
-                            }
+                    // Loading state
+                    if appState.isLoadingSubscription && appState.subscriptionPlans.isEmpty {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                            Text("Loading plans...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
-                    )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                    } else if appState.subscriptionPlans.isEmpty {
+                        // Empty state
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.largeTitle)
+                                .foregroundColor(.orange)
+                            Text("Unable to load subscription plans")
+                                .font(.headline)
+                            Text("Pull down to refresh")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                    } else {
+                        // Plans Comparison
+                        PlansSection(
+                            plans: appState.subscriptionPlans,
+                            currentSubscription: appState.currentSubscription,
+                            userSubscriptionTier: authManager.currentUser?.subscriptionTier,
+                            selectedCycle: selectedBillingCycle,
+                            isLoading: isLoading,
+                            onSelectPlan: { plan in
+                                Task {
+                                    await subscribeToPlan(plan)
+                                }
+                            }
+                        )
+                    }
 
                     // Coupon Code Section
                     CouponSection(
@@ -473,8 +507,10 @@ struct SubscriptionView: View {
                         showingField: $showingCouponField
                     )
 
-                    // Feature Comparison Table
-                    FeatureComparisonSection(plans: appState.subscriptionPlans)
+                    // Feature Comparison Table (only show if plans loaded)
+                    if !appState.subscriptionPlans.isEmpty {
+                        FeatureComparisonSection(plans: appState.subscriptionPlans)
+                    }
 
                     // FAQ Section
                     FAQSection()
@@ -505,9 +541,8 @@ struct SubscriptionView: View {
             }
         }
         .task {
-            if appState.subscriptionPlans.isEmpty {
-                await appState.loadSubscriptionData()
-            }
+            // Always load subscription data when view appears
+            await appState.loadSubscriptionData()
         }
     }
 
@@ -531,6 +566,66 @@ struct SubscriptionView: View {
         } catch {
             errorMessage = "Failed to start checkout: \(error.localizedDescription)"
         }
+    }
+}
+
+// MARK: - Current Plan Card (for free users)
+
+struct CurrentPlanCard: View {
+    let userTier: SubscriptionTier
+    let onUpgrade: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Current Plan")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Text("\(userTier.displayName) Plan")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                }
+
+                Spacer()
+
+                Text("Free")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.green)
+            }
+
+            Divider()
+
+            // Plan limits
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "square.grid.2x2")
+                        .foregroundColor(.blue)
+                    Text("Up to \(userTier.maxButtons) buttons")
+                        .font(.subheadline)
+                }
+                HStack {
+                    Image(systemName: "person.2")
+                        .foregroundColor(.green)
+                    Text("Up to \(userTier.maxFriends) friends")
+                        .font(.subheadline)
+                }
+                if !userTier.hasAnalytics {
+                    HStack {
+                        Image(systemName: "chart.bar.xaxis")
+                            .foregroundColor(.gray)
+                        Text("Basic analytics only")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
     }
 }
 

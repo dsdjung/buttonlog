@@ -277,6 +277,9 @@ defmodule ButtonLogWeb.Router do
     post "/auth/refresh", API.AuthController, :refresh
     post "/auth/oauth/callback", API.AuthController, :oauth_callback
 
+    # Public subscription plans (pricing page)
+    get "/subscriptions/plans", API.SubscriptionController, :index
+
     # App configuration (public - used by mobile apps on startup)
     get "/config", API.ConfigController, :index
 
