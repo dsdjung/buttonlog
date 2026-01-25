@@ -1,0 +1,25 @@
+{
+  "name": "buttonlog-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end tests for ButtonLog",
+  "scripts": {
+    "test": "TEST_ENV=local playwright test",
+    "test:local": "TEST_ENV=local playwright test",
+    "test:staging": "TEST_ENV=staging playwright test",
+    "test:prod": "TEST_ENV=production playwright test",
+    "test:ui": "TEST_ENV=local playwright test --ui",
+    "test:headed": "TEST_ENV=local playwright test --headed",
+    "test:debug": "TEST_ENV=local playwright test --debug",
+    "test:chromium": "TEST_ENV=local playwright test --project=chromium",
+    "test:firefox": "TEST_ENV=local playwright test --project=firefox",
+    "test:webkit": "TEST_ENV=local playwright test --project=webkit",
+    "test:mobile": "TEST_ENV=local playwright test --project=mobile-chrome --project=mobile-safari",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen localhost:4000",
+    "codegen:staging": "playwright codegen",
+    "install-browsers": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.0"
+  }
+}
