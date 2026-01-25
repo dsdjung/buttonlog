@@ -57,13 +57,41 @@ PROD_URL=https://buttonlog.com npm run test:prod
 ```
 e2e/
 ├── tests/
-│   ├── auth.spec.ts        # Authentication flows
-│   ├── buttons.spec.ts     # Button CRUD operations
-│   ├── account.spec.ts     # Account settings
-│   └── subscription.spec.ts # Subscription pages
-├── playwright.config.ts    # Playwright configuration
-└── package.json
+│   ├── fixtures/
+│   │   └── auth.ts              # Shared authentication helpers
+│   ├── public-pages.spec.ts     # Home, pricing, about, terms, privacy
+│   ├── auth.spec.ts             # Login, register, logout, OAuth
+│   ├── buttons.spec.ts          # Button CRUD and interactions
+│   ├── friends.spec.ts          # Friends/social features
+│   ├── notifications.spec.ts    # Notifications and alerts
+│   ├── diary.spec.ts            # Diary/calendar view
+│   ├── teams.spec.ts            # Teams functionality
+│   ├── organizations.spec.ts    # Organizations management
+│   ├── account.spec.ts          # Account settings (profile, privacy, etc.)
+│   ├── webhooks.spec.ts         # Webhook configuration
+│   ├── support.spec.ts          # Support tickets
+│   └── subscription.spec.ts     # Subscription and payments
+├── playwright.config.ts         # Playwright configuration
+├── package.json
+└── README.md
 ```
+
+## Test Coverage
+
+| Test File | Coverage Area | Tests |
+|-----------|--------------|-------|
+| `public-pages.spec.ts` | Home, pricing, about, terms, privacy, health check | ~15 |
+| `auth.spec.ts` | Login, register, logout, OAuth, session persistence | ~25 |
+| `buttons.spec.ts` | Button CRUD, types, interactions, sharing, notifications | ~30 |
+| `friends.spec.ts` | Friend requests, permissions, blocking, activity | ~20 |
+| `notifications.spec.ts` | Notifications list, types, actions, settings | ~15 |
+| `diary.spec.ts` | Calendar view, navigation, filtering, statistics | ~20 |
+| `teams.spec.ts` | Team CRUD, members, settings, buttons | ~20 |
+| `organizations.spec.ts` | Organization CRUD, members, teams, billing | ~25 |
+| `account.spec.ts` | Profile, password, privacy, export, devices | ~35 |
+| `webhooks.spec.ts` | Webhook URL, events, testing, history | ~20 |
+| `support.spec.ts` | Ticket CRUD, replies, attachments, FAQ | ~20 |
+| `subscription.spec.ts` | Plans, payments, billing, usage, promo codes | ~35 |
 
 ## Environment Variables
 
