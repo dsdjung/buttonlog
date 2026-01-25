@@ -79,6 +79,31 @@ defmodule ButtonLogWeb.API.SubscriptionControllerTest do
       assert premium_plan["limits"]["max_buttons"] == 100
       assert premium_plan["limits"]["max_friends"] == 50
     end
+
+    test "returns null for unlimited limits (-1 values)", %{conn: conn} do
+      Repo.delete_all(ButtonLog.Subscriptions.SubscriptionPlan)
+
+      # Enterprise-style plan with unlimited limits (-1)
+      insert_subscription_plan(%{
+        name: "Enterprise",
+        slug: "enterprise",
+        is_active: true,
+        max_buttons: -1,
+        max_friends: -1,
+        max_button_clicks_per_month: -1
+      })
+
+      conn = get(conn, "/api/subscriptions/plans")
+
+      assert %{"success" => true, "data" => plans} = json_response(conn, 200)
+
+      enterprise_plan = Enum.find(plans, &(&1["slug"] == "enterprise"))
+      assert enterprise_plan != nil
+      # -1 (unlimited) values should be converted to null for mobile clients
+      assert enterprise_plan["limits"]["max_buttons"] == nil
+      assert enterprise_plan["limits"]["max_friends"] == nil
+      assert enterprise_plan["limits"]["max_clicks_per_month"] == nil
+    end
   end
 
   describe "GET /api/subscriptions (authenticated)" do

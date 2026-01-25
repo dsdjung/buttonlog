@@ -239,11 +239,11 @@ defmodule ButtonLogWeb.API.SubscriptionController do
         white_label_options: plan.has_white_label || false
       },
       limits: %{
-        max_buttons: plan.max_buttons,
-        max_friends: plan.max_friends,
-        max_clicks_per_month: plan.max_button_clicks_per_month,
-        analytics_history_days: plan.max_analytics_history_days,
-        export_history_days: plan.max_export_history_days
+        max_buttons: unlimited_to_nil(plan.max_buttons),
+        max_friends: unlimited_to_nil(plan.max_friends),
+        max_clicks_per_month: unlimited_to_nil(plan.max_button_clicks_per_month),
+        analytics_history_days: unlimited_to_nil(plan.max_analytics_history_days),
+        export_history_days: unlimited_to_nil(plan.max_export_history_days)
       },
       trial_days: plan.trial_days,
       is_active: plan.is_active || true,
@@ -257,6 +257,11 @@ defmodule ButtonLogWeb.API.SubscriptionController do
   defp decimal_to_float(%Decimal{} = decimal), do: Decimal.to_float(decimal)
   defp decimal_to_float(value) when is_float(value), do: value
   defp decimal_to_float(value) when is_integer(value), do: value / 1.0
+
+  # Convert -1 (unlimited) to nil for mobile clients
+  # Mobile apps expect null for unlimited values, not -1
+  defp unlimited_to_nil(-1), do: nil
+  defp unlimited_to_nil(value), do: value
 
   defp format_usage(usage) when is_map(usage) do
     %{
