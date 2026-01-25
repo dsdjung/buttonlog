@@ -108,7 +108,7 @@
               <!-- Upgrade/Manage Buttons -->
               <div class="flex gap-4">
                 <%= if @subscription_info.plan.slug == "free" do %>
-                  <a href={~p"/pricing"} class="flex-1 text-center bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium">
+                  <a href={~p"/pricing"} class="flex-1 text-center px-4 py-2 rounded-lg transition-colors font-medium" style="background-color: #0d9488; color: white;">
                     Upgrade to Premium
                   </a>
                 <% else %>
@@ -125,7 +125,7 @@
               <div class="text-center p-6 bg-gray-50 rounded-lg">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">Free Plan</h3>
                 <p class="text-gray-600 mb-4">You're currently on the free plan. Upgrade for more features!</p>
-                <a href={~p"/pricing"} class="inline-block bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium">
+                <a href={~p"/pricing"} class="inline-block px-6 py-2 rounded-lg transition-colors font-medium" style="background-color: #0d9488; color: white;">
                   View Plans & Pricing
                 </a>
               </div>
@@ -224,7 +224,7 @@
 
           <!-- Back to Buttons Link -->
           <div class="text-center">
-            <a href={~p"/"} class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
+            <a href={~p"/"} class="inline-flex items-center px-4 py-2 rounded-lg transition-colors" style="background-color: #0d9488; color: white;">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
               </svg>
@@ -236,7 +236,7 @@
         <div class="text-center py-12">
           <h3 class="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
           <p class="text-gray-500 mb-4">Please log in to access account settings</p>
-          <a href={~p"/auth/login"} class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors">
+          <a href={~p"/auth/login"} class="px-4 py-2 rounded-lg transition-colors" style="background-color: #0d9488; color: white;">
             Log In
           </a>
         </div>
