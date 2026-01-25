@@ -77,8 +77,8 @@ test.describe('Button Operations (Authenticated)', () => {
         const testButtonName = `E2E Test Button ${Date.now()}`;
         await nameInput.fill(testButtonName);
 
-        // Submit the form
-        await page.locator('button[type="submit"]').or(page.locator('button:has-text("Create")')).click();
+        // Submit the form (use the form's submit button specifically)
+        await page.locator('form button[type="submit"]').first().click();
         await page.waitForLoadState('networkidle');
 
         // Verify button was created (should see the name somewhere)
