@@ -130,6 +130,15 @@ defmodule ButtonLog.Accounts do
   end
 
   @doc """
+  Changes a user's password.
+  """
+  def change_user_password(%User{} = user, new_password) do
+    user
+    |> User.password_changeset(%{password: new_password, password_confirmation: new_password})
+    |> Repo.update()
+  end
+
+  @doc """
   Updates a user's status.
   """
   def update_user_status(user_id, status) do

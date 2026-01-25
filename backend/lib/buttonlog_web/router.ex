@@ -50,6 +50,9 @@ defmodule ButtonLogWeb.Router do
     live "/support", SupportLive, :index
     live "/support/:id", SupportLive, :show
     live "/pricing", PricingLive, :index
+    live "/about", AboutLive, :index
+    live "/terms", TermsLive, :index
+    live "/privacy", PrivacyLive, :index
 
     # Debug route to test basic connectivity
     get "/debug", PageController, :debug
@@ -115,6 +118,11 @@ defmodule ButtonLogWeb.Router do
     get "/users/:id/public-profile", API.UserController, :public_profile
     get "/users/notification-preferences", API.UserController, :notification_preferences
     put "/users/notification-preferences", API.UserController, :update_notification_preferences
+    put "/users/password", API.PasswordController, :change_password
+
+    # Data export endpoints
+    get "/users/export", API.ExportController, :export
+    get "/users/export/info", API.ExportController, :export_info
 
     # Social endpoints
     get "/friends", API.SocialController, :friends

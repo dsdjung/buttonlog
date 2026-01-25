@@ -59,13 +59,13 @@ class PrivacySettingsViewModel @Inject constructor(
         }
     }
 
-    fun setProfileVisibility(visibility: String) {
+    fun updateProfileVisibility(visibility: String) {
         if (profileVisibility == visibility) return
         profileVisibility = visibility
         saveSettings()
     }
 
-    fun setActivityVisibility(visibility: String) {
+    fun updateActivityVisibility(visibility: String) {
         if (activityVisibility == visibility) return
         activityVisibility = visibility
         saveSettings()

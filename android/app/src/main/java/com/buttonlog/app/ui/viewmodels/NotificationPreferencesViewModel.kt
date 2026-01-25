@@ -77,32 +77,32 @@ class NotificationSettingsViewModel @Inject constructor(
         }
     }
 
-    fun setPushNotificationsEnabled(enabled: Boolean) {
+    fun updatePushNotificationsEnabled(enabled: Boolean) {
         pushNotificationsEnabled = enabled
         saveSettings()
     }
 
-    fun setEmailNotificationsEnabled(enabled: Boolean) {
+    fun updateEmailNotificationsEnabled(enabled: Boolean) {
         emailNotificationsEnabled = enabled
         saveSettings()
     }
 
-    fun setButtonNotifications(enabled: Boolean) {
+    fun updateButtonNotifications(enabled: Boolean) {
         buttonNotifications = enabled
         saveSettings()
     }
 
-    fun setFriendNotifications(enabled: Boolean) {
+    fun updateFriendNotifications(enabled: Boolean) {
         friendNotifications = enabled
         saveSettings()
     }
 
-    fun setSystemNotifications(enabled: Boolean) {
+    fun updateSystemNotifications(enabled: Boolean) {
         systemNotifications = enabled
         saveSettings()
     }
 
-    fun setQuietHoursEnabled(enabled: Boolean) {
+    fun updateQuietHoursEnabled(enabled: Boolean) {
         quietHoursEnabled = enabled
         saveSettings()
     }

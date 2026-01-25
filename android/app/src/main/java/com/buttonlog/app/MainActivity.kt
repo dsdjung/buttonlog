@@ -52,6 +52,10 @@ import com.buttonlog.app.ui.screens.OnboardingScreen
 import com.buttonlog.app.ui.screens.EditProfileScreen
 import com.buttonlog.app.ui.screens.PrivacySettingsScreen
 import com.buttonlog.app.ui.screens.NotificationSettingsScreen
+import com.buttonlog.app.ui.screens.PasswordChangeScreen
+import com.buttonlog.app.ui.screens.DataExportScreen
+import com.buttonlog.app.ui.screens.AboutScreen
+import com.buttonlog.app.ui.screens.WebhookSettingsScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 import com.buttonlog.app.ui.viewmodels.SupportViewModel
@@ -139,6 +143,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var showEditProfileScreen by remember { mutableStateOf(false) }
     var showPrivacySettingsScreen by remember { mutableStateOf(false) }
     var showNotificationSettingsScreen by remember { mutableStateOf(false) }
+    var showPasswordChangeScreen by remember { mutableStateOf(false) }
+    var showDataExportScreen by remember { mutableStateOf(false) }
+    var showAboutScreen by remember { mutableStateOf(false) }
+    var showWebhookSettingsScreen by remember { mutableStateOf(false) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
     val notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -317,7 +325,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onSubscriptionClick = { showSubscriptionScreen = true },
                         onEditProfileClick = { showEditProfileScreen = true },
                         onPrivacySettingsClick = { showPrivacySettingsScreen = true },
-                        onNotificationSettingsClick = { showNotificationSettingsScreen = true }
+                        onNotificationSettingsClick = { showNotificationSettingsScreen = true },
+                        onPasswordChangeClick = { showPasswordChangeScreen = true },
+                        onDataExportClick = { showDataExportScreen = true },
+                        onAboutClick = { showAboutScreen = true },
+                        onWebhookSettingsClick = { showWebhookSettingsScreen = true }
                     )
                 }
             }
@@ -526,6 +538,34 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     if (showNotificationSettingsScreen) {
         NotificationSettingsScreen(
             onNavigateBack = { showNotificationSettingsScreen = false }
+        )
+    }
+
+    // Password Change Screen
+    if (showPasswordChangeScreen) {
+        PasswordChangeScreen(
+            onNavigateBack = { showPasswordChangeScreen = false }
+        )
+    }
+
+    // Data Export Screen
+    if (showDataExportScreen) {
+        DataExportScreen(
+            onNavigateBack = { showDataExportScreen = false }
+        )
+    }
+
+    // About Screen
+    if (showAboutScreen) {
+        AboutScreen(
+            onNavigateBack = { showAboutScreen = false }
+        )
+    }
+
+    // Webhook Settings Screen
+    if (showWebhookSettingsScreen) {
+        WebhookSettingsScreen(
+            onNavigateBack = { showWebhookSettingsScreen = false }
         )
     }
 }

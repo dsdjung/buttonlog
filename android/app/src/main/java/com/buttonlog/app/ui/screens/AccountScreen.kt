@@ -22,7 +22,11 @@ fun AccountScreen(
     onSubscriptionClick: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
     onPrivacySettingsClick: () -> Unit = {},
-    onNotificationSettingsClick: () -> Unit = {}
+    onNotificationSettingsClick: () -> Unit = {},
+    onPasswordChangeClick: () -> Unit = {},
+    onDataExportClick: () -> Unit = {},
+    onAboutClick: () -> Unit = {},
+    onWebhookSettingsClick: () -> Unit = {}
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -149,6 +153,27 @@ fun AccountScreen(
             )
 
             SettingsItem(
+                icon = Icons.Default.Key,
+                title = "Change Password",
+                subtitle = "Update your account password",
+                onClick = onPasswordChangeClick
+            )
+
+            SettingsItem(
+                icon = Icons.Default.Download,
+                title = "Export Data",
+                subtitle = "Download your data and activity history",
+                onClick = onDataExportClick
+            )
+
+            SettingsItem(
+                icon = Icons.Default.Link,
+                title = "Webhook Notifications",
+                subtitle = "Configure external webhook integrations",
+                onClick = onWebhookSettingsClick
+            )
+
+            SettingsItem(
                 icon = Icons.Default.Chat,
                 title = "Help & Support",
                 subtitle = "Get help or report issues",
@@ -159,7 +184,7 @@ fun AccountScreen(
                 icon = Icons.Default.Info,
                 title = "About",
                 subtitle = "App version and information",
-                onClick = { /* TODO: Navigate to about */ }
+                onClick = onAboutClick
             )
 
             Spacer(modifier = Modifier.height(32.dp))

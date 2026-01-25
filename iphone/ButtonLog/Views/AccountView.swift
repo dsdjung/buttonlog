@@ -60,11 +60,23 @@ struct AccountView: View {
                     Label("Privacy", systemImage: "lock")
                 }
 
+                NavigationLink(destination: PasswordChangeView()) {
+                    Label("Change Password", systemImage: "key")
+                }
+
                 NavigationLink(destination: DataExportView()) {
                     Label("Export Data", systemImage: "square.and.arrow.up")
                 }
+
+                NavigationLink(destination: WebhookSettingsView()) {
+                    Label("Webhook Notifications", systemImage: "link")
+                }
+
+                NavigationLink(destination: AboutView()) {
+                    Label("About", systemImage: "info.circle")
+                }
             }
-            
+
             // Support Section
             Section("Support") {
                 NavigationLink(destination: SupportView()) {
@@ -408,13 +420,25 @@ struct PrivacySettingsView: View {
 struct DataExportView: View {
     @State private var isExporting = false
     @State private var exportFormat: ExportFormat = .json
-    
+    @State private var showingError = false
+    @State private var errorMessage: String?
+    @State private var showingShareSheet = false
+    @State private var exportedFileURL: URL?
+
+    private let apiService = APIService.shared
+
     enum ExportFormat: String, CaseIterable {
         case json = "JSON"
         case csv = "CSV"
-        case pdf = "PDF"
+
+        var apiFormat: String {
+            switch self {
+            case .json: return "json"
+            case .csv: return "csv"
+            }
+        }
     }
-    
+
     var body: some View {
         Form {
             Section("Export Format") {
@@ -425,43 +449,182 @@ struct DataExportView: View {
                 }
                 .pickerStyle(.segmented)
             }
-            
+
             Section("Data to Export") {
-                Text("• All your buttons and settings")
-                Text("• Button click history")
-                Text("• Friend connections")
-                Text("• Account information")
+                Text("All your buttons and settings")
+                Text("Button click history")
+                Text("Friend connections")
+                Text("Account information")
             }
             .font(.subheadline)
             .foregroundColor(.secondary)
-            
+
             Section {
-                SwiftUI.Button("Export My Data") {
-                    exportData()
-                }
-                .disabled(isExporting)
-                
-                if isExporting {
+                SwiftUI.Button {
+                    Task { await exportData() }
+                } label: {
                     HStack {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("Preparing export...")
+                        Text("Export My Data")
+                        Spacer()
+                        if isExporting {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
                     }
                 }
+                .disabled(isExporting)
+            } footer: {
+                Text("Your data will be downloaded as a \(exportFormat.rawValue) file that you can save or share.")
             }
         }
         .navigationTitle("Export Data")
         .navigationBarTitleDisplayMode(.inline)
-    }
-    
-    private func exportData() {
-        isExporting = true
-        
-        // Simulate export process
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            isExporting = false
-            // In a real app, this would trigger the actual export
+        .alert("Export Error", isPresented: $showingError) {
+            SwiftUI.Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "Failed to export data")
         }
+        .sheet(isPresented: $showingShareSheet) {
+            if let fileURL = exportedFileURL {
+                ShareSheet(items: [fileURL])
+            }
+        }
+    }
+
+    @MainActor
+    private func exportData() async {
+        isExporting = true
+
+        do {
+            let (data, filename, _) = try await apiService.exportUserData(format: exportFormat.apiFormat)
+
+            // Save to temporary directory
+            let tempDir = FileManager.default.temporaryDirectory
+            let fileURL = tempDir.appendingPathComponent(filename)
+
+            try data.write(to: fileURL)
+
+            exportedFileURL = fileURL
+            showingShareSheet = true
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+
+        isExporting = false
+    }
+}
+
+// MARK: - Share Sheet
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Password Change View
+struct PasswordChangeView: View {
+    @State private var currentPassword = ""
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+    @State private var isSaving = false
+    @State private var showingError = false
+    @State private var errorMessage: String?
+    @State private var showingSuccess = false
+
+    private let apiService = APIService.shared
+
+    var body: some View {
+        Form {
+            Section {
+                SecureField("Current Password", text: $currentPassword)
+                    .textContentType(.password)
+            } header: {
+                Text("Current Password")
+            } footer: {
+                Text("Enter your current password to verify your identity")
+            }
+
+            Section {
+                SecureField("New Password", text: $newPassword)
+                    .textContentType(.newPassword)
+
+                SecureField("Confirm New Password", text: $confirmPassword)
+                    .textContentType(.newPassword)
+            } header: {
+                Text("New Password")
+            } footer: {
+                Text("Password must be at least 8 characters long")
+            }
+
+            Section {
+                SwiftUI.Button {
+                    Task { await changePassword() }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text("Change Password")
+                        }
+                        Spacer()
+                    }
+                }
+                .disabled(!isFormValid || isSaving)
+            }
+        }
+        .navigationTitle("Change Password")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Error", isPresented: $showingError) {
+            SwiftUI.Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "Failed to change password")
+        }
+        .alert("Password Changed", isPresented: $showingSuccess) {
+            SwiftUI.Button("OK") {
+                // Clear form
+                currentPassword = ""
+                newPassword = ""
+                confirmPassword = ""
+            }
+        } message: {
+            Text("Your password has been changed successfully.")
+        }
+    }
+
+    private var isFormValid: Bool {
+        !currentPassword.isEmpty &&
+        newPassword.count >= 8 &&
+        newPassword == confirmPassword
+    }
+
+    @MainActor
+    private func changePassword() async {
+        isSaving = true
+
+        do {
+            try await apiService.changePassword(
+                currentPassword: currentPassword,
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
+            )
+            showingSuccess = true
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+
+        isSaving = false
     }
 }
 

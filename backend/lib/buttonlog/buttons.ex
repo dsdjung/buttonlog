@@ -21,6 +21,17 @@ defmodule ButtonLog.Buttons do
   end
 
   @doc """
+  Returns the count of button clicks by a user.
+  """
+  def count_user_clicks(user_id) do
+    Repo.aggregate(
+      from(bc in ButtonClick, where: bc.user_id == ^user_id),
+      :count,
+      :id
+    )
+  end
+
+  @doc """
   Returns the list of buttons for a user with latest click time.
   """
   def list_user_buttons(user_id) do

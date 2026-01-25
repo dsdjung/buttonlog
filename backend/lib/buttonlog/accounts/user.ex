@@ -115,6 +115,15 @@ defmodule ButtonLog.Accounts.User do
     |> put_password_hash()
   end
 
+  def password_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:password, :password_confirmation])
+    |> validate_required([:password, :password_confirmation])
+    |> validate_length(:password, min: 8)
+    |> validate_confirmation(:password)
+    |> put_password_hash()
+  end
+
   def oauth_registration_changeset(user, attrs) do
     user
     |> changeset(attrs)

@@ -375,9 +375,97 @@ class APIService {
             body: update.toRequestBody()
         )
     }
-    
+
+    func changePassword(currentPassword: String, newPassword: String, confirmPassword: String) async throws {
+        let body: [String: Any] = [
+            "current_password": currentPassword,
+            "new_password": newPassword,
+            "confirm_password": confirmPassword
+        ]
+        try await makeVoidRequest(
+            endpoint: "/users/password",
+            method: .PUT,
+            body: body
+        )
+    }
+
+    func exportUserData(format: String) async throws -> (data: Data, filename: String, contentType: String) {
+        guard let url = URL(string: "\(baseURL)/users/export?format=\(format)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = HTTPMethod.GET.rawValue
+        addCommonHeaders(to: &request)
+
+        if let token = KeychainManager.shared.getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+            let contentDisposition = httpResponse.value(forHTTPHeaderField: "Content-Disposition") ?? ""
+            let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "application/octet-stream"
+
+            // Extract filename from Content-Disposition header
+            var filename = "buttonlog_export.\(format)"
+            if let filenameRange = contentDisposition.range(of: "filename=\""),
+               let endRange = contentDisposition.range(of: "\"", range: filenameRange.upperBound..<contentDisposition.endIndex) {
+                filename = String(contentDisposition[filenameRange.upperBound..<endRange.lowerBound])
+            }
+
+            return (data, filename, contentType)
+        } else {
+            throw APIError.serverError("Export failed: HTTP \(httpResponse.statusCode)")
+        }
+    }
+
     func getPublicProfile(userId: String) async throws -> PublicUser {
         return try await makeRequest(endpoint: "/users/\(userId)/public-profile")
+    }
+
+    // MARK: - Webhook Settings
+
+    func getWebhookSettings() async throws -> WebhookSettings {
+        return try await makeRequest(endpoint: "/notifications/settings")
+    }
+
+    func updateWebhookSettings(
+        webhookUrl: String?,
+        webhookEnabled: Bool,
+        webhookSecret: String?,
+        retryFailed: Bool,
+        maxRetries: Int
+    ) async throws {
+        var body: [String: Any] = [
+            "default_webhook_enabled": webhookEnabled,
+            "retry_failed": retryFailed,
+            "max_retries": maxRetries
+        ]
+        if let url = webhookUrl {
+            body["default_webhook_url"] = url
+        }
+        if let secret = webhookSecret {
+            body["webhook_secret"] = secret
+        }
+        try await makeVoidRequest(
+            endpoint: "/notifications/settings",
+            method: .PUT,
+            body: body
+        )
+    }
+
+    func testWebhook() async throws {
+        try await makeVoidRequest(
+            endpoint: "/notifications/test",
+            method: .POST,
+            body: nil
+        )
     }
 
     func completeOnboarding() async throws {

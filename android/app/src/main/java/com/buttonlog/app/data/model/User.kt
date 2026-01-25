@@ -147,3 +147,63 @@ data class NotificationPreferencesUpdate(
     val quietHoursEnd: String? = null
 )
 
+// Password change request data
+data class PasswordChangeRequest(
+    @SerializedName("current_password")
+    val currentPassword: String,
+    @SerializedName("new_password")
+    val newPassword: String,
+    @SerializedName("confirm_password")
+    val confirmPassword: String
+)
+
+// Password change response data
+data class PasswordChangeResponse(
+    val success: Boolean,
+    val data: PasswordChangeData?,
+    val error: ApiError?
+)
+
+data class PasswordChangeData(
+    val message: String
+)
+
+// Webhook settings models
+data class WebhookSettings(
+    @SerializedName("default_webhook_url")
+    val defaultWebhookUrl: String?,
+    @SerializedName("default_webhook_enabled")
+    val defaultWebhookEnabled: Boolean,
+    @SerializedName("webhook_secret")
+    val webhookSecret: String?,
+    @SerializedName("retry_failed")
+    val retryFailed: Boolean,
+    @SerializedName("max_retries")
+    val maxRetries: Int
+)
+
+data class WebhookSettingsResponse(
+    val success: Boolean,
+    val data: WebhookSettings?,
+    val error: ApiError?
+)
+
+data class WebhookSettingsUpdate(
+    @SerializedName("default_webhook_url")
+    val defaultWebhookUrl: String?,
+    @SerializedName("default_webhook_enabled")
+    val defaultWebhookEnabled: Boolean,
+    @SerializedName("webhook_secret")
+    val webhookSecret: String?,
+    @SerializedName("retry_failed")
+    val retryFailed: Boolean,
+    @SerializedName("max_retries")
+    val maxRetries: Int
+)
+
+data class WebhookTestResponse(
+    val success: Boolean,
+    val data: Any?,
+    val error: ApiError?
+)
+

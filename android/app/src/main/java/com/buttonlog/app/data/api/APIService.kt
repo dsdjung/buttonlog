@@ -129,6 +129,24 @@ interface APIService {
     @PUT("users/notification-preferences")
     suspend fun updateNotificationPreferences(@Body update: NotificationPreferencesUpdate): NotificationPreferences
 
+    @PUT("users/password")
+    suspend fun changePassword(@Body request: PasswordChangeRequest): PasswordChangeResponse
+
+    @GET("users/export")
+    @Streaming
+    suspend fun exportData(@Query("format") format: String): retrofit2.Response<okhttp3.ResponseBody>
+
+    // MARK: - Webhook Settings
+
+    @GET("notifications/settings")
+    suspend fun getWebhookSettings(): WebhookSettingsResponse
+
+    @PUT("notifications/settings")
+    suspend fun updateWebhookSettings(@Body update: WebhookSettingsUpdate): WebhookSettingsResponse
+
+    @POST("notifications/test")
+    suspend fun testWebhook(): WebhookTestResponse
+
     // MARK: - Social Endpoints
 
     @GET("friends")

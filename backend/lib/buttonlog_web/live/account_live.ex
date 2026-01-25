@@ -20,7 +20,10 @@ defmodule ButtonLogWeb.AccountLive do
        |> assign(:plans, plans)
        |> assign(:page_title, "Account Settings")
        |> assign(:editing_profile, false)
-       |> assign(:profile_form, build_profile_form(current_user))}
+       |> assign(:profile_form, build_profile_form(current_user))
+       |> assign(:editing_password, false)
+       |> assign(:password_form, %{"current_password" => "", "new_password" => "", "confirm_password" => ""})
+       |> assign(:password_error, nil)}
     else
       {:ok,
        socket
@@ -121,6 +124,61 @@ defmodule ButtonLogWeb.AccountLive do
         {:noreply,
          socket
          |> put_flash(:error, "Failed to update privacy settings")}
+    end
+  end
+
+  @impl true
+  def handle_event("start_edit_password", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:editing_password, true)
+     |> assign(:password_error, nil)}
+  end
+
+  @impl true
+  def handle_event("cancel_edit_password", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:editing_password, false)
+     |> assign(:password_form, %{"current_password" => "", "new_password" => "", "confirm_password" => ""})
+     |> assign(:password_error, nil)}
+  end
+
+  @impl true
+  def handle_event("validate_password", %{"password" => password_params}, socket) do
+    {:noreply, assign(socket, :password_form, password_params)}
+  end
+
+  @impl true
+  def handle_event("save_password", %{"password" => password_params}, socket) do
+    user = socket.assigns.current_user
+    current_password = password_params["current_password"]
+    new_password = password_params["new_password"]
+    confirm_password = password_params["confirm_password"]
+
+    cond do
+      new_password != confirm_password ->
+        {:noreply, assign(socket, :password_error, "New passwords do not match")}
+
+      String.length(new_password) < 8 ->
+        {:noreply, assign(socket, :password_error, "Password must be at least 8 characters")}
+
+      !Bcrypt.verify_pass(current_password, user.password_hash || "") ->
+        {:noreply, assign(socket, :password_error, "Current password is incorrect")}
+
+      true ->
+        case Accounts.change_user_password(user, new_password) do
+          {:ok, _updated_user} ->
+            {:noreply,
+             socket
+             |> assign(:editing_password, false)
+             |> assign(:password_form, %{"current_password" => "", "new_password" => "", "confirm_password" => ""})
+             |> assign(:password_error, nil)
+             |> put_flash(:info, "Password changed successfully")}
+
+          {:error, _changeset} ->
+            {:noreply, assign(socket, :password_error, "Failed to change password")}
+        end
     end
   end
 

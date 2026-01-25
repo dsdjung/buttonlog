@@ -94,7 +94,7 @@ fun PrivacySettingsScreen(
                     description = "Anyone can see your profile",
                     selected = viewModel.profileVisibility == "public",
                     enabled = !viewModel.isSaving,
-                    onClick = { viewModel.setProfileVisibility("public") }
+                    onClick = { viewModel.updateProfileVisibility("public") }
                 )
 
                 VisibilityOption(
@@ -102,7 +102,7 @@ fun PrivacySettingsScreen(
                     description = "Only friends can see your profile",
                     selected = viewModel.profileVisibility == "friends",
                     enabled = !viewModel.isSaving,
-                    onClick = { viewModel.setProfileVisibility("friends") }
+                    onClick = { viewModel.updateProfileVisibility("friends") }
                 )
 
                 VisibilityOption(
@@ -110,7 +110,7 @@ fun PrivacySettingsScreen(
                     description = "Only you can see your profile",
                     selected = viewModel.profileVisibility == "private",
                     enabled = !viewModel.isSaving,
-                    onClick = { viewModel.setProfileVisibility("private") }
+                    onClick = { viewModel.updateProfileVisibility("private") }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -137,7 +137,7 @@ fun PrivacySettingsScreen(
                     description = "Anyone can see your button activities",
                     selected = viewModel.activityVisibility == "public",
                     enabled = !viewModel.isSaving,
-                    onClick = { viewModel.setActivityVisibility("public") }
+                    onClick = { viewModel.updateActivityVisibility("public") }
                 )
 
                 VisibilityOption(
@@ -145,7 +145,7 @@ fun PrivacySettingsScreen(
                     description = "Only friends can see your button activities",
                     selected = viewModel.activityVisibility == "friends",
                     enabled = !viewModel.isSaving,
-                    onClick = { viewModel.setActivityVisibility("friends") }
+                    onClick = { viewModel.updateActivityVisibility("friends") }
                 )
 
                 VisibilityOption(
@@ -153,7 +153,7 @@ fun PrivacySettingsScreen(
                     description = "Only you can see your button activities",
                     selected = viewModel.activityVisibility == "private",
                     enabled = !viewModel.isSaving,
-                    onClick = { viewModel.setActivityVisibility("private") }
+                    onClick = { viewModel.updateActivityVisibility("private") }
                 )
 
                 if (viewModel.isSaving) {

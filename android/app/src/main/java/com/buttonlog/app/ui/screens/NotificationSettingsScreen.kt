@@ -79,7 +79,7 @@ fun NotificationSettingsScreen(
                     description = "Receive push notifications on your device",
                     checked = viewModel.pushNotificationsEnabled,
                     enabled = !viewModel.isSaving,
-                    onCheckedChange = { viewModel.setPushNotificationsEnabled(it) }
+                    onCheckedChange = { viewModel.updatePushNotificationsEnabled(it) }
                 )
 
                 SwitchSettingItem(
@@ -87,7 +87,7 @@ fun NotificationSettingsScreen(
                     description = "Get notified about button clicks and updates",
                     checked = viewModel.buttonNotifications,
                     enabled = !viewModel.isSaving && viewModel.pushNotificationsEnabled,
-                    onCheckedChange = { viewModel.setButtonNotifications(it) }
+                    onCheckedChange = { viewModel.updateButtonNotifications(it) }
                 )
 
                 SwitchSettingItem(
@@ -95,7 +95,7 @@ fun NotificationSettingsScreen(
                     description = "Get notified about friend requests and activity",
                     checked = viewModel.friendNotifications,
                     enabled = !viewModel.isSaving && viewModel.pushNotificationsEnabled,
-                    onCheckedChange = { viewModel.setFriendNotifications(it) }
+                    onCheckedChange = { viewModel.updateFriendNotifications(it) }
                 )
 
                 SwitchSettingItem(
@@ -103,7 +103,7 @@ fun NotificationSettingsScreen(
                     description = "Get notified about system updates and announcements",
                     checked = viewModel.systemNotifications,
                     enabled = !viewModel.isSaving && viewModel.pushNotificationsEnabled,
-                    onCheckedChange = { viewModel.setSystemNotifications(it) }
+                    onCheckedChange = { viewModel.updateSystemNotifications(it) }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -122,7 +122,7 @@ fun NotificationSettingsScreen(
                     description = "Receive notifications via email",
                     checked = viewModel.emailNotificationsEnabled,
                     enabled = !viewModel.isSaving,
-                    onCheckedChange = { viewModel.setEmailNotificationsEnabled(it) }
+                    onCheckedChange = { viewModel.updateEmailNotificationsEnabled(it) }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -141,7 +141,7 @@ fun NotificationSettingsScreen(
                     description = "Pause notifications during specific hours",
                     checked = viewModel.quietHoursEnabled,
                     enabled = !viewModel.isSaving,
-                    onCheckedChange = { viewModel.setQuietHoursEnabled(it) }
+                    onCheckedChange = { viewModel.updateQuietHoursEnabled(it) }
                 )
 
                 if (viewModel.quietHoursEnabled) {
