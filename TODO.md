@@ -82,3 +82,144 @@ cd iphone && bundle install && bundle exec fastlane deploy_testflight
 - Backend: [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md)
 - Mobile: [deploy/MOBILE_DEPLOYMENT.md](deploy/MOBILE_DEPLOYMENT.md)
 - Overview: [deploy/README.md](deploy/README.md)
+
+## Manual Testing Checklist
+
+### Account Features
+
+#### Edit Profile (iOS, Android, Web)
+- [ ] Load current profile data on screen open
+- [ ] Edit display name and save
+- [ ] Edit first/last name and save
+- [ ] Verify changes persist after app restart
+- [ ] Test with empty optional fields
+- [ ] Test validation (required fields)
+
+#### Privacy Settings (iOS, Android, Web)
+- [ ] Load current visibility settings
+- [ ] Change profile visibility (Public/Friends/Private)
+- [ ] Change activity visibility (Public/Friends/Private)
+- [ ] Verify settings persist after save
+- [ ] Verify privacy is enforced (view as another user)
+
+#### Notification Settings (iOS, Android, Web)
+- [ ] Load current notification preferences
+- [ ] Toggle push notifications on/off
+- [ ] Toggle email notifications on/off
+- [ ] Toggle button activity notifications
+- [ ] Toggle friend update notifications
+- [ ] Toggle system notifications
+- [ ] Enable/disable quiet hours
+- [ ] Verify settings persist after save
+- [ ] Test that sub-toggles disable when push notifications off
+
+#### Password Management (iOS, Android, Web)
+- [ ] Enter current password + new password + confirm
+- [ ] Submit and verify success message
+- [ ] Log out and log in with new password
+- [ ] Test wrong current password (should fail)
+- [ ] Test mismatched passwords (should fail)
+- [ ] Test too short password (<8 chars, should fail)
+
+#### Data Export (iOS, Android, Web)
+- [ ] View export info (button count, click count, friend count)
+- [ ] Export as JSON format
+- [ ] Export as CSV format
+- [ ] Verify file contains user profile data
+- [ ] Verify file contains all buttons
+- [ ] Verify file contains click history
+- [ ] Verify file contains friend list
+- [ ] Share/save exported file successfully
+
+#### About Page (iOS, Android, Web)
+- [ ] View app version and build number
+- [ ] Tap Terms of Service link - opens correctly
+- [ ] Tap Privacy Policy link - opens correctly
+- [ ] View contact information
+- [ ] View acknowledgements/credits
+
+#### Webhook Settings (iOS, Android, Web)
+- [ ] Load current webhook configuration
+- [ ] Enter webhook URL
+- [ ] Toggle webhook enabled/disabled
+- [ ] Set webhook secret
+- [ ] Configure retry settings
+- [ ] Save settings and verify persistence
+- [ ] Test webhook button - verify delivery
+- [ ] View delivery history (Web only)
+
+### Cross-Platform Consistency Checks
+
+#### iOS vs Android vs Web
+- [ ] Same fields available on all platforms
+- [ ] Same validation rules on all platforms
+- [ ] Same error messages for same errors
+- [ ] Consistent UI/UX patterns
+- [ ] Data syncs correctly across platforms
+
+### API Endpoint Verification
+
+| Endpoint | Method | Test |
+|----------|--------|------|
+| `/api/users/profile` | GET | Returns current user data |
+| `/api/users/profile` | PUT | Updates profile fields |
+| `/api/users/password` | PUT | Changes password |
+| `/api/users/notification-preferences` | GET | Returns notification prefs |
+| `/api/users/notification-preferences` | PUT | Updates notification prefs |
+| `/api/users/export` | GET | Returns JSON/CSV export |
+| `/api/users/export/info` | GET | Returns export metadata |
+| `/api/notifications/settings` | GET | Returns webhook settings |
+| `/api/notifications/settings` | PUT | Updates webhook settings |
+| `/api/notifications/test` | POST | Tests webhook delivery |
+
+### Error Handling Tests
+
+- [ ] Network offline - graceful error message
+- [ ] Invalid auth token - redirects to login
+- [ ] Server error (500) - user-friendly message
+- [ ] Validation errors - specific field errors shown
+- [ ] Timeout handling - retry or error message
+
+### Regression Tests
+
+- [ ] Existing button functionality works
+- [ ] Friend requests/accepts work
+- [ ] Notifications received correctly
+- [ ] Subscription features work
+- [ ] Login/logout works
+- [ ] OAuth login works (Google, Facebook, Apple)
+
+---
+
+## Feature Plans (Future)
+
+- Analytics History
+- Calendar Sync
+- API Access
+- Priority Support
+- Custom Themes
+- Team Features
+- Enterprise Features
+
+---
+
+## Completed Features (January 2025)
+
+### Phase 1-3 (Previously completed)
+- [x] Edit Profile - Backend API + iOS/Android/Web UIs
+- [x] Privacy Settings - Backend API + iOS/Android/Web UIs
+- [x] Notification Settings - Backend migration + iOS/Android/Web UIs
+
+### Phase 4-8 (This session)
+- [x] Password Management - Full stack implementation
+- [x] Data Export - JSON/CSV export with file sharing
+- [x] About Pages - iOS, Android, Web
+- [x] Terms of Service / Privacy Policy - Web pages with legal content
+- [x] Webhook Notifications on Mobile - iOS and Android screens
+
+### Test Coverage Added
+- [x] Password controller tests (5 test cases)
+- [x] Export controller tests (9 test cases)
+- [x] Data export module tests (9 test cases)
+
+
