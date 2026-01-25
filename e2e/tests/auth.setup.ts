@@ -32,16 +32,20 @@ setup('authenticate via Google OAuth', async ({ page }) => {
   console.log('3. Wait until you see the main app (buttons page)');
   console.log('4. The test will automatically save your session');
   console.log('\n');
-  console.log('You have 2 minutes to complete the login...');
+  console.log('You have 5 minutes to complete the login...');
   console.log('='.repeat(60));
   console.log('\n');
 
-  // Wait for user to complete OAuth login (up to 2 minutes)
-  // The test waits until we're redirected away from auth pages
+  // Wait for user to complete OAuth login (up to 5 minutes)
+  // The test waits until we're back on the app domain and not on auth pages
   await page.waitForURL((url) => {
+    // Must be on our app domain (not Google's OAuth page)
+    const isAppDomain = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
     const path = url.pathname;
-    return !path.includes('/auth/') && path !== '/';
-  }, { timeout: 120000 });
+    const isNotAuthPage = !path.includes('/auth/');
+    const isNotRoot = path !== '/';
+    return isAppDomain && isNotAuthPage && isNotRoot;
+  }, { timeout: 300000 });
 
   // Verify we're logged in by checking for authenticated UI elements
   // Wait for the page to settle
