@@ -10,7 +10,78 @@ defmodule ButtonLogWeb.API.SubscriptionControllerTest do
     {:ok, user: user, token: token}
   end
 
-  describe "GET /api/subscriptions" do
+  describe "GET /api/subscriptions/plans (public)" do
+    test "returns list of available subscription plans without auth", %{conn: conn} do
+      # Clean up existing plans to have predictable test data
+      Repo.delete_all(ButtonLog.Subscriptions.SubscriptionPlan)
+
+      insert_subscription_plan(%{name: "Free", slug: "free", is_active: true})
+      insert_subscription_plan(%{name: "Premium", slug: "premium", is_active: true})
+
+      # No auth header - this is a public endpoint
+      conn = get(conn, "/api/subscriptions/plans")
+
+      assert %{
+        "success" => true,
+        "data" => plans
+      } = json_response(conn, 200)
+
+      assert length(plans) == 2
+      assert Enum.all?(plans, fn plan ->
+        Map.has_key?(plan, "id") and
+        Map.has_key?(plan, "name") and
+        Map.has_key?(plan, "slug")
+      end)
+    end
+
+    test "returns prices as numbers (not strings) for mobile clients", %{conn: conn} do
+      Repo.delete_all(ButtonLog.Subscriptions.SubscriptionPlan)
+
+      insert_subscription_plan(%{
+        name: "Premium",
+        slug: "premium",
+        is_active: true,
+        price_monthly: Decimal.new("9.99"),
+        price_yearly: Decimal.new("99.99")
+      })
+
+      conn = get(conn, "/api/subscriptions/plans")
+
+      assert %{"success" => true, "data" => [plan]} = json_response(conn, 200)
+
+      # Prices must be numbers, not strings (critical for iOS/Android JSON parsing)
+      assert is_number(plan["monthly_price"])
+      assert is_number(plan["yearly_price"])
+      assert plan["monthly_price"] == 9.99
+      assert plan["yearly_price"] == 99.99
+    end
+
+    test "includes plan features and limits", %{conn: conn} do
+      Repo.delete_all(ButtonLog.Subscriptions.SubscriptionPlan)
+
+      plan = insert_subscription_plan(%{
+        name: "Premium",
+        is_active: true,
+        max_buttons: 100,
+        max_friends: 50,
+        has_advanced_analytics: true,
+        has_calendar_sync: true
+      })
+
+      conn = get(conn, "/api/subscriptions/plans")
+
+      assert %{"success" => true, "data" => plans} = json_response(conn, 200)
+
+      premium_plan = Enum.find(plans, &(&1["slug"] == plan.slug))
+      assert premium_plan != nil
+      assert premium_plan["features"]["analytics"] == true
+      assert premium_plan["features"]["calendar_sync"] == true
+      assert premium_plan["limits"]["max_buttons"] == 100
+      assert premium_plan["limits"]["max_friends"] == 50
+    end
+  end
+
+  describe "GET /api/subscriptions (authenticated)" do
     test "returns list of available subscription plans", %{conn: conn, token: token} do
       # Insert some subscription plans
       insert_subscription_plan(%{name: "Free", is_active: true})

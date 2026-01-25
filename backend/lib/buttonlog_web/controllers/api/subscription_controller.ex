@@ -225,8 +225,8 @@ defmodule ButtonLogWeb.API.SubscriptionController do
       name: plan.name,
       slug: plan.slug,
       description: plan.description || "",
-      monthly_price: plan.price_monthly || 0.0,
-      yearly_price: plan.price_yearly || 0.0,
+      monthly_price: decimal_to_float(plan.price_monthly),
+      yearly_price: decimal_to_float(plan.price_yearly),
       features: %{
         analytics: plan.has_advanced_analytics || false,
         calendar_sync: plan.has_calendar_sync || false,
@@ -249,6 +249,12 @@ defmodule ButtonLogWeb.API.SubscriptionController do
       updated_at: plan.updated_at
     }
   end
+
+  # Convert Decimal to float for JSON serialization
+  defp decimal_to_float(nil), do: 0.0
+  defp decimal_to_float(%Decimal{} = decimal), do: Decimal.to_float(decimal)
+  defp decimal_to_float(value) when is_float(value), do: value
+  defp decimal_to_float(value) when is_integer(value), do: value / 1.0
 
   defp format_usage(usage) when is_map(usage) do
     %{
