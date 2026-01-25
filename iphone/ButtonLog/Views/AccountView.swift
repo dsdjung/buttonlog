@@ -866,14 +866,11 @@ struct PlanCard: View {
 
             Divider()
 
-            // Key Features
+            // Key Features - only show implemented features
             VStack(alignment: .leading, spacing: 6) {
                 PlanFeatureRow(text: "Up to \(plan.limits.maxButtons ?? 999) buttons", included: true)
                 PlanFeatureRow(text: "Up to \(plan.limits.maxFriends ?? 999) friends", included: true)
-                PlanFeatureRow(text: "\(plan.limits.analyticsHistoryDays ?? 7) days analytics history", included: true)
-                PlanFeatureRow(text: "Calendar sync", included: plan.features.calendarSync)
-                PlanFeatureRow(text: "API access", included: plan.features.apiAccess)
-                PlanFeatureRow(text: "Priority support", included: plan.features.prioritySupport)
+                PlanFeatureRow(text: "\(plan.limits.maxClicksPerMonth ?? 999) clicks/month", included: true)
             }
 
             // Action Button
@@ -1016,15 +1013,10 @@ struct FeatureComparisonSection: View {
 
             if isExpanded {
                 VStack(spacing: 0) {
+                    // Only show implemented features
                     FeatureComparisonRow(feature: "Buttons", values: plans.map { "\($0.limits.maxButtons ?? 999)" })
                     FeatureComparisonRow(feature: "Friends", values: plans.map { "\($0.limits.maxFriends ?? 999)" })
                     FeatureComparisonRow(feature: "Clicks/month", values: plans.map { formatLimit($0.limits.maxClicksPerMonth) })
-                    FeatureComparisonRow(feature: "Analytics history", values: plans.map { "\($0.limits.analyticsHistoryDays ?? 7) days" })
-                    FeatureComparisonRow(feature: "Calendar sync", values: plans.map { $0.features.calendarSync ? "Yes" : "No" })
-                    FeatureComparisonRow(feature: "API access", values: plans.map { $0.features.apiAccess ? "Yes" : "No" })
-                    FeatureComparisonRow(feature: "Custom themes", values: plans.map { $0.features.customThemes ? "Yes" : "No" })
-                    FeatureComparisonRow(feature: "Team features", values: plans.map { $0.features.teamFeatures ? "Yes" : "No" })
-                    FeatureComparisonRow(feature: "Priority support", values: plans.map { $0.features.prioritySupport ? "Yes" : "No" })
                 }
                 .background(Color(.systemGray6))
                 .cornerRadius(8)

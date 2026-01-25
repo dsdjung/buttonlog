@@ -568,7 +568,7 @@ private fun PlanCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Features list
+            // Features list - only show implemented features
             PlanFeatureRow(
                 text = "Up to ${plan.limits.maxButtons ?: "Unlimited"} buttons",
                 included = true
@@ -581,12 +581,6 @@ private fun PlanCard(
                 text = "${plan.limits.maxClicksPerMonth ?: "Unlimited"} clicks/month",
                 included = true
             )
-            PlanFeatureRow(text = "Analytics", included = plan.features.analytics)
-            PlanFeatureRow(text = "Calendar sync", included = plan.features.calendarSync)
-            PlanFeatureRow(text = "API access", included = plan.features.apiAccess)
-            PlanFeatureRow(text = "Custom themes", included = plan.features.customThemes)
-            PlanFeatureRow(text = "Priority support", included = plan.features.prioritySupport)
-            PlanFeatureRow(text = "Team features", included = plan.features.teamFeatures)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -819,7 +813,7 @@ private fun FeatureComparisonSection(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                    // Feature rows
+                    // Feature rows - only show implemented features
                     FeatureComparisonRow("Max Buttons", plans) { plan ->
                         plan.limits.maxButtons?.toString() ?: "Unlimited"
                     }
@@ -829,12 +823,6 @@ private fun FeatureComparisonSection(
                     FeatureComparisonRow("Clicks/Month", plans) { plan ->
                         plan.limits.maxClicksPerMonth?.toString() ?: "Unlimited"
                     }
-                    FeatureComparisonRowBoolean("Analytics", plans) { it.features.analytics }
-                    FeatureComparisonRowBoolean("Calendar Sync", plans) { it.features.calendarSync }
-                    FeatureComparisonRowBoolean("API Access", plans) { it.features.apiAccess }
-                    FeatureComparisonRowBoolean("Custom Themes", plans) { it.features.customThemes }
-                    FeatureComparisonRowBoolean("Priority Support", plans) { it.features.prioritySupport }
-                    FeatureComparisonRowBoolean("Team Features", plans) { it.features.teamFeatures }
                 }
             }
         }
