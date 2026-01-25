@@ -10,6 +10,8 @@ defmodule ButtonLog.Accounts.User do
     field :username, :string
     field :password_hash, :string
     field :display_name, :string
+    field :first_name, :string
+    field :last_name, :string
     field :avatar, :string
     field :timezone, :string
     field :language, :string
@@ -33,6 +35,16 @@ defmodule ButtonLog.Accounts.User do
     field :allow_friend_requests, :boolean
     field :profile_visibility, :string
     field :activity_visibility, :string
+
+    # Notification preferences
+    field :push_notifications_enabled, :boolean, default: true
+    field :email_notifications_enabled, :boolean, default: true
+    field :button_notifications, :boolean, default: true
+    field :friend_notifications, :boolean, default: true
+    field :system_notifications, :boolean, default: true
+    field :quiet_hours_enabled, :boolean, default: false
+    field :quiet_hours_start, :time
+    field :quiet_hours_end, :time
 
     # Admin flag
     field :is_admin, :boolean, default: false
@@ -58,7 +70,7 @@ defmodule ButtonLog.Accounts.User do
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:email, :username, :display_name, :avatar, :timezone, :language,
+    |> cast(attrs, [:email, :username, :display_name, :first_name, :last_name, :avatar, :timezone, :language,
                     :provider, :provider_uid, :provider_token, :provider_refresh_token, :provider_expires_at,
                     :email_verified, :subscription_tier, :subscription_expires_at, :default_history_sharing,
                     :allow_friend_requests, :profile_visibility, :activity_visibility, :onboarding_completed])
@@ -67,12 +79,32 @@ defmodule ButtonLog.Accounts.User do
     |> validate_format(:email, ~r/@/)
     |> validate_length(:username, min: 3, max: 30)
     |> validate_length(:display_name, min: 1, max: 100)
+    |> validate_length(:first_name, max: 100)
+    |> validate_length(:last_name, max: 100)
     |> validate_inclusion(:profile_visibility, ["public", "friends", "private"])
     |> validate_inclusion(:activity_visibility, ["public", "friends", "private"])
     |> validate_inclusion(:subscription_tier, ["free", "premium", "enterprise"])
     |> unique_constraint(:username)
     |> unique_constraint(:email)
     |> validate_oauth_constraints()
+  end
+
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:display_name, :first_name, :last_name, :avatar, :timezone, :language,
+                    :profile_visibility, :activity_visibility])
+    |> validate_length(:display_name, min: 1, max: 100)
+    |> validate_length(:first_name, max: 100)
+    |> validate_length(:last_name, max: 100)
+    |> validate_inclusion(:profile_visibility, ["public", "friends", "private"])
+    |> validate_inclusion(:activity_visibility, ["public", "friends", "private"])
+  end
+
+  def notification_preferences_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:push_notifications_enabled, :email_notifications_enabled,
+                    :button_notifications, :friend_notifications, :system_notifications,
+                    :quiet_hours_enabled, :quiet_hours_start, :quiet_hours_end])
   end
 
   def registration_changeset(user, attrs) do

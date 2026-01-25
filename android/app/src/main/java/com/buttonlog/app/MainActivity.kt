@@ -49,6 +49,8 @@ import com.buttonlog.app.ui.screens.TeamsScreen
 import com.buttonlog.app.ui.screens.OrganizationsScreen
 import com.buttonlog.app.ui.screens.SubscriptionScreen
 import com.buttonlog.app.ui.screens.OnboardingScreen
+import com.buttonlog.app.ui.screens.EditProfileScreen
+import com.buttonlog.app.ui.screens.PrivacySettingsScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 import com.buttonlog.app.ui.viewmodels.SupportViewModel
@@ -133,6 +135,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var showOrganizationsScreen by remember { mutableStateOf(false) }
     var showSubscriptionScreen by remember { mutableStateOf(false) }
     var showCreatedGiftButtonsScreen by remember { mutableStateOf(false) }
+    var showEditProfileScreen by remember { mutableStateOf(false) }
+    var showPrivacySettingsScreen by remember { mutableStateOf(false) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
     val notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -308,7 +312,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onSupportClick = { showSupportScreen = true },
                         onTeamsClick = { showTeamsScreen = true },
                         onOrganizationsClick = { showOrganizationsScreen = true },
-                        onSubscriptionClick = { showSubscriptionScreen = true }
+                        onSubscriptionClick = { showSubscriptionScreen = true },
+                        onEditProfileClick = { showEditProfileScreen = true },
+                        onPrivacySettingsClick = { showPrivacySettingsScreen = true }
                     )
                 }
             }
@@ -496,6 +502,20 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     if (showCreatedGiftButtonsScreen) {
         CreatedGiftButtonsScreen(
             onNavigateBack = { showCreatedGiftButtonsScreen = false }
+        )
+    }
+
+    // Edit Profile Screen
+    if (showEditProfileScreen) {
+        EditProfileScreen(
+            onNavigateBack = { showEditProfileScreen = false }
+        )
+    }
+
+    // Privacy Settings Screen
+    if (showPrivacySettingsScreen) {
+        PrivacySettingsScreen(
+            onNavigateBack = { showPrivacySettingsScreen = false }
         )
     }
 }

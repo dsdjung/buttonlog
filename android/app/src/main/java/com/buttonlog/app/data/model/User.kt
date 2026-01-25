@@ -94,12 +94,16 @@ data class ApiErrorDetail(
 // User profile update data
 data class UserProfileUpdate(
     @SerializedName("display_name")
-    val displayName: String,
-    val timezone: String,
-    val language: String,
+    val displayName: String? = null,
+    @SerializedName("first_name")
+    val firstName: String? = null,
+    @SerializedName("last_name")
+    val lastName: String? = null,
+    val timezone: String? = null,
+    val language: String? = null,
     @SerializedName("profile_visibility")
-    val profileVisibility: ProfileVisibility,
+    val profileVisibility: String? = null,
     @SerializedName("activity_visibility")
-    val activityVisibility: ActivityVisibility
+    val activityVisibility: String? = null
 )
 

@@ -304,9 +304,13 @@ struct NotificationSettingsView: View {
 }
 
 struct PrivacySettingsView: View {
+    @EnvironmentObject private var authManager: AuthenticationManager
     @State private var profileVisibility: ProfileVisibility = .friends
     @State private var activityVisibility: ActivityVisibility = .friends
-    
+    @State private var isSaving = false
+    @State private var showingError = false
+    @State private var errorMessage: String?
+
     var body: some View {
         Form {
             Section("Profile Visibility") {
@@ -321,8 +325,11 @@ struct PrivacySettingsView: View {
                         .tag(visibility)
                     }
                 }
+                .onChange(of: profileVisibility) { _, newValue in
+                    Task { await savePrivacySettings() }
+                }
             }
-            
+
             Section("Activity Visibility") {
                 Picker("Who can see your button activity", selection: $activityVisibility) {
                     ForEach(ActivityVisibility.allCases, id: \.self) { visibility in
@@ -335,10 +342,66 @@ struct PrivacySettingsView: View {
                         .tag(visibility)
                     }
                 }
+                .onChange(of: activityVisibility) { _, newValue in
+                    Task { await savePrivacySettings() }
+                }
+            }
+
+            if isSaving {
+                Section {
+                    HStack {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Saving...")
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
         }
         .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            loadCurrentSettings()
+        }
+        .alert("Error", isPresented: $showingError) {
+            SwiftUI.Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "Failed to save privacy settings")
+        }
+    }
+
+    private func loadCurrentSettings() {
+        guard let user = authManager.currentUser else { return }
+        profileVisibility = user.profileVisibility
+        activityVisibility = user.activityVisibility
+    }
+
+    @MainActor
+    private func savePrivacySettings() async {
+        guard !isSaving else { return }
+        isSaving = true
+
+        var update = UserProfileUpdate()
+        update.profileVisibility = profileVisibility
+        update.activityVisibility = activityVisibility
+
+        // Preserve other settings
+        if let user = authManager.currentUser {
+            update.displayName = user.displayName ?? ""
+            update.firstName = user.firstName ?? ""
+            update.lastName = user.lastName ?? ""
+        }
+
+        await authManager.updateProfile(update)
+
+        isSaving = false
+
+        if let error = authManager.errorMessage {
+            errorMessage = error
+            showingError = true
+        }
     }
 }
 
@@ -402,22 +465,145 @@ struct DataExportView: View {
     }
 }
 
-// Additional stub views for editing profile and subscription
+// MARK: - Edit Profile View
 struct EditProfileView: View {
-    @Environment(\.presentationMode) var presentationMode
-    
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var authManager: AuthenticationManager
+
+    @State private var displayName: String = ""
+    @State private var firstName: String = ""
+    @State private var lastName: String = ""
+    @State private var isSaving = false
+    @State private var showingError = false
+    @State private var errorMessage: String?
+    @State private var showingSuccess = false
+
     var body: some View {
         NavigationView {
-            Text("Edit Profile - Coming Soon")
-                .navigationTitle("Edit Profile")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        SwiftUI.Button("Done") {
-                            presentationMode.wrappedValue.dismiss()
+            Form {
+                Section("Display Information") {
+                    TextField("Display Name", text: $displayName)
+                        .textContentType(.name)
+                        .autocapitalization(.words)
+
+                    TextField("First Name", text: $firstName)
+                        .textContentType(.givenName)
+                        .autocapitalization(.words)
+
+                    TextField("Last Name", text: $lastName)
+                        .textContentType(.familyName)
+                        .autocapitalization(.words)
+                }
+
+                Section {
+                    if let user = authManager.currentUser {
+                        HStack {
+                            Text("Email")
+                            Spacer()
+                            Text(user.email)
+                                .foregroundColor(.secondary)
+                        }
+
+                        if let username = user.username {
+                            HStack {
+                                Text("Username")
+                                Spacer()
+                                Text(username)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
+                } header: {
+                    Text("Account Information")
+                } footer: {
+                    Text("Email and username cannot be changed here. Contact support if you need to update these.")
                 }
+            }
+            .navigationTitle("Edit Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    SwiftUI.Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    SwiftUI.Button("Save") {
+                        Task {
+                            await saveProfile()
+                        }
+                    }
+                    .disabled(isSaving || !hasChanges)
+                    .fontWeight(.semibold)
+                }
+            }
+            .overlay {
+                if isSaving {
+                    ProgressView("Saving...")
+                        .padding()
+                        .background(.regularMaterial)
+                        .cornerRadius(12)
+                }
+            }
+            .onAppear {
+                loadCurrentValues()
+            }
+            .alert("Error", isPresented: $showingError) {
+                SwiftUI.Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                Text(errorMessage ?? "An error occurred while saving your profile.")
+            }
+            .alert("Profile Updated", isPresented: $showingSuccess) {
+                SwiftUI.Button("OK") {
+                    dismiss()
+                }
+            } message: {
+                Text("Your profile has been updated successfully.")
+            }
+        }
+    }
+
+    private var hasChanges: Bool {
+        guard let user = authManager.currentUser else { return false }
+        return displayName != (user.displayName ?? "") ||
+               firstName != (user.firstName ?? "") ||
+               lastName != (user.lastName ?? "")
+    }
+
+    private func loadCurrentValues() {
+        guard let user = authManager.currentUser else { return }
+        displayName = user.displayName ?? ""
+        firstName = user.firstName ?? ""
+        lastName = user.lastName ?? ""
+    }
+
+    @MainActor
+    private func saveProfile() async {
+        isSaving = true
+
+        var update = UserProfileUpdate()
+        update.displayName = displayName
+        update.firstName = firstName
+        update.lastName = lastName
+
+        // Preserve current visibility settings
+        if let user = authManager.currentUser {
+            update.profileVisibility = user.profileVisibility
+            update.activityVisibility = user.activityVisibility
+        }
+
+        await authManager.updateProfile(update)
+
+        isSaving = false
+
+        if let error = authManager.errorMessage {
+            errorMessage = error
+            showingError = true
+        } else {
+            showingSuccess = true
         }
     }
 }

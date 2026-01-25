@@ -118,7 +118,7 @@ interface APIService {
     suspend fun getUserProfile(): User
 
     @PUT("users/profile")
-    suspend fun updateUserProfile(@Body user: User): User
+    suspend fun updateUserProfile(@Body update: UserProfileUpdate): User
 
     @POST("users/complete-onboarding")
     suspend fun completeOnboarding(): GenericResponse

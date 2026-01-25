@@ -19,7 +19,9 @@ fun AccountScreen(
     onSupportClick: () -> Unit = {},
     onTeamsClick: () -> Unit = {},
     onOrganizationsClick: () -> Unit = {},
-    onSubscriptionClick: () -> Unit = {}
+    onSubscriptionClick: () -> Unit = {},
+    onEditProfileClick: () -> Unit = {},
+    onPrivacySettingsClick: () -> Unit = {}
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -128,7 +130,7 @@ fun AccountScreen(
                 icon = Icons.Default.Person,
                 title = "Edit Profile",
                 subtitle = "Change your display name and avatar",
-                onClick = { /* TODO: Navigate to edit profile */ }
+                onClick = onEditProfileClick
             )
 
             SettingsItem(
@@ -142,7 +144,7 @@ fun AccountScreen(
                 icon = Icons.Default.Lock,
                 title = "Privacy",
                 subtitle = "Manage your privacy settings",
-                onClick = { /* TODO: Navigate to privacy settings */ }
+                onClick = onPrivacySettingsClick
             )
 
             SettingsItem(

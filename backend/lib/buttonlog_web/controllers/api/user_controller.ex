@@ -12,9 +12,13 @@ defmodule ButtonLogWeb.API.UserController do
         email: user.email,
         username: user.username,
         display_name: user.display_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         avatar: user.avatar,
         timezone: user.timezone,
         language: user.language,
+        profile_visibility: user.profile_visibility,
+        activity_visibility: user.activity_visibility,
         subscription_tier: user.subscription_tier,
         subscription_expires_at: user.subscription_expires_at
       }
@@ -22,9 +26,18 @@ defmodule ButtonLogWeb.API.UserController do
   end
 
   def update_profile(conn, %{"user" => user_params}) do
+    do_update_profile(conn, user_params)
+  end
+
+  # Fallback for mobile apps that send params directly without "user" wrapper
+  def update_profile(conn, params) do
+    do_update_profile(conn, params)
+  end
+
+  defp do_update_profile(conn, user_params) do
     user = conn.assigns.current_user
 
-    case Accounts.update_user(user, user_params) do
+    case Accounts.update_user_profile(user, user_params) do
       {:ok, updated_user} ->
         conn
         |> json(%{
@@ -34,9 +47,13 @@ defmodule ButtonLogWeb.API.UserController do
             email: updated_user.email,
             username: updated_user.username,
             display_name: updated_user.display_name,
+            first_name: updated_user.first_name,
+            last_name: updated_user.last_name,
             avatar: updated_user.avatar,
             timezone: updated_user.timezone,
-            language: updated_user.language
+            language: updated_user.language,
+            profile_visibility: updated_user.profile_visibility,
+            activity_visibility: updated_user.activity_visibility
           }
         })
 
@@ -106,6 +123,85 @@ defmodule ButtonLogWeb.API.UserController do
         })
     end
   end
+
+  def notification_preferences(conn, _params) do
+    user = conn.assigns.current_user
+
+    conn
+    |> json(%{
+      success: true,
+      data: %{
+        push_notifications_enabled: user.push_notifications_enabled,
+        email_notifications_enabled: user.email_notifications_enabled,
+        button_notifications: user.button_notifications,
+        friend_notifications: user.friend_notifications,
+        system_notifications: user.system_notifications,
+        quiet_hours_enabled: user.quiet_hours_enabled,
+        quiet_hours_start: format_time(user.quiet_hours_start),
+        quiet_hours_end: format_time(user.quiet_hours_end)
+      }
+    })
+  end
+
+  def update_notification_preferences(conn, params) do
+    user = conn.assigns.current_user
+
+    attrs = %{
+      push_notifications_enabled: Map.get(params, "push_notifications_enabled"),
+      email_notifications_enabled: Map.get(params, "email_notifications_enabled"),
+      button_notifications: Map.get(params, "button_notifications"),
+      friend_notifications: Map.get(params, "friend_notifications"),
+      system_notifications: Map.get(params, "system_notifications"),
+      quiet_hours_enabled: Map.get(params, "quiet_hours_enabled"),
+      quiet_hours_start: parse_time(Map.get(params, "quiet_hours_start")),
+      quiet_hours_end: parse_time(Map.get(params, "quiet_hours_end"))
+    }
+    |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+    |> Map.new()
+
+    case Accounts.update_notification_preferences(user, attrs) do
+      {:ok, updated_user} ->
+        conn
+        |> json(%{
+          success: true,
+          data: %{
+            push_notifications_enabled: updated_user.push_notifications_enabled,
+            email_notifications_enabled: updated_user.email_notifications_enabled,
+            button_notifications: updated_user.button_notifications,
+            friend_notifications: updated_user.friend_notifications,
+            system_notifications: updated_user.system_notifications,
+            quiet_hours_enabled: updated_user.quiet_hours_enabled,
+            quiet_hours_start: format_time(updated_user.quiet_hours_start),
+            quiet_hours_end: format_time(updated_user.quiet_hours_end)
+          }
+        })
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "VALIDATION_ERROR",
+            message: "Failed to update notification preferences",
+            details: format_changeset_errors(changeset)
+          }
+        })
+    end
+  end
+
+  defp format_time(nil), do: nil
+  defp format_time(time), do: Time.to_string(time)
+
+  defp parse_time(nil), do: nil
+  defp parse_time(""), do: nil
+  defp parse_time(time_str) when is_binary(time_str) do
+    case Time.from_iso8601(time_str) do
+      {:ok, time} -> time
+      _ -> nil
+    end
+  end
+  defp parse_time(_), do: nil
 
   defp format_changeset_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->

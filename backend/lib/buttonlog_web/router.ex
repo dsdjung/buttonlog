@@ -113,6 +113,8 @@ defmodule ButtonLogWeb.Router do
     put "/users/profile", API.UserController, :update_profile
     post "/users/complete-onboarding", API.UserController, :complete_onboarding
     get "/users/:id/public-profile", API.UserController, :public_profile
+    get "/users/notification-preferences", API.UserController, :notification_preferences
+    put "/users/notification-preferences", API.UserController, :update_notification_preferences
 
     # Social endpoints
     get "/friends", API.SocialController, :friends

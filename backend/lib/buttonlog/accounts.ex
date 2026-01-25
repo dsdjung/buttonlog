@@ -92,6 +92,44 @@ defmodule ButtonLog.Accounts do
   end
 
   @doc """
+  Updates a user's profile (display_name, first_name, last_name, etc.).
+  """
+  def update_user_profile(%User{} = user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Updates a user's notification preferences.
+  """
+  def update_notification_preferences(%User{} = user, attrs) do
+    user
+    |> User.notification_preferences_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Gets a user's notification preferences.
+  """
+  def get_notification_preferences(user_id) do
+    case get_user(user_id) do
+      nil -> nil
+      user ->
+        %{
+          push_notifications_enabled: user.push_notifications_enabled,
+          email_notifications_enabled: user.email_notifications_enabled,
+          button_notifications: user.button_notifications,
+          friend_notifications: user.friend_notifications,
+          system_notifications: user.system_notifications,
+          quiet_hours_enabled: user.quiet_hours_enabled,
+          quiet_hours_start: user.quiet_hours_start,
+          quiet_hours_end: user.quiet_hours_end
+        }
+    end
+  end
+
+  @doc """
   Updates a user's status.
   """
   def update_user_status(user_id, status) do
