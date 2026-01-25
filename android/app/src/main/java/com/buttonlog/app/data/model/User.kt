@@ -107,3 +107,43 @@ data class UserProfileUpdate(
     val activityVisibility: String? = null
 )
 
+// Notification preferences data
+data class NotificationPreferences(
+    @SerializedName("push_notifications_enabled")
+    val pushNotificationsEnabled: Boolean = true,
+    @SerializedName("email_notifications_enabled")
+    val emailNotificationsEnabled: Boolean = true,
+    @SerializedName("button_notifications")
+    val buttonNotifications: Boolean = true,
+    @SerializedName("friend_notifications")
+    val friendNotifications: Boolean = true,
+    @SerializedName("system_notifications")
+    val systemNotifications: Boolean = true,
+    @SerializedName("quiet_hours_enabled")
+    val quietHoursEnabled: Boolean = false,
+    @SerializedName("quiet_hours_start")
+    val quietHoursStart: String? = null,
+    @SerializedName("quiet_hours_end")
+    val quietHoursEnd: String? = null
+)
+
+// Notification preferences update data
+data class NotificationPreferencesUpdate(
+    @SerializedName("push_notifications_enabled")
+    val pushNotificationsEnabled: Boolean? = null,
+    @SerializedName("email_notifications_enabled")
+    val emailNotificationsEnabled: Boolean? = null,
+    @SerializedName("button_notifications")
+    val buttonNotifications: Boolean? = null,
+    @SerializedName("friend_notifications")
+    val friendNotifications: Boolean? = null,
+    @SerializedName("system_notifications")
+    val systemNotifications: Boolean? = null,
+    @SerializedName("quiet_hours_enabled")
+    val quietHoursEnabled: Boolean? = null,
+    @SerializedName("quiet_hours_start")
+    val quietHoursStart: String? = null,
+    @SerializedName("quiet_hours_end")
+    val quietHoursEnd: String? = null
+)
+

@@ -51,6 +51,7 @@ import com.buttonlog.app.ui.screens.SubscriptionScreen
 import com.buttonlog.app.ui.screens.OnboardingScreen
 import com.buttonlog.app.ui.screens.EditProfileScreen
 import com.buttonlog.app.ui.screens.PrivacySettingsScreen
+import com.buttonlog.app.ui.screens.NotificationSettingsScreen
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 import com.buttonlog.app.ui.viewmodels.SupportViewModel
@@ -137,6 +138,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var showCreatedGiftButtonsScreen by remember { mutableStateOf(false) }
     var showEditProfileScreen by remember { mutableStateOf(false) }
     var showPrivacySettingsScreen by remember { mutableStateOf(false) }
+    var showNotificationSettingsScreen by remember { mutableStateOf(false) }
     val buttonsViewModel: ButtonsViewModel = hiltViewModel()
     val friendsViewModel: FriendsViewModel = hiltViewModel()
     val notificationsViewModel: NotificationsViewModel = hiltViewModel()
@@ -314,7 +316,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onOrganizationsClick = { showOrganizationsScreen = true },
                         onSubscriptionClick = { showSubscriptionScreen = true },
                         onEditProfileClick = { showEditProfileScreen = true },
-                        onPrivacySettingsClick = { showPrivacySettingsScreen = true }
+                        onPrivacySettingsClick = { showPrivacySettingsScreen = true },
+                        onNotificationSettingsClick = { showNotificationSettingsScreen = true }
                     )
                 }
             }
@@ -516,6 +519,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     if (showPrivacySettingsScreen) {
         PrivacySettingsScreen(
             onNavigateBack = { showPrivacySettingsScreen = false }
+        )
+    }
+
+    // Notification Settings Screen
+    if (showNotificationSettingsScreen) {
+        NotificationSettingsScreen(
+            onNavigateBack = { showNotificationSettingsScreen = false }
         )
     }
 }

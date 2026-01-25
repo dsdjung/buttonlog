@@ -21,7 +21,8 @@ fun AccountScreen(
     onOrganizationsClick: () -> Unit = {},
     onSubscriptionClick: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
-    onPrivacySettingsClick: () -> Unit = {}
+    onPrivacySettingsClick: () -> Unit = {},
+    onNotificationSettingsClick: () -> Unit = {}
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -137,7 +138,7 @@ fun AccountScreen(
                 icon = Icons.Default.Notifications,
                 title = "Notifications",
                 subtitle = "Configure notification preferences",
-                onClick = { /* TODO: Navigate to notifications settings */ }
+                onClick = onNotificationSettingsClick
             )
 
             SettingsItem(

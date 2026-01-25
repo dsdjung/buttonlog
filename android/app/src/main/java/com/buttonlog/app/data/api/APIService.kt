@@ -123,6 +123,12 @@ interface APIService {
     @POST("users/complete-onboarding")
     suspend fun completeOnboarding(): GenericResponse
 
+    @GET("users/notification-preferences")
+    suspend fun getNotificationPreferences(): NotificationPreferences
+
+    @PUT("users/notification-preferences")
+    suspend fun updateNotificationPreferences(@Body update: NotificationPreferencesUpdate): NotificationPreferences
+
     // MARK: - Social Endpoints
 
     @GET("friends")
