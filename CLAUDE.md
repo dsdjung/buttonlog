@@ -25,8 +25,10 @@ ButtonLog is a comprehensive multi-platform application built with:
 - `mix ecto.rollback` - Rollback last migration
 
 #### Running the Application
-- `mix phx.server` - Start Phoenix server (available at localhost:4000)
+- `mix phx.server` - Start Phoenix server (available at localhost:14015)
 - `iex -S mix phx.server` - Start server in interactive Elixir shell
+
+**IMPORTANT: The local development server runs on port 14015, NOT 4000.**
 
 #### Testing
 - `mix test` - Run all tests (creates test DB, runs migrations, then tests)
@@ -121,10 +123,10 @@ Key entities:
 4. **Live Dashboard**: Available at `/dev/dashboard` in development
 
 ### Mobile Development
-1. **Backend First**: Ensure Phoenix backend is running on localhost:4000
-2. **API Configuration**: 
-   - iOS: Uses `http://localhost:4000/api`
-   - Android: Uses `http://10.0.2.2:4000/api` (Android emulator networking)
+1. **Backend First**: Ensure Phoenix backend is running on localhost:14015
+2. **API Configuration**:
+   - iOS: Uses `http://localhost:14015/api`
+   - Android: Uses `http://10.0.2.2:14015/api` (Android emulator networking)
 3. **Build**: Use native IDE build tools (Xcode for iOS, Android Studio for Android)
 
 ### Testing Strategy

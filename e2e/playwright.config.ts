@@ -10,8 +10,9 @@ import { defineConfig, devices } from '@playwright/test';
  */
 
 // Environment URLs
+// NOTE: Local dev server runs on port 14015 (configured in backend/config/dev.exs)
 const environments = {
-  local: 'http://localhost:4000',
+  local: 'http://localhost:14015',
   staging: process.env.STAGING_URL || 'https://staging.buttonlog.com',
   production: process.env.PROD_URL || 'https://buttonlog.com',
 };
@@ -83,8 +84,8 @@ export default defineConfig({
   // Run local dev server before starting tests (only for local environment)
   ...(targetEnv === 'local' ? {
     webServer: {
-      command: 'cd ../backend && mix phx.server',
-      url: 'http://localhost:4000',
+      command: 'cd ../backend && source .env 2>/dev/null; mix phx.server',
+      url: 'http://localhost:14015',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },
