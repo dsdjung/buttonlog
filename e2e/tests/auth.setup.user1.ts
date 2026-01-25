@@ -1,9 +1,10 @@
-import { test as setup, expect } from '@playwright/test';
+import { test as setup, expect, chromium } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
 const authDir = path.join(__dirname, '../playwright/.auth');
 const authFile = path.join(authDir, 'user1.json');
+const userDataDir = path.join(__dirname, '../playwright/.browser-data/user1');
 
 /**
  * Authentication Setup - User 1
@@ -16,12 +17,24 @@ const authFile = path.join(authDir, 'user1.json');
  * Note: This is one of two users needed for friend relationship testing.
  * After setting up both users, run: npm run test:friends
  */
-setup('authenticate User 1 via Google OAuth', async ({ page }) => {
-  // Ensure auth directory exists
+setup('authenticate User 1 via Google OAuth', async ({ }, testInfo) => {
+  // Ensure directories exist
   await fs.promises.mkdir(authDir, { recursive: true });
+  await fs.promises.mkdir(userDataDir, { recursive: true });
+
+  // Launch browser with persistent context to avoid Google's bot detection
+  const context = await chromium.launchPersistentContext(userDataDir, {
+    headless: false,
+    args: [
+      '--disable-blink-features=AutomationControlled',
+    ],
+    ignoreDefaultArgs: ['--enable-automation'],
+  });
+
+  const page = await context.newPage();
 
   // Navigate to login page
-  await page.goto('/auth/login');
+  await page.goto('http://localhost:14015/auth/login');
 
   // Wait for user to see the login page
   await expect(page.locator('text=Sign in')).toBeVisible();
@@ -84,5 +97,8 @@ setup('authenticate User 1 via Google OAuth', async ({ page }) => {
   }
 
   // Save the authentication state
-  await page.context().storageState({ path: authFile });
+  await context.storageState({ path: authFile });
+
+  // Close the browser
+  await context.close();
 });

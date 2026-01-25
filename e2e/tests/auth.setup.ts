@@ -1,7 +1,10 @@
-import { test as setup, expect } from '@playwright/test';
+import { test as setup, expect, chromium } from '@playwright/test';
 import path from 'path';
+import fs from 'fs';
 
-const authFile = path.join(__dirname, '../playwright/.auth/user.json');
+const authDir = path.join(__dirname, '../playwright/.auth');
+const authFile = path.join(authDir, 'user.json');
+const userDataDir = path.join(__dirname, '../playwright/.browser-data/user');
 
 /**
  * Authentication Setup
@@ -15,9 +18,24 @@ const authFile = path.join(__dirname, '../playwright/.auth/user.json');
  * Note: This test is designed to be run interactively (headed mode).
  * It will pause to let you complete the OAuth flow manually.
  */
-setup('authenticate via Google OAuth', async ({ page }) => {
+setup('authenticate via Google OAuth', async ({ }, testInfo) => {
+  // Ensure directories exist
+  await fs.promises.mkdir(authDir, { recursive: true });
+  await fs.promises.mkdir(userDataDir, { recursive: true });
+
+  // Launch browser with persistent context to avoid Google's bot detection
+  const context = await chromium.launchPersistentContext(userDataDir, {
+    headless: false,
+    args: [
+      '--disable-blink-features=AutomationControlled',
+    ],
+    ignoreDefaultArgs: ['--enable-automation'],
+  });
+
+  const page = await context.newPage();
+
   // Navigate to login page
-  await page.goto('/auth/login');
+  await page.goto('http://localhost:14015/auth/login');
 
   // Wait for user to see the login page
   await expect(page.locator('text=Sign in')).toBeVisible();
@@ -76,5 +94,8 @@ setup('authenticate via Google OAuth', async ({ page }) => {
   }
 
   // Save the authentication state
-  await page.context().storageState({ path: authFile });
+  await context.storageState({ path: authFile });
+
+  // Close the browser
+  await context.close();
 });

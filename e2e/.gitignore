@@ -7,3 +7,6 @@ playwright-report/
 playwright/.auth/user.json
 playwright/.auth/user1.json
 playwright/.auth/user2.json
+
+# Browser data directories (for persistent context to bypass bot detection)
+playwright/.browser-data/
