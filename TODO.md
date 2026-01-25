@@ -85,109 +85,65 @@ cd iphone && bundle install && bundle exec fastlane deploy_testflight
 
 ## Manual Testing Checklist
 
-### Account Features
+These tests require human verification and cannot be easily automated.
 
-#### Edit Profile (iOS, Android, Web)
-- [ ] Load current profile data on screen open
-- [ ] Edit display name and save
-- [ ] Edit first/last name and save
-- [ ] Verify changes persist after app restart
-- [ ] Test with empty optional fields
-- [ ] Test validation (required fields)
+### Device-Specific Features (Physical Device Required)
 
-#### Privacy Settings (iOS, Android, Web)
-- [ ] Load current visibility settings
-- [ ] Change profile visibility (Public/Friends/Private)
-- [ ] Change activity visibility (Public/Friends/Private)
-- [ ] Verify settings persist after save
-- [ ] Verify privacy is enforced (view as another user)
+#### Push Notifications
+- [ ] iOS: Receive push notification on physical device
+- [ ] Android: Receive push notification on physical device
+- [ ] Tap notification navigates to correct screen
+- [ ] Notification badge count updates correctly
 
-#### Notification Settings (iOS, Android, Web)
-- [ ] Load current notification preferences
-- [ ] Toggle push notifications on/off
-- [ ] Toggle email notifications on/off
-- [ ] Toggle button activity notifications
-- [ ] Toggle friend update notifications
-- [ ] Toggle system notifications
-- [ ] Enable/disable quiet hours
-- [ ] Verify settings persist after save
-- [ ] Test that sub-toggles disable when push notifications off
+#### Data Export File Sharing
+- [ ] iOS: Share sheet opens with export file
+- [ ] iOS: Save to Files app works
+- [ ] iOS: AirDrop file to another device
+- [ ] Android: Share intent opens with export file
+- [ ] Android: Save to device storage works
 
-#### Password Management (iOS, Android, Web)
-- [ ] Enter current password + new password + confirm
-- [ ] Submit and verify success message
-- [ ] Log out and log in with new password
-- [ ] Test wrong current password (should fail)
-- [ ] Test mismatched passwords (should fail)
-- [ ] Test too short password (<8 chars, should fail)
+#### OAuth Authentication
+- [ ] Google Sign-In flow completes on iOS
+- [ ] Google Sign-In flow completes on Android
+- [ ] Apple Sign-In flow completes on iOS
+- [ ] Facebook Login flow completes (if enabled)
 
-#### Data Export (iOS, Android, Web)
-- [ ] View export info (button count, click count, friend count)
-- [ ] Export as JSON format
-- [ ] Export as CSV format
-- [ ] Verify file contains user profile data
-- [ ] Verify file contains all buttons
-- [ ] Verify file contains click history
-- [ ] Verify file contains friend list
-- [ ] Share/save exported file successfully
+### Visual/UI Verification
 
-#### About Page (iOS, Android, Web)
-- [ ] View app version and build number
-- [ ] Tap Terms of Service link - opens correctly
-- [ ] Tap Privacy Policy link - opens correctly
-- [ ] View contact information
-- [ ] View acknowledgements/credits
+#### Cross-Platform Consistency
+- [ ] Edit Profile: Same fields and layout across iOS/Android/Web
+- [ ] Privacy Settings: Radio buttons/pickers appear correctly
+- [ ] Notification Settings: Toggles align and function identically
+- [ ] About Page: Version info displays correctly per platform
+- [ ] Webhook Settings: Form layout consistent across platforms
 
-#### Webhook Settings (iOS, Android, Web)
-- [ ] Load current webhook configuration
-- [ ] Enter webhook URL
-- [ ] Toggle webhook enabled/disabled
-- [ ] Set webhook secret
-- [ ] Configure retry settings
-- [ ] Save settings and verify persistence
-- [ ] Test webhook button - verify delivery
-- [ ] View delivery history (Web only)
+#### Responsive Design (Web)
+- [ ] Account page renders correctly on mobile viewport
+- [ ] Account page renders correctly on tablet viewport
+- [ ] Account page renders correctly on desktop viewport
 
-### Cross-Platform Consistency Checks
+#### Dark Mode (if supported)
+- [ ] All account screens readable in dark mode
+- [ ] No contrast issues with form elements
 
-#### iOS vs Android vs Web
-- [ ] Same fields available on all platforms
-- [ ] Same validation rules on all platforms
-- [ ] Same error messages for same errors
-- [ ] Consistent UI/UX patterns
-- [ ] Data syncs correctly across platforms
+### External URL Handling
 
-### API Endpoint Verification
+#### Terms & Privacy Links
+- [ ] iOS: Terms link opens in Safari/WebView correctly
+- [ ] iOS: Privacy link opens in Safari/WebView correctly
+- [ ] Android: Terms link opens in Chrome/WebView correctly
+- [ ] Android: Privacy link opens in Chrome/WebView correctly
 
-| Endpoint | Method | Test |
-|----------|--------|------|
-| `/api/users/profile` | GET | Returns current user data |
-| `/api/users/profile` | PUT | Updates profile fields |
-| `/api/users/password` | PUT | Changes password |
-| `/api/users/notification-preferences` | GET | Returns notification prefs |
-| `/api/users/notification-preferences` | PUT | Updates notification prefs |
-| `/api/users/export` | GET | Returns JSON/CSV export |
-| `/api/users/export/info` | GET | Returns export metadata |
-| `/api/notifications/settings` | GET | Returns webhook settings |
-| `/api/notifications/settings` | PUT | Updates webhook settings |
-| `/api/notifications/test` | POST | Tests webhook delivery |
+#### Webhook External Delivery
+- [ ] Test webhook delivers to external URL (e.g., webhook.site)
+- [ ] Webhook payload contains expected data structure
 
-### Error Handling Tests
+### Accessibility
 
-- [ ] Network offline - graceful error message
-- [ ] Invalid auth token - redirects to login
-- [ ] Server error (500) - user-friendly message
-- [ ] Validation errors - specific field errors shown
-- [ ] Timeout handling - retry or error message
-
-### Regression Tests
-
-- [ ] Existing button functionality works
-- [ ] Friend requests/accepts work
-- [ ] Notifications received correctly
-- [ ] Subscription features work
-- [ ] Login/logout works
-- [ ] OAuth login works (Google, Facebook, Apple)
+- [ ] VoiceOver (iOS) can navigate account screens
+- [ ] TalkBack (Android) can navigate account screens
+- [ ] Screen reader announces form labels correctly
+- [ ] Sufficient color contrast for all text
 
 ---
 
