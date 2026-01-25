@@ -1255,6 +1255,22 @@ struct PermissionCheckResponse: Codable {
     let allowed: Bool
 }
 
+struct WebhookSettings: Codable {
+    let defaultWebhookUrl: String?
+    let defaultWebhookEnabled: Bool
+    let webhookSecret: String?
+    let retryFailed: Bool
+    let maxRetries: Int
+
+    enum CodingKeys: String, CodingKey {
+        case defaultWebhookUrl = "default_webhook_url"
+        case defaultWebhookEnabled = "default_webhook_enabled"
+        case webhookSecret = "webhook_secret"
+        case retryFailed = "retry_failed"
+        case maxRetries = "max_retries"
+    }
+}
+
 // MARK: - JSON Decoder Extension
 
 extension JSONDecoder {
