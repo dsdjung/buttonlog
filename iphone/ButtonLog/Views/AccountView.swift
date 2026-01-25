@@ -705,13 +705,7 @@ struct CurrentSubscriptionCard: View {
             }
 
             if subscription.isInTrial, let trialEnd = subscription.trialEnd {
-                HStack {
-                    Image(systemName: "clock")
-                        .foregroundColor(.orange)
-                    Text("Trial ends \(trialEnd, style: .relative)")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                }
+                TrialCountdownBanner(trialEnd: trialEnd)
             }
 
             SwiftUI.Button("Manage Subscription") {
@@ -749,6 +743,43 @@ struct SubscriptionStatusBadge: View {
         case .trialing: return .blue
         case .incomplete: return .gray
         }
+    }
+}
+
+// MARK: - Trial Countdown Banner
+
+struct TrialCountdownBanner: View {
+    let trialEnd: Date
+
+    private var daysRemaining: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        let days = calendar.dateComponents([.day], from: now, to: trialEnd).day ?? 0
+        return max(days, 0)
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "timer")
+                .font(.title2)
+                .foregroundColor(.orange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(daysRemaining == 1 ? "1 day left in trial" : "\(daysRemaining) days left in trial")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(red: 0.9, green: 0.35, blue: 0))
+
+                Text("Your subscription will start automatically")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+
+            Spacer()
+        }
+        .padding(12)
+        .background(Color(red: 1.0, green: 0.95, blue: 0.88))
+        .cornerRadius(8)
     }
 }
 
@@ -900,7 +931,7 @@ struct PlanCard: View {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     } else {
-                        Text("Subscribe")
+                        Text(subscribeButtonText)
                             .fontWeight(.semibold)
                     }
                 }
@@ -937,6 +968,13 @@ struct PlanCard: View {
             return "forever"
         }
         return selectedCycle == .monthly ? "/month" : "/year"
+    }
+
+    private var subscribeButtonText: String {
+        if let trialDays = plan.trialDays, trialDays > 0 {
+            return "Start \(trialDays)-Day Free Trial"
+        }
+        return "Subscribe"
     }
 }
 

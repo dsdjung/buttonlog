@@ -80,6 +80,27 @@
                   </div>
                 </div>
 
+                <!-- Trial Countdown Banner -->
+                <%= if subscription && subscription.status == "trialing" && subscription.trial_end do %>
+                  <%
+                    days_remaining = max(0, Date.diff(subscription.trial_end, Date.utc_today()))
+                    day_text = if days_remaining == 1, do: "day", else: "days"
+                  %>
+                  <div class="flex items-center p-4 bg-amber-50 rounded-lg border border-amber-200 mb-4">
+                    <svg class="w-8 h-8 text-amber-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                      <p class="text-amber-800 font-semibold">
+                        <%= days_remaining %> <%= day_text %> left in trial
+                      </p>
+                      <p class="text-amber-600 text-sm">
+                        Your subscription will start automatically on <%= Calendar.strftime(subscription.trial_end, "%B %d, %Y") %>
+                      </p>
+                    </div>
+                  </div>
+                <% end %>
+
                 <!-- Usage Stats -->
                 <%= if usage != %{} do %>
                   <div class="grid grid-cols-3 gap-4 mb-4">

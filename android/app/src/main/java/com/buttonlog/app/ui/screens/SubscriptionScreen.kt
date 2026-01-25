@@ -652,6 +652,7 @@ private fun PlanCard(
                         text = when {
                             isCurrentPlan -> "Current Plan"
                             isFreePlan -> "Free Plan"
+                            plan.trialDays != null && plan.trialDays > 0 -> "Start ${plan.trialDays}-Day Free Trial"
                             else -> "Subscribe"
                         }
                     )
