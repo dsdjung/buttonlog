@@ -1,0 +1,58 @@
+appId: com.buttonlog.app
+---
+# Android Auth Setup - User 2
+#
+# This flow guides you through logging in as User 2.
+# Run with: npm run setup:android:user2
+#
+# Prerequisites:
+# - A SECOND Android Emulator running with ButtonLog app installed
+# - Use the SAME Google account as web E2E User 2
+# - This must be a DIFFERENT emulator than User 1
+#
+# After OAuth completes, the app will be authenticated and ready for tests.
+
+# Launch app fresh
+- clearState
+
+# Wait for login screen
+- waitForAnimationToEnd
+- assertVisible: "ButtonLog"
+
+# Instructions displayed in Maestro output
+- evalScript: |
+    console.log('');
+    console.log('='.repeat(60));
+    console.log('USER 2 MANUAL LOGIN REQUIRED');
+    console.log('='.repeat(60));
+    console.log('');
+    console.log('IMPORTANT: Run this on a DIFFERENT emulator than User 1!');
+    console.log('');
+    console.log('1. Tap "Continue with Google" on the emulator');
+    console.log('2. Complete Google OAuth with User 2 account');
+    console.log('3. Wait for the app to show the Buttons screen');
+    console.log('');
+    console.log('Use the SAME account as web E2E User 2!');
+    console.log('='.repeat(60));
+
+# Wait for user to complete OAuth (up to 5 minutes)
+- extendedWaitUntil:
+    visible: "Buttons"
+    timeout: 300000
+
+# Verify we're logged in
+- assertVisible: "Buttons"
+- assertVisible: "Friends"
+- assertVisible: "Account"
+
+- evalScript: |
+    console.log('');
+    console.log('='.repeat(60));
+    console.log('SUCCESS! User 2 is now authenticated.');
+    console.log('='.repeat(60));
+    console.log('');
+    console.log('Both users are now set up!');
+    console.log('');
+    console.log('To run multi-user friend tests:');
+    console.log('  npm run test:android:friends:multi');
+    console.log('='.repeat(60));

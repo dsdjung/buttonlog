@@ -1,0 +1,57 @@
+appId: com.buttonlog.ButtonLog
+---
+# iOS Auth Setup - User 1
+#
+# This flow guides you through logging in as User 1.
+# Run with: npm run setup:ios:user1
+#
+# Prerequisites:
+# - iOS Simulator running with ButtonLog app installed
+# - Use the SAME Google account as web E2E User 1
+#
+# After OAuth completes, the app will be authenticated and ready for tests.
+
+# Launch app fresh
+- clearState
+
+# Wait for login screen
+- waitForAnimationToEnd
+- assertVisible: "ButtonLog"
+
+# Instructions displayed in Maestro output
+- evalScript: |
+    console.log('');
+    console.log('='.repeat(60));
+    console.log('USER 1 MANUAL LOGIN REQUIRED');
+    console.log('='.repeat(60));
+    console.log('');
+    console.log('1. Tap "Sign in with Google" on the simulator');
+    console.log('2. Complete Google OAuth with User 1 account');
+    console.log('3. Wait for the app to show the Buttons screen');
+    console.log('');
+    console.log('Use the SAME account as web E2E User 1!');
+    console.log('='.repeat(60));
+
+# Wait for user to complete OAuth (up to 5 minutes)
+# The test passes when we see the Buttons tab
+- extendedWaitUntil:
+    visible: "Buttons"
+    timeout: 300000
+
+# Verify we're logged in
+- assertVisible: "Buttons"
+- assertVisible: "Friends"
+- assertVisible: "Account"
+
+- evalScript: |
+    console.log('');
+    console.log('='.repeat(60));
+    console.log('SUCCESS! User 1 is now authenticated.');
+    console.log('='.repeat(60));
+    console.log('');
+    console.log('The simulator now has User 1 session.');
+    console.log('Do NOT clear app state before running tests.');
+    console.log('');
+    console.log('Next: Set up User 2 on a DIFFERENT simulator');
+    console.log('  npm run setup:ios:user2');
+    console.log('='.repeat(60));

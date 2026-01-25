@@ -3,20 +3,33 @@
   "version": "1.0.0",
   "description": "E2E tests for ButtonLog iOS and Android apps using Maestro",
   "scripts": {
+    "devices": "maestro devices",
+    "devices:list": "./scripts/list-devices.sh",
+    "clear": "maestro clear",
+
+    "setup:ios:user1": "maestro test ios/setup/auth-user1.yaml",
+    "setup:ios:user2": "maestro test ios/setup/auth-user2.yaml",
+    "setup:android:user1": "maestro test android/setup/auth-user1.yaml",
+    "setup:android:user2": "maestro test android/setup/auth-user2.yaml",
+
     "test:ios": "maestro test ios/",
-    "test:android": "maestro test android/",
     "test:ios:login": "maestro test ios/login.yaml",
     "test:ios:buttons": "maestro test ios/buttons.yaml",
-    "test:ios:account": "maestro test ios/account.yaml",
     "test:ios:friends": "maestro test ios/friends.yaml",
+    "test:ios:account": "maestro test ios/account.yaml",
+    "test:ios:navigation": "maestro test ios/navigation.yaml",
+    "test:ios:friends:multi": "./scripts/run-multi-user-ios.sh",
+
+    "test:android": "maestro test android/",
     "test:android:login": "maestro test android/login.yaml",
     "test:android:buttons": "maestro test android/buttons.yaml",
-    "test:android:account": "maestro test android/account.yaml",
     "test:android:friends": "maestro test android/friends.yaml",
+    "test:android:account": "maestro test android/account.yaml",
+    "test:android:navigation": "maestro test android/navigation.yaml",
+    "test:android:friends:multi": "./scripts/run-multi-user-android.sh",
+
     "record:ios": "maestro record ios/",
-    "record:android": "maestro record android/",
-    "devices": "maestro devices",
-    "clear": "maestro clear"
+    "record:android": "maestro record android/"
   },
   "keywords": [
     "e2e",

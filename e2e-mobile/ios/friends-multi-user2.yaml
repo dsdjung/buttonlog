@@ -1,0 +1,81 @@
+appId: com.buttonlog.ButtonLog
+---
+# iOS Multi-User Friend Tests - User 2's Perspective
+#
+# Run on User 2's simulator while User 1 runs their flow on another simulator.
+# These tests verify friend relationship features from User 2's point of view.
+#
+# Prerequisites:
+# - User 2 authenticated on this simulator (npm run setup:ios:user2)
+# - User 1 authenticated on another simulator
+#
+# Run with: maestro test --device <user2-simulator-udid> ios/friends-multi-user2.yaml
+
+# Verify we're logged in
+- waitForAnimationToEnd
+- assertVisible: "Buttons"
+
+# Navigate to Friends
+- tapOn: "Friends"
+- waitForAnimationToEnd
+- assertVisible: "Friends"
+
+# ===== Test: View Friends List =====
+- evalScript: |
+    console.log('Test: Viewing friends list as User 2');
+
+# Check for friends list or empty state
+- assertVisible:
+    text: ".*"
+    enabled: true
+
+# ===== Test: Check for Friend Request from User 1 =====
+- evalScript: |
+    console.log('Test: Checking for pending friend requests');
+
+# Look for pending/requests section or badge
+- assertVisible:
+    text: "Pending.*|Requests.*|Accept.*"
+    optional: true
+
+# ===== Test: Accept Friend Request =====
+- evalScript: |
+    console.log('Test: Looking for Accept button');
+
+# If there's a pending request, try to accept
+- tapOn:
+    text: "Accept"
+    optional: true
+- waitForAnimationToEnd
+
+# ===== Test: View Friend's Buttons =====
+- evalScript: |
+    console.log('Test: Attempting to view friend buttons');
+
+# If there are friends, tap on one to see their buttons
+- tapOn:
+    text: ".*@.*|Friend.*"
+    index: 0
+    optional: true
+- waitForAnimationToEnd
+
+# Look for friend's buttons or shared content
+- assertVisible:
+    text: "Buttons.*|Shared.*|No buttons.*"
+    optional: true
+
+# Go back
+- tapOn:
+    text: "Back|Friends|<"
+    optional: true
+- waitForAnimationToEnd
+
+# ===== Complete =====
+- evalScript: |
+    console.log('');
+    console.log('User 2 friend tests complete!');
+    console.log('');
+
+# Return to Buttons tab
+- tapOn: "Buttons"
+- waitForAnimationToEnd

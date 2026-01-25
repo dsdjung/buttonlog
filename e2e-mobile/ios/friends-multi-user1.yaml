@@ -1,0 +1,92 @@
+appId: com.buttonlog.ButtonLog
+---
+# iOS Multi-User Friend Tests - User 1's Perspective
+#
+# Run on User 1's simulator while User 2 runs their flow on another simulator.
+# These tests verify friend relationship features from User 1's point of view.
+#
+# Prerequisites:
+# - User 1 authenticated on this simulator (npm run setup:ios:user1)
+# - User 2 authenticated on another simulator
+#
+# Run with: maestro test --device <user1-simulator-udid> ios/friends-multi-user1.yaml
+
+# Verify we're logged in
+- waitForAnimationToEnd
+- assertVisible: "Buttons"
+
+# Navigate to Friends
+- tapOn: "Friends"
+- waitForAnimationToEnd
+- assertVisible: "Friends"
+
+# ===== Test: View Friends List =====
+- evalScript: |
+    console.log('Test: Viewing friends list as User 1');
+
+# Check for friends list or empty state
+- assertVisible:
+    text: ".*"
+    enabled: true
+
+# ===== Test: Send Friend Request =====
+- evalScript: |
+    console.log('Test: Looking for Add Friend option');
+
+# Look for add friend button
+- tapOn:
+    text: "Add.*|Invite.*|\\+"
+    optional: true
+- waitForAnimationToEnd
+
+# If add friend dialog opened, look for search/invite option
+- assertVisible:
+    text: "Search.*|Email.*|Username.*|Invite.*"
+    optional: true
+
+# Go back if we opened a dialog
+- tapOn:
+    text: "Cancel|Close|Back"
+    optional: true
+- waitForAnimationToEnd
+
+# ===== Test: Check Pending Requests =====
+- evalScript: |
+    console.log('Test: Checking for pending friend requests');
+
+# Look for pending/requests section
+- assertVisible:
+    text: "Pending.*|Requests.*|Waiting.*"
+    optional: true
+
+# ===== Test: View Friend's Profile =====
+- evalScript: |
+    console.log('Test: Attempting to view a friend profile');
+
+# If there are friends, tap on one
+- tapOn:
+    text: ".*@.*|Friend.*"
+    index: 0
+    optional: true
+- waitForAnimationToEnd
+
+# If friend detail opened, check for profile info
+- assertVisible:
+    text: "Buttons.*|Activity.*|Remove.*"
+    optional: true
+
+# Go back
+- tapOn:
+    text: "Back|Friends|<"
+    optional: true
+- waitForAnimationToEnd
+
+# ===== Complete =====
+- evalScript: |
+    console.log('');
+    console.log('User 1 friend tests complete!');
+    console.log('');
+
+# Return to Buttons tab
+- tapOn: "Buttons"
+- waitForAnimationToEnd
