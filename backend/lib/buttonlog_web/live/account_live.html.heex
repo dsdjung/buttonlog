@@ -109,7 +109,7 @@
               <div class="flex gap-4">
                 <%= if @subscription_info.plan.slug == "free" do %>
                   <a href={~p"/pricing"} class="flex-1 text-center px-4 py-2 rounded-lg transition-colors font-medium" style="background-color: #0d9488; color: white;">
-                    Upgrade to Premium
+                    Upgrade
                   </a>
                 <% else %>
                   <button phx-click="manage_subscription" class="flex-1 text-center bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium">
