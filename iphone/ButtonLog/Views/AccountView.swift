@@ -433,6 +433,7 @@ struct SubscriptionView: View {
     @State private var isLoading = false
     @State private var showingManageSubscription = false
     @State private var errorMessage: String?
+    @State private var showingError = false
     @State private var couponCode = ""
     @State private var showingCouponField = false
 
@@ -529,7 +530,7 @@ struct SubscriptionView: View {
             .refreshable {
                 await appState.loadSubscriptionData()
             }
-            .alert("Error", isPresented: .constant(errorMessage != nil)) {
+            .alert("Error", isPresented: $showingError) {
                 SwiftUI.Button("OK") {
                     errorMessage = nil
                 }
@@ -565,6 +566,7 @@ struct SubscriptionView: View {
             }
         } catch {
             errorMessage = "Failed to start checkout: \(error.localizedDescription)"
+            showingError = true
         }
     }
 }
@@ -1114,6 +1116,7 @@ struct ManageSubscriptionView: View {
 
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showingError = false
 
     private let apiService = APIService.shared
 
@@ -1205,7 +1208,7 @@ struct ManageSubscriptionView: View {
                     }
                 }
             }
-            .alert("Error", isPresented: .constant(errorMessage != nil)) {
+            .alert("Error", isPresented: $showingError) {
                 SwiftUI.Button("OK") {
                     errorMessage = nil
                 }
@@ -1229,6 +1232,7 @@ struct ManageSubscriptionView: View {
             }
         } catch {
             errorMessage = "Failed to open payment portal: \(error.localizedDescription)"
+            showingError = true
         }
     }
 }
