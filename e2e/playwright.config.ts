@@ -23,8 +23,11 @@ const environments = {
 const targetEnv = (process.env.TEST_ENV || 'local') as keyof typeof environments;
 const baseURL = environments[targetEnv];
 
-// Auth storage file path
-const authFile = path.join(__dirname, 'playwright/.auth/user.json');
+// Auth storage file paths
+const authDir = path.join(__dirname, 'playwright/.auth');
+const authFile = path.join(authDir, 'user.json');
+const user1AuthFile = path.join(authDir, 'user1.json');
+const user2AuthFile = path.join(authDir, 'user2.json');
 
 export default defineConfig({
   testDir: './tests',
@@ -66,7 +69,19 @@ export default defineConfig({
     // Setup project - captures auth state (run manually with: npm run test:setup)
     {
       name: 'setup',
-      testMatch: /auth\.setup\.ts/,
+      testMatch: /auth\.setup\.ts$/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // Setup project for User 1 (run manually with: npm run test:setup:user1)
+    {
+      name: 'setup-user1',
+      testMatch: /auth\.setup\.user1\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // Setup project for User 2 (run manually with: npm run test:setup:user2)
+    {
+      name: 'setup-user2',
+      testMatch: /auth\.setup\.user2\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
 
@@ -74,20 +89,20 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: /.*\.auth\.spec\.ts/,
+      testIgnore: [/.*\.auth\.spec\.ts/, /.*\.friends\.spec\.ts/],
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      testIgnore: /.*\.auth\.spec\.ts/,
+      testIgnore: [/.*\.auth\.spec\.ts/, /.*\.friends\.spec\.ts/],
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testIgnore: /.*\.auth\.spec\.ts/,
+      testIgnore: [/.*\.auth\.spec\.ts/, /.*\.friends\.spec\.ts/],
     },
 
-    // Authenticated tests - require stored auth state
+    // Authenticated tests - require stored auth state (single user)
     {
       name: 'chromium-auth',
       use: {
@@ -95,18 +110,27 @@ export default defineConfig({
         storageState: authFile,
       },
       testMatch: /.*\.auth\.spec\.ts/,
+      testIgnore: /.*\.friends\.spec\.ts/,
+    },
+
+    // Multi-user friend tests - require both user1 and user2 auth
+    // These tests use the multiUserTest fixture from fixtures/auth.ts
+    {
+      name: 'friends',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /.*\.friends\.spec\.ts/,
     },
 
     // Mobile viewports (unauthenticated)
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 5'] },
-      testIgnore: /.*\.auth\.spec\.ts/,
+      testIgnore: [/.*\.auth\.spec\.ts/, /.*\.friends\.spec\.ts/],
     },
     {
       name: 'mobile-safari',
       use: { ...devices['iPhone 12'] },
-      testIgnore: /.*\.auth\.spec\.ts/,
+      testIgnore: [/.*\.auth\.spec\.ts/, /.*\.friends\.spec\.ts/],
     },
   ],
 

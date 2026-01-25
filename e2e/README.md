@@ -79,12 +79,36 @@ npm run codegen:auth
 
 This opens a browser where you can log in manually and the session is saved automatically.
 
+### Multi-User Setup (For Friend Tests)
+
+Friend relationship tests require TWO different authenticated users. This allows testing friend requests, permissions, and button sharing between accounts.
+
+#### Step 1: Set up User 1
+```bash
+npm run test:setup:user1
+```
+Log in with your FIRST Google account.
+
+#### Step 2: Set up User 2
+```bash
+npm run test:setup:user2
+```
+Log in with a DIFFERENT Google account.
+
+#### Step 3: Run Friend Tests
+```bash
+npm run test:friends
+```
+
+**Note:** Use two different Google accounts! The tests verify that two separate users can interact through friend features.
+
 ### Test Types
 
 | Command | Description | Auth Required |
 |---------|-------------|---------------|
 | `npm test` | Run unauthenticated tests | No |
-| `npm run test:auth` | Run authenticated tests | Yes (run setup first) |
+| `npm run test:auth` | Run authenticated tests | Yes (1 user) |
+| `npm run test:friends` | Run friend relationship tests | Yes (2 users) |
 | `npm run test:all` | Run all browsers (unauth) | No |
 
 ## Useful Commands
@@ -95,9 +119,13 @@ This opens a browser where you can log in manually and the session is saved auto
 | `npm run test:all` | Run all browser tests |
 | `npm run test:staging` | Run tests against staging |
 | `npm run test:prod` | Run tests against production |
-| `npm run test:setup` | Set up authentication (interactive) |
-| `npm run test:auth` | Run authenticated tests |
+| `npm run test:setup` | Set up single-user authentication |
+| `npm run test:setup:user1` | Set up User 1 for friend tests |
+| `npm run test:setup:user2` | Set up User 2 for friend tests |
+| `npm run test:auth` | Run authenticated tests (single user) |
 | `npm run test:auth:headed` | Run authenticated tests with visible browser |
+| `npm run test:friends` | Run friend relationship tests (two users) |
+| `npm run test:friends:headed` | Run friend tests with visible browser |
 | `npm run test:ui` | Open Playwright UI mode |
 | `npm run test:headed` | Run tests with visible browser |
 | `npm run test:debug` | Debug mode with inspector |
@@ -115,13 +143,16 @@ This opens a browser where you can log in manually and the session is saved auto
 e2e/
 ├── tests/
 │   ├── fixtures/
-│   │   └── auth.ts              # Authentication helpers
-│   ├── auth.setup.ts            # Auth setup script (run with test:setup)
+│   │   └── auth.ts              # Authentication helpers (single & multi-user)
+│   ├── auth.setup.ts            # Auth setup script (single user)
+│   ├── auth.setup.user1.ts      # Auth setup for User 1 (friend tests)
+│   ├── auth.setup.user2.ts      # Auth setup for User 2 (friend tests)
 │   ├── public-pages.spec.ts     # Public pages (unauthenticated)
 │   ├── auth.spec.ts             # OAuth flow tests (unauthenticated)
 │   ├── buttons.spec.ts          # Button tests (unauthenticated)
 │   ├── buttons.auth.spec.ts     # Button tests (authenticated)
-│   ├── friends.spec.ts          # Friends tests
+│   ├── friends.spec.ts          # Friends tests (unauthenticated)
+│   ├── friends.friends.spec.ts  # Friends tests (multi-user)
 │   ├── notifications.spec.ts    # Notifications tests
 │   ├── diary.spec.ts            # Diary tests
 │   ├── teams.spec.ts            # Teams tests
@@ -132,7 +163,9 @@ e2e/
 │   └── subscription.spec.ts     # Subscription tests
 ├── playwright/
 │   └── .auth/
-│       └── user.json            # Stored auth state (gitignored)
+│       ├── user.json            # Single user auth (gitignored)
+│       ├── user1.json           # User 1 auth for friend tests (gitignored)
+│       └── user2.json           # User 2 auth for friend tests (gitignored)
 ├── playwright.config.ts         # Playwright configuration
 ├── package.json
 └── README.md
@@ -143,8 +176,11 @@ e2e/
 | Pattern | Description |
 |---------|-------------|
 | `*.spec.ts` | Unauthenticated tests |
-| `*.auth.spec.ts` | Authenticated tests (require stored auth) |
+| `*.auth.spec.ts` | Authenticated tests (single user) |
+| `*.friends.spec.ts` | Multi-user friend tests (requires 2 users) |
 | `*.setup.ts` | Setup scripts |
+| `*.setup.user1.ts` | User 1 setup script |
+| `*.setup.user2.ts` | User 2 setup script |
 
 ## Environment Variables
 
@@ -201,6 +237,33 @@ test('conditional test', async ({ page }) => {
   }
 });
 ```
+
+### Multi-User Tests (Friend Features)
+```typescript
+// myfeature.friends.spec.ts
+import { expect } from '@playwright/test';
+import { multiUserTest, hasBothUsersAuth } from './fixtures/auth';
+
+multiUserTest.describe('Friend Feature', () => {
+  multiUserTest('User 1 and User 2 can interact', async ({ user1Page, user2Page }) => {
+    // user1Page is authenticated as User 1
+    // user2Page is authenticated as User 2
+
+    await user1Page.goto('/friends');
+    await user2Page.goto('/friends');
+
+    // Test interactions between the two users
+    await expect(user1Page.locator('body')).toBeVisible();
+    await expect(user2Page.locator('body')).toBeVisible();
+  });
+});
+```
+
+The `multiUserTest` fixture provides:
+- `user1Page`: Page authenticated as User 1
+- `user2Page`: Page authenticated as User 2
+- `user1Context`: Browser context for User 1
+- `user2Context`: Browser context for User 2
 
 ## CI/CD Integration
 

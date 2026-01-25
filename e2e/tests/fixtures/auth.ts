@@ -1,4 +1,4 @@
-import { test as base, Page } from '@playwright/test';
+import { test as base, Page, BrowserContext } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
@@ -10,10 +10,16 @@ import fs from 'fs';
  *
  * ## Setting Up Authentication
  *
+ * ### Single User (Basic)
  * 1. Start the backend server: cd backend && mix phx.server
  * 2. Run auth setup: npm run test:setup
  * 3. Complete Google OAuth login in the browser window
  * 4. Your session is saved automatically
+ *
+ * ### Multiple Users (For Friend Tests)
+ * 1. Run: npm run test:setup:user1 (log in as first user)
+ * 2. Run: npm run test:setup:user2 (log in as second user)
+ * 3. Run: npm run test:friends (tests using both accounts)
  *
  * ## Running Authenticated Tests
  *
@@ -28,8 +34,11 @@ import fs from 'fs';
  * The session is saved to playwright/.auth/user.json
  */
 
-// Storage state file path
-export const AUTH_STORAGE_FILE = path.join(__dirname, '../../playwright/.auth/user.json');
+// Storage state file paths
+export const AUTH_DIR = path.join(__dirname, '../../playwright/.auth');
+export const AUTH_STORAGE_FILE = path.join(AUTH_DIR, 'user.json');
+export const USER1_STORAGE_FILE = path.join(AUTH_DIR, 'user1.json');
+export const USER2_STORAGE_FILE = path.join(AUTH_DIR, 'user2.json');
 
 // Test user info (used for reference)
 export const TEST_USER = {
@@ -144,3 +153,110 @@ export async function login(page: Page, _email?: string, _password?: string): Pr
 
   await page.goto('/auth/login');
 }
+
+// ============================================================================
+// Multi-User Authentication Support
+// ============================================================================
+
+/**
+ * Check if a specific user's auth file exists
+ */
+export async function hasUserAuth(userFile: string): Promise<boolean> {
+  try {
+    await fs.promises.access(userFile);
+    const content = await fs.promises.readFile(userFile, 'utf-8');
+    const state = JSON.parse(content);
+    return state.cookies && state.cookies.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if User 1 auth exists
+ */
+export async function hasUser1Auth(): Promise<boolean> {
+  return hasUserAuth(USER1_STORAGE_FILE);
+}
+
+/**
+ * Check if User 2 auth exists
+ */
+export async function hasUser2Auth(): Promise<boolean> {
+  return hasUserAuth(USER2_STORAGE_FILE);
+}
+
+/**
+ * Check if both users have auth (required for friend tests)
+ */
+export async function hasBothUsersAuth(): Promise<boolean> {
+  const [user1, user2] = await Promise.all([hasUser1Auth(), hasUser2Auth()]);
+  return user1 && user2;
+}
+
+/**
+ * Get user auth state by file path
+ */
+export async function getUserAuthState(userFile: string): Promise<object | null> {
+  try {
+    const content = await fs.promises.readFile(userFile, 'utf-8');
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extended test fixture that provides two authenticated pages for friend tests
+ * User 1 and User 2 are in separate browser contexts
+ */
+export const multiUserTest = base.extend<{
+  user1Page: Page;
+  user2Page: Page;
+  user1Context: BrowserContext;
+  user2Context: BrowserContext;
+}>({
+  user1Context: async ({ browser }, use) => {
+    const hasAuth = await hasUser1Auth();
+    if (!hasAuth) {
+      console.warn('\n');
+      console.warn('='.repeat(60));
+      console.warn('No User 1 authentication found.');
+      console.warn('Run: npm run test:setup:user1');
+      console.warn('='.repeat(60));
+      console.warn('\n');
+      throw new Error('User 1 auth not found. Run: npm run test:setup:user1');
+    }
+    const context = await browser.newContext({ storageState: USER1_STORAGE_FILE });
+    await use(context);
+    await context.close();
+  },
+
+  user2Context: async ({ browser }, use) => {
+    const hasAuth = await hasUser2Auth();
+    if (!hasAuth) {
+      console.warn('\n');
+      console.warn('='.repeat(60));
+      console.warn('No User 2 authentication found.');
+      console.warn('Run: npm run test:setup:user2');
+      console.warn('='.repeat(60));
+      console.warn('\n');
+      throw new Error('User 2 auth not found. Run: npm run test:setup:user2');
+    }
+    const context = await browser.newContext({ storageState: USER2_STORAGE_FILE });
+    await use(context);
+    await context.close();
+  },
+
+  user1Page: async ({ user1Context }, use) => {
+    const page = await user1Context.newPage();
+    await use(page);
+    await page.close();
+  },
+
+  user2Page: async ({ user2Context }, use) => {
+    const page = await user2Context.newPage();
+    await use(page);
+    await page.close();
+  },
+});

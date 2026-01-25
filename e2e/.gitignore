@@ -5,3 +5,5 @@ playwright-report/
 
 # Auth storage (contains session cookies - do not commit)
 playwright/.auth/user.json
+playwright/.auth/user1.json
+playwright/.auth/user2.json
