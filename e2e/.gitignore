@@ -2,3 +2,6 @@ node_modules/
 test-results/
 playwright-report/
 .playwright/
+
+# Auth storage (contains session cookies - do not commit)
+playwright/.auth/user.json

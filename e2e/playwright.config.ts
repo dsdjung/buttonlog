@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
 
 /**
  * Environment configuration for ButtonLog E2E tests
@@ -7,6 +8,7 @@ import { defineConfig, devices } from '@playwright/test';
  *   npm test                    # Run against local (default)
  *   npm run test:staging        # Run against staging
  *   npm run test:prod           # Run against production
+ *   npm run test:auth           # Run only authenticated tests
  */
 
 // Environment URLs
@@ -20,6 +22,9 @@ const environments = {
 // Get target environment from ENV or default to local
 const targetEnv = (process.env.TEST_ENV || 'local') as keyof typeof environments;
 const baseURL = environments[targetEnv];
+
+// Auth storage file path
+const authFile = path.join(__dirname, 'playwright/.auth/user.json');
 
 export default defineConfig({
   testDir: './tests',
@@ -58,26 +63,50 @@ export default defineConfig({
 
   // Configure projects for major browsers
   projects: [
+    // Setup project - captures auth state (run manually with: npm run test:setup)
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+
+    // Unauthenticated tests - run without stored auth
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: /.*\.auth\.spec\.ts/,
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: /.*\.auth\.spec\.ts/,
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: /.*\.auth\.spec\.ts/,
     },
-    // Mobile viewports
+
+    // Authenticated tests - require stored auth state
+    {
+      name: 'chromium-auth',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: authFile,
+      },
+      testMatch: /.*\.auth\.spec\.ts/,
+    },
+
+    // Mobile viewports (unauthenticated)
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 5'] },
+      testIgnore: /.*\.auth\.spec\.ts/,
     },
     {
       name: 'mobile-safari',
       use: { ...devices['iPhone 12'] },
+      testIgnore: /.*\.auth\.spec\.ts/,
     },
   ],
 

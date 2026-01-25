@@ -1,0 +1,3 @@
+# This directory stores authentication state for E2E tests
+# The user.json file contains session cookies and should NOT be committed
+# See e2e/README.md for setup instructions
