@@ -3,6 +3,7 @@ import AuthenticationServices
 
 struct AuthenticationView: View {
     @EnvironmentObject private var authManager: AuthenticationManager
+    @State private var showingError = false
 
     var body: some View {
         NavigationView {
@@ -61,12 +62,15 @@ struct AuthenticationView: View {
             .navigationTitle("")
             .navigationBarHidden(true)
         }
-        .alert("Error", isPresented: .constant(authManager.errorMessage != nil)) {
+        .alert("Error", isPresented: $showingError) {
             SwiftUI.Button("OK") {
                 authManager.errorMessage = nil
             }
         } message: {
             Text(authManager.errorMessage ?? "")
+        }
+        .onChange(of: authManager.errorMessage) { _, newValue in
+            showingError = newValue != nil
         }
     }
 }

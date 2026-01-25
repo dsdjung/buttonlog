@@ -5,6 +5,7 @@ struct MainTabView: View {
     @EnvironmentObject private var authManager: AuthenticationManager
     @State private var selectedTab = 0
     @State private var showingCreateButton = false
+    @State private var showingError = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -97,12 +98,15 @@ struct MainTabView: View {
         .refreshable {
             await appState.refreshData()
         }
-        .alert("Error", isPresented: .constant(appState.errorMessage != nil)) {
+        .alert("Error", isPresented: $showingError) {
             SwiftUI.Button("OK") {
                 appState.clearError()
             }
         } message: {
             Text(appState.errorMessage ?? "")
+        }
+        .onChange(of: appState.errorMessage) { _, newValue in
+            showingError = newValue != nil
         }
         .upgradePrompt(upgradeInfo: $appState.pendingUpgradeInfo) {
             // Navigate to subscription page
