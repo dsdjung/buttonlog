@@ -547,9 +547,9 @@ struct SubscriptionView: View {
         }
     }
 
+    @MainActor
     private func subscribeToPlan(_ plan: SubscriptionPlan) async {
         isLoading = true
-        defer { isLoading = false }
 
         do {
             let session = try await apiService.createCheckoutSession(
@@ -558,13 +558,14 @@ struct SubscriptionView: View {
                 couponCode: couponCode.isEmpty ? nil : couponCode
             )
 
+            isLoading = false
+
             // Open Stripe Checkout in Safari
             if let url = URL(string: session.checkoutUrl) {
-                await MainActor.run {
-                    openURL(url)
-                }
+                openURL(url)
             }
         } catch {
+            isLoading = false
             errorMessage = "Failed to start checkout: \(error.localizedDescription)"
             showingError = true
         }
@@ -1218,19 +1219,20 @@ struct ManageSubscriptionView: View {
         }
     }
 
+    @MainActor
     private func openCustomerPortal() async {
         isLoading = true
-        defer { isLoading = false }
 
         do {
             let session = try await apiService.createPortalSession()
 
+            isLoading = false
+
             if let url = URL(string: session.portalUrl) {
-                await MainActor.run {
-                    openURL(url)
-                }
+                openURL(url)
             }
         } catch {
+            isLoading = false
             errorMessage = "Failed to open payment portal: \(error.localizedDescription)"
             showingError = true
         }
