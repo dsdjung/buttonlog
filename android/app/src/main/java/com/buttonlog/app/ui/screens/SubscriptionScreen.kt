@@ -288,6 +288,12 @@ private fun CurrentSubscriptionCard(
                     )
                 }
 
+                // Trial countdown
+                if (subscription.status == SubscriptionStatus.TRIALING && subscription.trialEnd != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TrialCountdownBanner(trialEndDate = subscription.trialEnd)
+                }
+
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Usage Stats
@@ -425,6 +431,52 @@ private fun SubscriptionStatusBadge(status: SubscriptionStatus) {
             color = textColor,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
         )
+    }
+}
+
+@Composable
+private fun TrialCountdownBanner(trialEndDate: String) {
+    val daysRemaining = remember(trialEndDate) {
+        try {
+            val formatter = java.time.format.DateTimeFormatter.ISO_DATE_TIME
+            val endDate = java.time.ZonedDateTime.parse(trialEndDate, formatter)
+            val now = java.time.ZonedDateTime.now()
+            java.time.temporal.ChronoUnit.DAYS.between(now, endDate).coerceAtLeast(0)
+        } catch (e: Exception) {
+            0L
+        }
+    }
+
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFFFFF3E0),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Timer,
+                contentDescription = null,
+                tint = Color(0xFFFF9800),
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (daysRemaining == 1L) "1 day left in trial" else "$daysRemaining days left in trial",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE65100)
+                )
+                Text(
+                    text = "Your subscription will start automatically",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFFF9800)
+                )
+            }
+        }
     }
 }
 

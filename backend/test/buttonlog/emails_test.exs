@@ -85,4 +85,61 @@ defmodule ButtonLog.EmailsTest do
       assert email.html_body =~ "John O'Brien"
     end
   end
+
+  describe "trial_ending/4" do
+    test "creates email with correct structure" do
+      trial_end = DateTime.utc_now() |> DateTime.add(3, :day)
+      email = Emails.trial_ending("user@example.com", "John", "Premium", trial_end)
+
+      # Check basic email properties
+      assert email.to == [{"", "user@example.com"}]
+      assert email.subject =~ "Premium trial ends in"
+      assert email.subject =~ "days"
+
+      # Check from address
+      {from_name, from_email} = email.from
+      assert from_name == Emails.from_name()
+      assert from_email == Emails.from_email()
+
+      # Check HTML body contains user info
+      assert email.html_body =~ "John"
+      assert email.html_body =~ "Premium"
+      assert email.html_body =~ "trial"
+
+      # Check text body
+      assert email.text_body =~ "John"
+      assert email.text_body =~ "Premium"
+    end
+
+    test "calculates correct days remaining" do
+      # Trial ending in 5 days
+      trial_end = DateTime.utc_now() |> DateTime.add(5, :day)
+      email = Emails.trial_ending("user@example.com", "User", "Premium", trial_end)
+
+      assert email.subject =~ "5 days"
+      assert email.html_body =~ "5"
+    end
+
+    test "shows 1 day singular when ending tomorrow" do
+      trial_end = DateTime.utc_now() |> DateTime.add(1, :day)
+      email = Emails.trial_ending("user@example.com", "User", "Premium", trial_end)
+
+      assert email.subject =~ "1 day"
+    end
+
+    test "handles trial already ended (0 days)" do
+      trial_end = DateTime.utc_now() |> DateTime.add(-1, :day)
+      email = Emails.trial_ending("user@example.com", "User", "Premium", trial_end)
+
+      assert email.subject =~ "0 days"
+    end
+
+    test "includes management link in email" do
+      trial_end = DateTime.utc_now() |> DateTime.add(3, :day)
+      email = Emails.trial_ending("user@example.com", "User", "Premium", trial_end)
+
+      assert email.html_body =~ "buttonlog.app/account"
+      assert email.text_body =~ "buttonlog.app/account"
+    end
+  end
 end

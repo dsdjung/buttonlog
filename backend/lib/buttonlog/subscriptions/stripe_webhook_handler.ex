@@ -14,6 +14,9 @@ defmodule ButtonLog.Subscriptions.StripeWebhookHandler do
     UserSubscription,
     Invoice
   }
+  alias ButtonLog.Accounts
+  alias ButtonLog.Emails
+  alias ButtonLog.Mailer
 
   @doc """
   Main entry point for handling Stripe webhook events.
@@ -235,13 +238,33 @@ defmodule ButtonLog.Subscriptions.StripeWebhookHandler do
     case find_user_subscription(subscription.id) do
       nil -> :ok
       user_sub ->
+        trial_end = unix_to_datetime(subscription.trial_end)
+
         # Record event for notification purposes
-        Subscriptions.record_subscription_event(user_sub.id, :trial_ended, %{
-          trial_end: unix_to_datetime(subscription.trial_end)
+        Subscriptions.record_subscription_event(user_sub.id, :trial_ending, %{
+          trial_end: trial_end
         })
 
-        # TODO: Send email notification about trial ending
+        # Send email notification about trial ending
+        send_trial_ending_email(user_sub, trial_end)
+
         :ok
+    end
+  end
+
+  defp send_trial_ending_email(user_sub, trial_end) do
+    with user when not is_nil(user) <- Accounts.get_user(user_sub.user_id),
+         plan when not is_nil(plan) <- Subscriptions.get_subscription_plan(user_sub.subscription_plan_id) do
+
+      user_name = user.display_name || user.username || "there"
+
+      Emails.trial_ending(user.email, user_name, plan.name, trial_end)
+      |> Mailer.deliver()
+
+      Logger.info("Sent trial ending email to #{user.email}")
+    else
+      _ ->
+        Logger.warning("Could not send trial ending email - user or plan not found")
     end
   end
 
