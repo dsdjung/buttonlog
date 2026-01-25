@@ -159,12 +159,13 @@ fun AccountScreen(
                 onClick = onPasswordChangeClick
             )
 
-            SettingsItem(
-                icon = Icons.Default.Download,
-                title = "Export Data",
-                subtitle = "Download your data and activity history",
-                onClick = onDataExportClick
-            )
+            // Data Export - Hidden for now
+            // SettingsItem(
+            //     icon = Icons.Default.Download,
+            //     title = "Export Data",
+            //     subtitle = "Download your data and activity history",
+            //     onClick = onDataExportClick
+            // )
 
             SettingsItem(
                 icon = Icons.Default.Link,

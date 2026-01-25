@@ -64,9 +64,10 @@ struct AccountView: View {
                     Label("Change Password", systemImage: "key")
                 }
 
-                NavigationLink(destination: DataExportView()) {
-                    Label("Export Data", systemImage: "square.and.arrow.up")
-                }
+                // Data Export - Hidden for now
+                // NavigationLink(destination: DataExportView()) {
+                //     Label("Export Data", systemImage: "square.and.arrow.up")
+                // }
 
                 NavigationLink(destination: WebhookSettingsView()) {
                     Label("Webhook Notifications", systemImage: "link")
