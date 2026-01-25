@@ -355,11 +355,11 @@ defmodule ButtonLogWeb.API.SubscriptionControllerTest do
         })
 
       assert %{
-        "action" => "create_button",
-        "can_perform" => can_perform
+        "success" => true,
+        "data" => %{"allowed" => allowed}
       } = json_response(conn, 200)
 
-      assert is_boolean(can_perform)
+      assert is_boolean(allowed)
     end
 
     test "checks permission for adding friend", %{conn: conn, token: token} do
@@ -372,11 +372,11 @@ defmodule ButtonLogWeb.API.SubscriptionControllerTest do
         })
 
       assert %{
-        "action" => "add_friend",
-        "can_perform" => can_perform
+        "success" => true,
+        "data" => %{"allowed" => allowed}
       } = json_response(conn, 200)
 
-      assert is_boolean(can_perform)
+      assert is_boolean(allowed)
     end
 
     test "checks permission for analytics access", %{conn: conn, token: token} do
@@ -389,11 +389,11 @@ defmodule ButtonLogWeb.API.SubscriptionControllerTest do
         })
 
       assert %{
-        "action" => "access_analytics",
-        "can_perform" => can_perform
+        "success" => true,
+        "data" => %{"allowed" => allowed}
       } = json_response(conn, 200)
 
-      assert is_boolean(can_perform)
+      assert is_boolean(allowed)
     end
   end
 

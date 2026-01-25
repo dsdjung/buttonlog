@@ -211,8 +211,10 @@ defmodule ButtonLogWeb.API.SubscriptionController do
     conn
     |> put_status(:ok)
     |> json(%{
-      action: action,
-      can_perform: can_perform
+      success: true,
+      data: %{
+        allowed: can_perform
+      }
     })
   end
 
