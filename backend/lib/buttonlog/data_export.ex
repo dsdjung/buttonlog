@@ -63,7 +63,11 @@ defmodule ButtonLog.DataExport do
   end
 
   defp get_user_buttons(user_id) do
-    from(b in Button, where: b.user_id == ^user_id, order_by: [desc: b.inserted_at])
+    from(b in Button,
+      where: b.user_id == ^user_id,
+      order_by: [desc: b.inserted_at],
+      preload: [:button_clicks]
+    )
     |> Repo.all()
   end
 
@@ -85,6 +89,12 @@ defmodule ButtonLog.DataExport do
   end
 
   defp format_button(button) do
+    click_count = if Ecto.assoc_loaded?(button.button_clicks) do
+      length(button.button_clicks)
+    else
+      0
+    end
+
     %{
       id: button.id,
       name: button.name,
@@ -93,7 +103,7 @@ defmodule ButtonLog.DataExport do
       icon: button.icon,
       color: button.color,
       current_state: button.current_state,
-      click_count: button.click_count,
+      click_count: click_count,
       sharing_mode: button.sharing_mode,
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at)
