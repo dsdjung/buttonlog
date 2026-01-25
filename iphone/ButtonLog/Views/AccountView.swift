@@ -1,4 +1,5 @@
 import SwiftUI
+import SafariServices
 
 struct AccountView: View {
     @EnvironmentObject private var authManager: AuthenticationManager
@@ -436,6 +437,8 @@ struct SubscriptionView: View {
     @State private var showingError = false
     @State private var couponCode = ""
     @State private var showingCouponField = false
+    @State private var checkoutURL: URL?
+    @State private var showingSafari = false
 
     private let apiService = APIService.shared
 
@@ -540,6 +543,11 @@ struct SubscriptionView: View {
             .sheet(isPresented: $showingManageSubscription) {
                 ManageSubscriptionView()
             }
+            .sheet(isPresented: $showingSafari) {
+                if let url = checkoutURL {
+                    SafariView(url: url)
+                }
+            }
         }
         .task {
             // Always load subscription data when view appears
@@ -549,27 +557,44 @@ struct SubscriptionView: View {
 
     @MainActor
     private func subscribeToPlan(_ plan: SubscriptionPlan) async {
+        print("DEBUG: subscribeToPlan called for plan: \(plan.id)")
         isLoading = true
 
         do {
+            print("DEBUG: Calling createCheckoutSession...")
             let session = try await apiService.createCheckoutSession(
                 planId: plan.id,
                 billingCycle: selectedBillingCycle,
                 couponCode: couponCode.isEmpty ? nil : couponCode
             )
+            print("DEBUG: Got checkout session: \(session.checkoutUrl)")
 
             isLoading = false
 
-            // Open Stripe Checkout in Safari
+            // Open Stripe Checkout in Safari View
             if let url = URL(string: session.checkoutUrl) {
-                openURL(url)
+                print("DEBUG: Opening URL in Safari View: \(url)")
+                checkoutURL = url
+                showingSafari = true
             }
         } catch {
+            print("DEBUG: Error in subscribeToPlan: \(error)")
             isLoading = false
             errorMessage = "Failed to start checkout: \(error.localizedDescription)"
             showingError = true
         }
     }
+}
+
+// MARK: - Safari View
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        return SFSafariViewController(url: url)
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }
 
 // MARK: - Current Plan Card (for free users)
@@ -1112,12 +1137,13 @@ struct SubscriptionFAQItem: View {
 
 struct ManageSubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
     @EnvironmentObject private var appState: AppState
 
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showingError = false
+    @State private var portalURL: URL?
+    @State private var showingSafari = false
 
     private let apiService = APIService.shared
 
@@ -1216,6 +1242,11 @@ struct ManageSubscriptionView: View {
             } message: {
                 Text(errorMessage ?? "")
             }
+            .sheet(isPresented: $showingSafari) {
+                if let url = portalURL {
+                    SafariView(url: url)
+                }
+            }
         }
     }
 
@@ -1229,7 +1260,8 @@ struct ManageSubscriptionView: View {
             isLoading = false
 
             if let url = URL(string: session.portalUrl) {
-                openURL(url)
+                portalURL = url
+                showingSafari = true
             }
         } catch {
             isLoading = false

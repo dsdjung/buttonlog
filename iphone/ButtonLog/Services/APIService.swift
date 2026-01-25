@@ -39,19 +39,26 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
+        request.timeoutInterval = 30 // 30 second timeout
         addCommonHeaders(to: &request)
 
         // Add auth token if required
         if requiresAuth, let token = KeychainManager.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            print("DEBUG API: Using token: \(token.prefix(20))...")
+        } else if requiresAuth {
+            print("DEBUG API: No token found in keychain!")
         }
 
         // Add body if provided
         if let body = body {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            print("DEBUG API: Request body: \(body)")
         }
 
+        print("DEBUG API: Making \(method.rawValue) request to \(url)")
         let (data, response) = try await session.data(for: request)
+        print("DEBUG API: Got response")
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
