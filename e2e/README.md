@@ -14,12 +14,14 @@ npx playwright install  # Install browser binaries
 
 ### Against Local (default)
 ```bash
-# Make sure Phoenix server is running on localhost:4000
+# Make sure Phoenix server is running on localhost:14015
 npm test
 
 # Or let Playwright start the server automatically
 npm test  # Config will start `mix phx.server` if needed
 ```
+
+**Note:** Local dev server runs on port **14015** (configured in `backend/config/dev.exs`).
 
 ### Against Staging
 ```bash
@@ -80,8 +82,8 @@ e2e/
 
 | Test File | Coverage Area | Tests |
 |-----------|--------------|-------|
-| `public-pages.spec.ts` | Home, pricing, about, terms, privacy, health check | ~15 |
-| `auth.spec.ts` | Login, register, logout, OAuth, session persistence | ~25 |
+| `public-pages.spec.ts` | Home, pricing, health check, login page | ~10 |
+| `auth.spec.ts` | OAuth login, route accessibility | ~15 |
 | `buttons.spec.ts` | Button CRUD, types, interactions, sharing, notifications | ~30 |
 | `friends.spec.ts` | Friend requests, permissions, blocking, activity | ~20 |
 | `notifications.spec.ts` | Notifications list, types, actions, settings | ~15 |
@@ -93,6 +95,38 @@ e2e/
 | `support.spec.ts` | Ticket CRUD, replies, attachments, FAQ | ~20 |
 | `subscription.spec.ts` | Plans, payments, billing, usage, promo codes | ~35 |
 
+## Authentication
+
+**Important:** This app uses OAuth-only authentication (Google). There are no email/password forms.
+
+### Testing Authenticated Features
+
+For tests that require authentication, you have two options:
+
+#### Option 1: Manual Setup (Recommended for CI)
+```bash
+# 1. Login manually via Google OAuth in a browser
+# 2. Save the browser state:
+npx playwright codegen --save-storage=playwright/.auth/user.json
+
+# 3. Run tests with stored state:
+npx playwright test --storage-state=playwright/.auth/user.json
+```
+
+#### Option 2: Test Unauthenticated Behavior
+Tests will verify that:
+- Pages load without errors
+- Login prompts are shown for protected features
+- Public content is accessible
+
+### Test Categories
+
+| Category | Auth Required | Notes |
+|----------|---------------|-------|
+| Public pages | No | Home, pricing, health check |
+| Auth pages | No | Login/register page structure |
+| Buttons, Friends, etc. | Yes | Require stored auth state |
+
 ## Environment Variables
 
 | Variable | Description | Default |
@@ -100,23 +134,45 @@ e2e/
 | `TEST_ENV` | Target environment | `local` |
 | `STAGING_URL` | Staging server URL | `https://staging.buttonlog.com` |
 | `PROD_URL` | Production server URL | `https://buttonlog.com` |
-| `TEST_USER_EMAIL` | Test user email | `test@example.com` |
-| `TEST_USER_PASSWORD` | Test user password | `password123` |
 
 ## Writing New Tests
 
 1. Use `npm run codegen` to record actions and generate test code
 2. Create a new file in `tests/` with `.spec.ts` extension
-3. Follow existing patterns for login/setup
+3. For authenticated tests, use the `authenticatedTest` fixture or check for stored auth
 
-Example:
+Example (public page):
 ```typescript
 import { test, expect } from '@playwright/test';
 
 test.describe('My Feature', () => {
-  test('does something', async ({ page }) => {
+  test('loads page', async ({ page }) => {
     await page.goto('/my-page');
     await expect(page.locator('h1')).toContainText('Expected');
+  });
+});
+```
+
+Example (authenticated feature):
+```typescript
+import { test, expect } from '@playwright/test';
+import { hasStoredAuth } from './fixtures/auth';
+
+test.describe('Protected Feature', () => {
+  test.beforeEach(async ({ page }) => {
+    // Tests will check for login prompt if not authenticated
+    await page.goto('/protected-page');
+  });
+
+  test('shows feature or login prompt', async ({ page }) => {
+    const hasAuth = await hasStoredAuth();
+    if (hasAuth) {
+      await expect(page.locator('.feature')).toBeVisible();
+    } else {
+      // Verify login prompt is shown
+      const loginLink = page.locator('a[href*="/auth"]');
+      await expect(loginLink.first()).toBeVisible();
+    }
   });
 });
 ```
