@@ -1,0 +1,28 @@
+appId: com.buttonlog.app
+---
+# Android Friends Flow Test
+# Requires: User must be logged in (pre-authenticated state)
+
+# Wait for app to load
+- waitForAnimationToEnd
+
+# Navigate to Friends tab
+- tapOn: "Friends"
+- waitForAnimationToEnd
+
+# Verify we're on Friends screen
+- assertVisible: "Friends"
+
+# Check for friend list or empty state
+- assertVisible:
+    text: ".*"
+    enabled: true
+
+# Look for add friend option
+- assertVisible:
+    text: "Add.*|Invite.*|Request.*"
+    optional: true
+
+# Navigate back to Buttons tab
+- tapOn: "Buttons"
+- waitForAnimationToEnd

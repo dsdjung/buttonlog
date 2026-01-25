@@ -1,0 +1,19 @@
+appId: com.buttonlog.ButtonLog
+---
+# iOS Login Flow Test
+# Note: OAuth testing requires pre-authenticated state or manual intervention
+
+# Verify login screen appears
+- assertVisible: "ButtonLog"
+- assertVisible: "Track your activities with the tap of a button"
+
+# Check OAuth buttons are present
+- assertVisible: "Sign in with Google"
+
+# Check terms text
+- assertVisible:
+    text: "Terms of Service"
+    enabled: true
+
+# Note: Actual OAuth flow requires manual testing due to Google's security
+# This test validates the login UI is displayed correctly

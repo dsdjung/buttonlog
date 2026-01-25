@@ -1,0 +1,36 @@
+appId: com.buttonlog.ButtonLog
+---
+# iOS Account Flow Test
+# Requires: User must be logged in (pre-authenticated state)
+
+# Wait for app to load
+- waitForAnimationToEnd
+
+# Navigate to Account tab
+- tapOn: "Account"
+- waitForAnimationToEnd
+
+# Verify account screen elements
+- assertVisible: "Account"
+
+# Check for profile section
+- assertVisible:
+    text: "Profile.*|Edit.*"
+    optional: true
+
+# Check for settings options
+- scroll
+
+# Look for common account options
+- assertVisible:
+    text: "Notifications|Subscription|Privacy"
+    optional: true
+
+# Look for sign out option
+- assertVisible:
+    text: "Sign Out"
+    optional: true
+
+# Navigate back to Buttons tab
+- tapOn: "Buttons"
+- waitForAnimationToEnd

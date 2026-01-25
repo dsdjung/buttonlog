@@ -1,0 +1,8 @@
+# Shared subflow: Wait for home screen (Buttons tab)
+# This assumes user is already logged in
+
+---
+- waitForAnimationToEnd
+- assertVisible:
+    text: "Buttons"
+    optional: true

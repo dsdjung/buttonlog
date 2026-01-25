@@ -1,0 +1,21 @@
+# Maestro E2E Test Configuration for ButtonLog
+
+# App identifiers
+appId:
+  ios: com.buttonlog.ButtonLog
+  android: com.buttonlog.app
+
+# Test execution settings
+executionOrder:
+  continueOnFailure: false
+  shuffleOrder: false
+
+# Timeouts (milliseconds)
+launchTimeout: 30000
+defaultTimeout: 10000
+
+# Screenshots
+screenshotOnFailure: true
+
+# Logging
+logLevel: info

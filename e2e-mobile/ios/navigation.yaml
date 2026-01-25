@@ -1,0 +1,35 @@
+appId: com.buttonlog.ButtonLog
+---
+# iOS Navigation Test
+# Tests all tab navigation in the app
+# Requires: User must be logged in (pre-authenticated state)
+
+# Wait for app to load
+- waitForAnimationToEnd
+
+# Start on Buttons tab
+- assertVisible: "Buttons"
+
+# Navigate to Friends tab
+- tapOn: "Friends"
+- waitForAnimationToEnd
+- assertVisible: "Friends"
+
+# Navigate to Diary tab
+- tapOn: "Diary"
+- waitForAnimationToEnd
+- assertVisible: "Diary"
+
+# Navigate to Logs tab
+- tapOn: "Logs"
+- waitForAnimationToEnd
+
+# Navigate to Account tab
+- tapOn: "Account"
+- waitForAnimationToEnd
+- assertVisible: "Account"
+
+# Navigate back to Buttons tab
+- tapOn: "Buttons"
+- waitForAnimationToEnd
+- assertVisible: "Buttons"

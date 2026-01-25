@@ -1,0 +1,31 @@
+{
+  "name": "buttonlog-e2e-mobile",
+  "version": "1.0.0",
+  "description": "E2E tests for ButtonLog iOS and Android apps using Maestro",
+  "scripts": {
+    "test:ios": "maestro test ios/",
+    "test:android": "maestro test android/",
+    "test:ios:login": "maestro test ios/login.yaml",
+    "test:ios:buttons": "maestro test ios/buttons.yaml",
+    "test:ios:account": "maestro test ios/account.yaml",
+    "test:ios:friends": "maestro test ios/friends.yaml",
+    "test:android:login": "maestro test android/login.yaml",
+    "test:android:buttons": "maestro test android/buttons.yaml",
+    "test:android:account": "maestro test android/account.yaml",
+    "test:android:friends": "maestro test android/friends.yaml",
+    "record:ios": "maestro record ios/",
+    "record:android": "maestro record android/",
+    "devices": "maestro devices",
+    "clear": "maestro clear"
+  },
+  "keywords": [
+    "e2e",
+    "testing",
+    "maestro",
+    "mobile",
+    "ios",
+    "android"
+  ],
+  "author": "",
+  "license": "MIT"
+}

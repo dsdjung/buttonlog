@@ -1,0 +1,19 @@
+# Shared subflow: Logout from the app
+
+---
+# Navigate to Account tab
+- tapOn: "Account"
+- waitForAnimationToEnd
+
+# Scroll down to find Sign Out
+- scroll
+
+# Look for sign out option
+- tapOn:
+    text: "Sign Out"
+    optional: true
+
+# Confirm logout if dialog appears
+- tapOn:
+    text: "Sign Out"
+    optional: true

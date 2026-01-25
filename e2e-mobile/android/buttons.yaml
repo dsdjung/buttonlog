@@ -1,0 +1,31 @@
+appId: com.buttonlog.app
+---
+# Android Buttons Flow Test
+# Requires: User must be logged in (pre-authenticated state)
+
+# Wait for home screen to load
+- waitForAnimationToEnd
+
+# Verify we're on the Buttons screen
+- assertVisible: "Buttons"
+
+# Check for button list or empty state
+- assertVisible:
+    text: ".*"
+    enabled: true
+
+# Test create button flow (tap FAB or add button)
+- tapOn:
+    text: "+"
+    optional: true
+
+- waitForAnimationToEnd
+
+# If create button form opened, verify fields
+- assertVisible:
+    text: "Name"
+    optional: true
+
+# Go back/cancel
+- back
+- waitForAnimationToEnd

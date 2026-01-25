@@ -1,0 +1,12 @@
+# Maestro test artifacts
+.maestro/
+test-results/
+screenshots/
+videos/
+*.mp4
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
