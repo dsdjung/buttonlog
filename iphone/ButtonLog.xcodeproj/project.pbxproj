@@ -52,6 +52,7 @@
 		CD11234567890071 /* UpgradePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890072 /* UpgradePromptView.swift */; };
 		CD11234567890074 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890073 /* AboutView.swift */; };
 		CD11234567890076 /* WebhookSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890075 /* WebhookSettingsView.swift */; };
+		CD11234567890078 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD11234567890077 /* Environment.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -100,6 +101,7 @@
 		CD11234567890072 /* UpgradePromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpgradePromptView.swift; sourceTree = "<group>"; };
 		CD11234567890073 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		CD11234567890075 /* WebhookSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebhookSettingsView.swift; sourceTree = "<group>"; };
+		CD11234567890077 /* Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +144,7 @@
 				CD11234567890102 /* ViewModels */,
 				CD11234567890103 /* Views */,
 				CD11234567890104 /* Theme */,
+				CD11234567890105 /* Configuration */,
 				CD01234567890ABF /* Assets.xcassets */,
 				CD01234567890AC1 /* Preview Content */,
 			);
@@ -228,6 +231,14 @@
 				CD11234567890062 /* DesignTokens.swift */,
 			);
 			path = Theme;
+			sourceTree = "<group>";
+		};
+		CD11234567890105 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				CD11234567890077 /* Environment.swift */,
+			);
+			path = Configuration;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -344,6 +355,7 @@
 				CD11234567890071 /* UpgradePromptView.swift in Sources */,
 				CD11234567890074 /* AboutView.swift in Sources */,
 				CD11234567890076 /* WebhookSettingsView.swift in Sources */,
+				CD11234567890078 /* Environment.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
