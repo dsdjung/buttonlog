@@ -11,9 +11,8 @@ enum AppEnvironment: String {
     var apiBaseURL: String {
         switch self {
         case .development:
-            // Local development server (Mac running Phoenix)
-            // Use localhost for simulator, or your Mac's IP for physical device
-            return "http://localhost:14015/api"
+            // Set by scripts/set-environment.sh - currently: staging
+            return "https://staging.buttonlog.com/api"
         case .staging:
             return "https://staging.buttonlog.com/api"
         case .production:
@@ -25,7 +24,8 @@ enum AppEnvironment: String {
     var webBaseURL: String {
         switch self {
         case .development:
-            return "http://localhost:14015"
+            // Set by scripts/set-environment.sh - currently: staging
+            return "https://staging.buttonlog.com"
         case .staging:
             return "https://staging.buttonlog.com"
         case .production:

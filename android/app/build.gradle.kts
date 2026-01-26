@@ -32,9 +32,9 @@ android {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "ButtonLog Dev")
-            // API URL for local development (Android emulator uses 10.0.2.2 for host localhost)
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:14015/api/\"")
-            buildConfigField("String", "WEB_BASE_URL", "\"http://10.0.2.2:14015\"")
+            // Set by scripts/set-environment.sh - currently: staging
+            buildConfigField("String", "API_BASE_URL", "\"https://staging.buttonlog.com/api/\"")
+            buildConfigField("String", "WEB_BASE_URL", "\"https://staging.buttonlog.com\"")
             buildConfigField("Boolean", "DEBUG_LOGGING", "true")
         }
         create("staging") {
