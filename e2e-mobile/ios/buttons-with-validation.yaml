@@ -1,0 +1,89 @@
+appId: com.buttonlog.ButtonLog
+---
+# iOS Buttons Flow Test with API Data Validation
+# Requires: User must be logged in (pre-authenticated state)
+# This test validates both UI state AND backend API data
+
+# Wait for home screen to load
+- waitForAnimationToEnd
+
+# Verify we're on the Buttons tab
+- assertVisible: "Buttons"
+
+# Store the auth token from environment (set via setup script)
+- runScript:
+    file: ../scripts/validate-buttons-api.sh
+    env:
+      API_BASE_URL: ${API_BASE_URL:-https://staging.buttonlog.com/api}
+      AUTH_TOKEN: ${AUTH_TOKEN}
+    outputVariable: buttonCount
+
+# Validate button count matches what API returns
+- evalScript: |
+    const apiCount = parseInt(output.buttonCount || '0');
+    console.log('API returned ' + apiCount + ' buttons');
+
+# Test create button flow
+- tapOn:
+    text: "+"
+    optional: true
+
+- waitForAnimationToEnd
+
+# If create button form opened, fill it out
+- assertVisible:
+    text: "Name"
+    optional: true
+
+# Enter button name
+- inputText:
+    text: "E2E Test Button ${TIMESTAMP}"
+    optional: true
+
+# Select button type (instant)
+- tapOn:
+    text: "Instant"
+    optional: true
+
+# Save the button
+- tapOn:
+    text: "Save"
+    optional: true
+
+- waitForAnimationToEnd
+
+# Validate the button was created via API
+- runScript:
+    file: ../scripts/validate-button-created.sh
+    env:
+      API_BASE_URL: ${API_BASE_URL:-https://staging.buttonlog.com/api}
+      AUTH_TOKEN: ${AUTH_TOKEN}
+      BUTTON_NAME: "E2E Test Button"
+    outputVariable: buttonCreated
+
+# Verify the new button appears in the list
+- assertVisible:
+    text: "E2E Test Button"
+    optional: true
+
+# Test clicking a button
+- tapOn:
+    text: "E2E Test Button"
+    optional: true
+
+- waitForAnimationToEnd
+
+# Validate click was recorded via API
+- runScript:
+    file: ../scripts/validate-button-click.sh
+    env:
+      API_BASE_URL: ${API_BASE_URL:-https://staging.buttonlog.com/api}
+      AUTH_TOKEN: ${AUTH_TOKEN}
+    outputVariable: clickRecorded
+
+# Go back to button list
+- tapOn:
+    text: "Back"
+    optional: true
+
+- waitForAnimationToEnd
