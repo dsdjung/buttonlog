@@ -22,6 +22,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ButtonsViewModelTest {
@@ -38,15 +39,15 @@ class ButtonsViewModelTest {
         type = ButtonType.INSTANT,
         icon = "star",
         color = "#007AFF",
-        clickCount = 5,
+        isActive = true,
         currentState = ButtonState.IDLE,
-        isActive = false,
+        stateChangedAt = null,
         alertsEnabled = true,
         autoStopEnabled = false,
         calendarSyncEnabled = false,
-        createdAt = "2024-01-01T00:00:00Z",
-        updatedAt = "2024-01-01T00:00:00Z",
-        latestClick = null
+        userId = "user-1",
+        createdAt = Date(),
+        updatedAt = Date()
     )
 
     @Before

@@ -1,16 +1,19 @@
 package com.buttonlog.app.data.repository
 
 import app.cash.turbine.test
-import com.buttonlog.app.data.api.APIResponse
 import com.buttonlog.app.data.api.APIService
-import com.buttonlog.app.data.api.CreateButtonRequest
-import com.buttonlog.app.data.api.UpdateButtonRequest
+import com.buttonlog.app.data.model.ApiError
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonClick
+import com.buttonlog.app.data.model.ButtonClickResponse
 import com.buttonlog.app.data.model.ButtonFormData
+import com.buttonlog.app.data.model.ButtonHistoryResponse
+import com.buttonlog.app.data.model.ButtonResponse
+import com.buttonlog.app.data.model.ButtonsResponse
 import com.buttonlog.app.data.model.ButtonState
 import com.buttonlog.app.data.model.ButtonType
 import com.google.common.truth.Truth.assertThat
+import com.google.gson.Gson
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -18,12 +21,15 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ButtonRepositoryTest {
 
     private lateinit var apiService: APIService
     private lateinit var repository: ButtonRepository
+
+    private val testDate = Date()
 
     private val testButton = Button(
         id = "test-id-1",
@@ -32,42 +38,47 @@ class ButtonRepositoryTest {
         type = ButtonType.INSTANT,
         icon = "star",
         color = "#007AFF",
-        clickCount = 5,
+        isActive = true,
         currentState = ButtonState.IDLE,
-        isActive = false,
+        stateChangedAt = null,
         alertsEnabled = true,
         autoStopEnabled = false,
         calendarSyncEnabled = false,
-        createdAt = "2024-01-01T00:00:00Z",
-        updatedAt = "2024-01-01T00:00:00Z",
-        latestClick = null
+        userId = "user-1",
+        createdAt = testDate,
+        updatedAt = testDate
     )
 
     private val testButtonClick = ButtonClick(
         id = "click-1",
         buttonId = "test-id-1",
-        action = "click",
-        clickedAt = "2024-01-01T12:00:00Z",
+        userId = "user-1",
+        clickedAt = testDate,
         duration = null,
-        location = null,
+        locationLat = null,
+        locationLng = null,
         device = "Test Device",
-        platform = "android"
+        platform = "android",
+        action = "click",
+        selectedChoice = null,
+        createdAt = testDate
     )
 
     @Before
     fun setup() {
         apiService = mockk()
-        repository = ButtonRepository(apiService)
+        repository = ButtonRepository(apiService, Gson())
     }
 
     @Test
     fun `fetchButtons success updates buttons flow`() = runTest {
         // Given
         val buttons = listOf(testButton)
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = buttons,
-            error = null
+            error = null,
+            meta = null
         )
 
         // When
@@ -83,13 +94,15 @@ class ButtonRepositoryTest {
     @Test
     fun `fetchButtons failure updates error flow`() = runTest {
         // Given
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = false,
             data = null,
-            error = com.buttonlog.app.data.api.APIError(
+            error = ApiError(
                 code = "ERROR",
-                message = "Network error"
-            )
+                message = "Network error",
+                details = null
+            ),
+            meta = null
         )
 
         // When
@@ -118,10 +131,11 @@ class ButtonRepositoryTest {
     @Test
     fun `fetchButtons updates loading state correctly`() = runTest {
         // Given
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = emptyList(),
-            error = null
+            error = null,
+            meta = null
         )
 
         // Then - verify loading is false after completion
@@ -141,10 +155,11 @@ class ButtonRepositoryTest {
             icon = "star",
             color = "#FF0000"
         )
-        coEvery { apiService.createButton(any()) } returns APIResponse(
+        coEvery { apiService.createButton(any()) } returns ButtonResponse(
             success = true,
             data = testButton,
-            error = null
+            error = null,
+            meta = null
         )
 
         // When
@@ -163,18 +178,20 @@ class ButtonRepositoryTest {
         // Given
         val formData = ButtonFormData(
             name = "New Button",
-            description = null,
+            description = "",
             type = ButtonType.INSTANT,
             icon = "star",
             color = "#FF0000"
         )
-        coEvery { apiService.createButton(any()) } returns APIResponse(
+        coEvery { apiService.createButton(any()) } returns ButtonResponse(
             success = false,
             data = null,
-            error = com.buttonlog.app.data.api.APIError(
+            error = ApiError(
                 code = "ERROR",
-                message = "Validation failed"
-            )
+                message = "Validation failed",
+                details = null
+            ),
+            meta = null
         )
 
         // When
@@ -188,18 +205,20 @@ class ButtonRepositoryTest {
     @Test
     fun `updateButton success updates button in list`() = runTest {
         // Given - First add a button to the list
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = listOf(testButton),
-            error = null
+            error = null,
+            meta = null
         )
         repository.fetchButtons()
 
         val updatedButton = testButton.copy(name = "Updated Name")
-        coEvery { apiService.updateButton(testButton.id, any()) } returns APIResponse(
+        coEvery { apiService.updateButton(testButton.id, any()) } returns ButtonResponse(
             success = true,
             data = updatedButton,
-            error = null
+            error = null,
+            meta = null
         )
 
         // When
@@ -213,10 +232,11 @@ class ButtonRepositoryTest {
     @Test
     fun `deleteButton success removes button from list`() = runTest {
         // Given - First add a button to the list
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = listOf(testButton),
-            error = null
+            error = null,
+            meta = null
         )
         repository.fetchButtons()
 
@@ -235,15 +255,17 @@ class ButtonRepositoryTest {
     @Test
     fun `clickButton success returns click and refreshes buttons`() = runTest {
         // Given
-        coEvery { apiService.clickButton(testButton.id) } returns APIResponse(
+        coEvery { apiService.clickButton(testButton.id) } returns ButtonClickResponse(
             success = true,
             data = testButtonClick,
-            error = null
+            error = null,
+            meta = null
         )
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
-            data = listOf(testButton.copy(clickCount = 6)),
-            error = null
+            data = listOf(testButton),
+            error = null,
+            meta = null
         )
 
         // When
@@ -258,10 +280,11 @@ class ButtonRepositoryTest {
     @Test
     fun `getButton returns button from list`() = runTest {
         // Given
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = listOf(testButton),
-            error = null
+            error = null,
+            meta = null
         )
         repository.fetchButtons()
 
@@ -275,10 +298,11 @@ class ButtonRepositoryTest {
     @Test
     fun `getButton returns null for non-existent id`() = runTest {
         // Given
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = listOf(testButton),
-            error = null
+            error = null,
+            meta = null
         )
         repository.fetchButtons()
 
@@ -296,10 +320,11 @@ class ButtonRepositoryTest {
         val button2 = testButton.copy(id = "2", name = "Water Tracker")
         val button3 = testButton.copy(id = "3", name = "Daily Exercise Log")
 
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = listOf(button1, button2, button3),
-            error = null
+            error = null,
+            meta = null
         )
         repository.fetchButtons()
 
@@ -314,10 +339,11 @@ class ButtonRepositoryTest {
     @Test
     fun `searchButtons with empty query returns all buttons`() = runTest {
         // Given
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = listOf(testButton),
-            error = null
+            error = null,
+            meta = null
         )
         repository.fetchButtons()
 
@@ -332,22 +358,23 @@ class ButtonRepositoryTest {
     fun `getButtonsByType filters correctly`() = runTest {
         // Given
         val instantButton = testButton.copy(id = "1", type = ButtonType.INSTANT)
-        val timedButton = testButton.copy(id = "2", type = ButtonType.TIMED)
-        val stateButton = testButton.copy(id = "3", type = ButtonType.STATE)
+        val toggleButton = testButton.copy(id = "2", type = ButtonType.TOGGLE)
+        val oneTimeButton = testButton.copy(id = "3", type = ButtonType.ONE_TIME)
 
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
-            data = listOf(instantButton, timedButton, stateButton),
-            error = null
+            data = listOf(instantButton, toggleButton, oneTimeButton),
+            error = null,
+            meta = null
         )
         repository.fetchButtons()
 
         // When
-        val timedButtons = repository.getButtonsByType(ButtonType.TIMED)
+        val toggleButtons = repository.getButtonsByType(ButtonType.TOGGLE)
 
         // Then
-        assertThat(timedButtons).hasSize(1)
-        assertThat(timedButtons.first().id).isEqualTo("2")
+        assertThat(toggleButtons).hasSize(1)
+        assertThat(toggleButtons.first().id).isEqualTo("2")
     }
 
     @Test
@@ -356,10 +383,11 @@ class ButtonRepositoryTest {
         val activeButton = testButton.copy(id = "1", isActive = true)
         val inactiveButton = testButton.copy(id = "2", isActive = false)
 
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = true,
             data = listOf(activeButton, inactiveButton),
-            error = null
+            error = null,
+            meta = null
         )
         repository.fetchButtons()
 
@@ -374,10 +402,11 @@ class ButtonRepositoryTest {
     @Test
     fun `clearError resets error state`() = runTest {
         // Given - First cause an error
-        coEvery { apiService.getButtons() } returns APIResponse(
+        coEvery { apiService.getButtons() } returns ButtonsResponse(
             success = false,
             data = null,
-            error = com.buttonlog.app.data.api.APIError(code = "ERROR", message = "Some error")
+            error = ApiError(code = "ERROR", message = "Some error", details = null),
+            meta = null
         )
         repository.fetchButtons()
 
@@ -399,10 +428,11 @@ class ButtonRepositoryTest {
     fun `getButtonHistory success returns click history`() = runTest {
         // Given
         val clicks = listOf(testButtonClick)
-        coEvery { apiService.getButtonHistory(testButton.id, 50) } returns APIResponse(
+        coEvery { apiService.getButtonHistory(testButton.id, 50) } returns ButtonHistoryResponse(
             success = true,
             data = clicks,
-            error = null
+            error = null,
+            meta = null
         )
 
         // When
@@ -416,10 +446,11 @@ class ButtonRepositoryTest {
     @Test
     fun `getButtonHistory failure returns error`() = runTest {
         // Given
-        coEvery { apiService.getButtonHistory(testButton.id, 50) } returns APIResponse(
+        coEvery { apiService.getButtonHistory(testButton.id, 50) } returns ButtonHistoryResponse(
             success = false,
             data = null,
-            error = com.buttonlog.app.data.api.APIError(code = "ERROR", message = "Not found")
+            error = ApiError(code = "ERROR", message = "Not found", details = null),
+            meta = null
         )
 
         // When

@@ -1,12 +1,15 @@
 package com.buttonlog.app.ui.viewmodels
 
 import app.cash.turbine.test
+import com.buttonlog.app.data.model.ButtonState
+import com.buttonlog.app.data.model.ButtonType
 import com.buttonlog.app.data.model.Friend
 import com.buttonlog.app.data.model.FriendButton
 import com.buttonlog.app.data.model.FriendPermissions
 import com.buttonlog.app.data.model.FriendPermissionUpdate
 import com.buttonlog.app.data.model.FriendshipStatus
 import com.buttonlog.app.data.model.PublicUser
+import com.buttonlog.app.data.repository.ActivityPage
 import com.buttonlog.app.data.repository.FriendsRepository
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
@@ -24,7 +27,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FriendsViewModelTest {
@@ -38,7 +40,9 @@ class FriendsViewModelTest {
         id = "user-1",
         username = "testuser",
         displayName = "Test User",
-        avatar = null
+        firstName = null,
+        lastName = null,
+        profileVisibility = "public"
     )
 
     private val testFriend = Friend(
@@ -52,7 +56,8 @@ class FriendsViewModelTest {
             receiveNotifications = true,
             canComment = false
         ),
-        createdAt = Date()
+        createdAt = "2024-01-01T00:00:00Z",
+        updatedAt = "2024-01-01T00:00:00Z"
     )
 
     private val pendingFriend = Friend(
@@ -66,7 +71,8 @@ class FriendsViewModelTest {
             receiveNotifications = true,
             canComment = false
         ),
-        createdAt = Date()
+        createdAt = "2024-01-01T00:00:00Z",
+        updatedAt = "2024-01-01T00:00:00Z"
     )
 
     @Before
@@ -235,9 +241,10 @@ class FriendsViewModelTest {
     fun `updateFriendPermissions calls repository and updates state`() = runTest {
         // Given
         val update = FriendPermissionUpdate(
-            canViewHistory = true,
-            canViewButtons = true,
-            canReceiveAlerts = false
+            canSeeButtons = true,
+            canSeeActivity = true,
+            receiveNotifications = false,
+            canComment = false
         )
         val updatedPermissions = FriendPermissions(
             canSeeButtons = true,
@@ -265,10 +272,19 @@ class FriendsViewModelTest {
             FriendButton(
                 id = "button-1",
                 name = "Friend's Button",
-                type = "instant",
+                description = null,
+                type = ButtonType.INSTANT,
                 icon = "star",
                 color = "#FF0000",
-                currentState = "idle",
+                isActive = true,
+                currentState = ButtonState.IDLE,
+                stateChangedAt = null,
+                alertsEnabled = true,
+                autoStopEnabled = false,
+                calendarSyncEnabled = false,
+                userId = "user-1",
+                createdAt = "2024-01-01T00:00:00Z",
+                updatedAt = "2024-01-01T00:00:00Z",
                 latestClickAt = null,
                 latestClickAction = null,
                 latestClickLocation = null,
@@ -298,8 +314,8 @@ class FriendsViewModelTest {
             FriendPermissions(true, true, true, false)
         )
         coEvery { friendsRepository.getFriendButtons(any()) } returns Result.success(emptyList())
-        coEvery { friendsRepository.getFriendActivity(any(), any()) } returns Result.success(
-            com.buttonlog.app.data.model.FriendActivityPage(emptyList(), false, null)
+        coEvery { friendsRepository.getFriendActivity(any(), any(), any()) } returns Result.success(
+            ActivityPage(emptyList(), false, null)
         )
 
         // When
@@ -315,7 +331,7 @@ class FriendsViewModelTest {
         // Verify data loading was triggered
         coVerify { friendsRepository.getFriendPermissions(testFriend.friendId) }
         coVerify { friendsRepository.getFriendButtons(testFriend.friendId) }
-        coVerify { friendsRepository.getFriendActivity(testFriend.friendId, null) }
+        coVerify { friendsRepository.getFriendActivity(testFriend.friendId, any(), any()) }
     }
 
     @Test
@@ -382,6 +398,6 @@ class FriendsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then - should not call repository since hasMore is false
-        coVerify(exactly = 0) { friendsRepository.getFriendActivity(any(), any()) }
+        coVerify(exactly = 0) { friendsRepository.getFriendActivity(any(), any(), any()) }
     }
 }

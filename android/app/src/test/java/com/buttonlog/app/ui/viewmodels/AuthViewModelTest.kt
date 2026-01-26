@@ -1,6 +1,8 @@
 package com.buttonlog.app.ui.viewmodels
 
 import app.cash.turbine.test
+import com.buttonlog.app.data.model.AuthUserData
+import com.buttonlog.app.data.model.User
 import com.buttonlog.app.data.repository.AuthRepository
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
@@ -26,6 +28,29 @@ class AuthViewModelTest {
     private lateinit var viewModel: AuthViewModel
 
     private val testDispatcher = StandardTestDispatcher()
+
+    private val testUser = User(
+        id = "test-user-id",
+        email = "test@example.com",
+        username = "testuser",
+        displayName = "Test User",
+        firstName = null,
+        lastName = null,
+        profileVisibility = "public",
+        activityVisibility = "friends",
+        subscriptionTier = "free",
+        isActive = true,
+        emailVerified = true,
+        onboardingCompleted = false,
+        createdAt = "2024-01-01T00:00:00Z",
+        updatedAt = "2024-01-01T00:00:00Z"
+    )
+
+    private val testAuthUserData = AuthUserData(
+        user = testUser,
+        token = "test-token",
+        refreshToken = "test-refresh-token"
+    )
 
     @Before
     fun setup() {
@@ -65,7 +90,7 @@ class AuthViewModelTest {
     @Test
     fun `login calls repository with correct credentials`() = runTest {
         // Given
-        coEvery { authRepository.login("test@example.com", "password123") } returns Result.success(Unit)
+        coEvery { authRepository.login("test@example.com", "password123") } returns Result.success(testAuthUserData)
 
         // When
         viewModel.login("test@example.com", "password123")
@@ -78,7 +103,7 @@ class AuthViewModelTest {
     @Test
     fun `login sets loading state during operation`() = runTest {
         // Given
-        coEvery { authRepository.login(any(), any()) } returns Result.success(Unit)
+        coEvery { authRepository.login(any(), any()) } returns Result.success(testAuthUserData)
 
         // When
         viewModel.login("test@example.com", "password123")
@@ -127,7 +152,7 @@ class AuthViewModelTest {
     @Test
     fun `register with matching passwords calls repository`() = runTest {
         // Given
-        coEvery { authRepository.register(any(), any(), any()) } returns Result.success(Unit)
+        coEvery { authRepository.register(any(), any(), any()) } returns Result.success(testAuthUserData)
 
         // When
         viewModel.register("test@example.com", "password123", "password123")
@@ -140,7 +165,7 @@ class AuthViewModelTest {
     @Test
     fun `register sets loading state during operation`() = runTest {
         // Given
-        coEvery { authRepository.register(any(), any(), any()) } returns Result.success(Unit)
+        coEvery { authRepository.register(any(), any(), any()) } returns Result.success(testAuthUserData)
 
         // When
         viewModel.register("test@example.com", "password123", "password123")
@@ -218,7 +243,7 @@ class AuthViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Setup for success
-        coEvery { authRepository.login(any(), any()) } returns Result.success(Unit)
+        coEvery { authRepository.login(any(), any()) } returns Result.success(testAuthUserData)
 
         // When
         viewModel.login("test@example.com", "correct")

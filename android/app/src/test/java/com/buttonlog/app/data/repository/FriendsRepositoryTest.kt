@@ -1,18 +1,22 @@
 package com.buttonlog.app.data.repository
 
 import app.cash.turbine.test
-import com.buttonlog.app.data.api.APIResponse
 import com.buttonlog.app.data.api.APIService
-import com.buttonlog.app.data.api.FriendActivityResponse
 import com.buttonlog.app.data.api.FriendPermissionUpdateRequest
 import com.buttonlog.app.data.api.FriendRequestBody
-import com.buttonlog.app.data.api.PaginationMeta
+import com.buttonlog.app.data.api.GenericResponse
 import com.buttonlog.app.data.model.ActivityCursor
+import com.buttonlog.app.data.model.ActivityMeta
+import com.buttonlog.app.data.model.ApiError
 import com.buttonlog.app.data.model.Friend
 import com.buttonlog.app.data.model.FriendActivity
+import com.buttonlog.app.data.model.FriendActivityResponse
 import com.buttonlog.app.data.model.FriendButton
+import com.buttonlog.app.data.model.FriendButtonsResponse
 import com.buttonlog.app.data.model.FriendPermissions
+import com.buttonlog.app.data.model.FriendPermissionsResponse
 import com.buttonlog.app.data.model.FriendPermissionUpdate
+import com.buttonlog.app.data.model.FriendsResponse
 import com.buttonlog.app.data.model.FriendshipStatus
 import com.buttonlog.app.data.model.PublicUser
 import com.buttonlog.app.data.model.ButtonType
@@ -36,7 +40,9 @@ class FriendsRepositoryTest {
         id = "user-1",
         username = "testuser",
         displayName = "Test User",
-        avatar = null
+        firstName = null,
+        lastName = null,
+        profileVisibility = "public"
     )
 
     private val testFriend = Friend(
@@ -50,16 +56,26 @@ class FriendsRepositoryTest {
             receiveNotifications = true,
             canComment = false
         ),
-        createdAt = "2024-01-01T00:00:00Z"
+        createdAt = "2024-01-01T00:00:00Z",
+        updatedAt = "2024-01-01T00:00:00Z"
     )
 
     private val testFriendButton = FriendButton(
         id = "button-1",
         name = "Test Button",
+        description = null,
         type = ButtonType.INSTANT,
         icon = "star",
         color = "#007AFF",
+        isActive = true,
         currentState = ButtonState.IDLE,
+        stateChangedAt = null,
+        alertsEnabled = true,
+        autoStopEnabled = false,
+        calendarSyncEnabled = false,
+        userId = "user-1",
+        createdAt = "2024-01-01T00:00:00Z",
+        updatedAt = "2024-01-01T00:00:00Z",
         latestClickAt = "2024-01-01T12:00:00Z",
         latestClickAction = "click",
         latestClickLocation = null,
@@ -72,10 +88,15 @@ class FriendsRepositoryTest {
         buttonId = "button-1",
         buttonName = "Test Button",
         buttonType = "instant",
+        buttonIcon = "star",
         buttonColor = "#007AFF",
-        action = "click",
+        userId = "user-1",
         clickedAt = "2024-01-01T12:00:00Z",
-        duration = null
+        duration = null,
+        action = "click",
+        device = "Android",
+        platform = "android",
+        createdAt = "2024-01-01T12:00:00Z"
     )
 
     @Before
@@ -88,7 +109,7 @@ class FriendsRepositoryTest {
     fun `fetchFriends success updates friends flow`() = runTest {
         // Given
         val friends = listOf(testFriend)
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = true,
             data = friends,
             error = null
@@ -106,12 +127,13 @@ class FriendsRepositoryTest {
     @Test
     fun `fetchFriends failure updates error flow`() = runTest {
         // Given
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = false,
             data = emptyList(),
-            error = com.buttonlog.app.data.api.APIError(
+            error = ApiError(
                 code = "ERROR",
-                message = "Network error"
+                message = "Network error",
+                details = null
             )
         )
 
@@ -128,7 +150,7 @@ class FriendsRepositoryTest {
     fun `acceptedFriends returns only accepted friends`() = runTest {
         // Given
         val pendingFriend = testFriend.copy(id = "2", status = FriendshipStatus.PENDING)
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = true,
             data = listOf(testFriend, pendingFriend),
             error = null
@@ -147,7 +169,7 @@ class FriendsRepositoryTest {
     fun `pendingFriendRequests returns only pending friends`() = runTest {
         // Given
         val pendingFriend = testFriend.copy(id = "2", status = FriendshipStatus.PENDING)
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = true,
             data = listOf(testFriend, pendingFriend),
             error = null
@@ -165,9 +187,9 @@ class FriendsRepositoryTest {
     @Test
     fun `sendFriendRequest success`() = runTest {
         // Given
-        coEvery { apiService.sendFriendRequest(any()) } returns APIResponse(
+        coEvery { apiService.sendFriendRequest(any()) } returns GenericResponse(
             success = true,
-            data = Unit,
+            data = null,
             error = null
         )
 
@@ -182,12 +204,13 @@ class FriendsRepositoryTest {
     @Test
     fun `sendFriendRequest failure returns error`() = runTest {
         // Given
-        coEvery { apiService.sendFriendRequest(any()) } returns APIResponse(
+        coEvery { apiService.sendFriendRequest(any()) } returns GenericResponse(
             success = false,
-            data = Unit,
-            error = com.buttonlog.app.data.api.APIError(
+            data = null,
+            error = ApiError(
                 code = "USER_NOT_FOUND",
-                message = "User not found"
+                message = "User not found",
+                details = null
             )
         )
 
@@ -202,12 +225,12 @@ class FriendsRepositoryTest {
     @Test
     fun `acceptFriendRequest success refetches friends`() = runTest {
         // Given
-        coEvery { apiService.acceptFriendRequest("friendship-1") } returns APIResponse(
+        coEvery { apiService.acceptFriendRequest("friendship-1") } returns GenericResponse(
             success = true,
-            data = Unit,
+            data = null,
             error = null
         )
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = true,
             data = listOf(testFriend),
             error = null
@@ -224,16 +247,16 @@ class FriendsRepositoryTest {
     @Test
     fun `removeFriend success removes friend from list`() = runTest {
         // Given - first load friends
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = true,
             data = listOf(testFriend),
             error = null
         )
         repository.fetchFriends()
 
-        coEvery { apiService.removeFriend("friendship-1") } returns APIResponse(
+        coEvery { apiService.removeFriend("friendship-1") } returns GenericResponse(
             success = true,
-            data = Unit,
+            data = null,
             error = null
         )
 
@@ -256,7 +279,7 @@ class FriendsRepositoryTest {
             receiveNotifications = true,
             canComment = false
         )
-        coEvery { apiService.getFriendPermissions("friend-1") } returns APIResponse(
+        coEvery { apiService.getFriendPermissions("friend-1") } returns FriendPermissionsResponse(
             success = true,
             data = permissions,
             error = null
@@ -285,7 +308,7 @@ class FriendsRepositoryTest {
             receiveNotifications = false,
             canComment = false
         )
-        coEvery { apiService.updateFriendPermissions("friend-1", any()) } returns APIResponse(
+        coEvery { apiService.updateFriendPermissions("friend-1", any()) } returns FriendPermissionsResponse(
             success = true,
             data = updatedPermissions,
             error = null
@@ -303,7 +326,7 @@ class FriendsRepositoryTest {
     fun `getFriendButtons success returns buttons`() = runTest {
         // Given
         val buttons = listOf(testFriendButton)
-        coEvery { apiService.getFriendButtons("friend-1") } returns APIResponse(
+        coEvery { apiService.getFriendButtons("friend-1") } returns FriendButtonsResponse(
             success = true,
             data = buttons,
             error = null
@@ -320,12 +343,13 @@ class FriendsRepositoryTest {
     @Test
     fun `getFriendButtons failure returns error`() = runTest {
         // Given
-        coEvery { apiService.getFriendButtons("friend-1") } returns APIResponse(
+        coEvery { apiService.getFriendButtons("friend-1") } returns FriendButtonsResponse(
             success = false,
             data = emptyList(),
-            error = com.buttonlog.app.data.api.APIError(
+            error = ApiError(
                 code = "NOT_FRIENDS",
-                message = "Not friends"
+                message = "Not friends",
+                details = null
             )
         )
 
@@ -344,7 +368,7 @@ class FriendsRepositoryTest {
             success = true,
             data = activities,
             error = null,
-            meta = PaginationMeta(hasMore = false, nextCursor = null)
+            meta = ActivityMeta(count = 1, limit = 20, hasMore = false, nextCursor = null)
         )
 
         // When
@@ -366,7 +390,12 @@ class FriendsRepositoryTest {
             success = true,
             data = activities,
             error = null,
-            meta = PaginationMeta(hasMore = true, nextCursor = ActivityCursor("activity-2", "2024-01-01T10:00:00Z"))
+            meta = ActivityMeta(
+                count = 1,
+                limit = 20,
+                hasMore = true,
+                nextCursor = ActivityCursor(id = "activity-2", clickedAt = "2024-01-01T10:00:00Z")
+            )
         )
 
         // When
@@ -385,9 +414,10 @@ class FriendsRepositoryTest {
         coEvery { apiService.getFriendActivity("friend-1", 20, null, null) } returns FriendActivityResponse(
             success = false,
             data = emptyList(),
-            error = com.buttonlog.app.data.api.APIError(
+            error = ApiError(
                 code = "PERMISSION_DENIED",
-                message = "Permission denied to view activity"
+                message = "Permission denied to view activity",
+                details = null
             ),
             meta = null
         )
@@ -403,7 +433,7 @@ class FriendsRepositoryTest {
     @Test
     fun `getFriend returns friend from list`() = runTest {
         // Given
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = true,
             data = listOf(testFriend),
             error = null
@@ -420,7 +450,7 @@ class FriendsRepositoryTest {
     @Test
     fun `getFriend returns null for non-existent friend`() = runTest {
         // Given
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = true,
             data = listOf(testFriend),
             error = null
@@ -437,10 +467,10 @@ class FriendsRepositoryTest {
     @Test
     fun `clearError resets error state`() = runTest {
         // Given - first cause an error
-        coEvery { apiService.getFriends() } returns APIResponse(
+        coEvery { apiService.getFriends() } returns FriendsResponse(
             success = false,
             data = emptyList(),
-            error = com.buttonlog.app.data.api.APIError(code = "ERROR", message = "Some error")
+            error = ApiError(code = "ERROR", message = "Some error", details = null)
         )
         repository.fetchFriends()
 

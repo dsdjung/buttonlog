@@ -1,11 +1,9 @@
 package com.buttonlog.app.network
 
-import com.buttonlog.app.data.api.APIResponse
-import com.buttonlog.app.data.api.APIError
+import com.buttonlog.app.data.model.ApiError
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Test
@@ -27,6 +25,13 @@ import java.net.UnknownHostException
 class NetworkErrorTests {
 
     private val gson = Gson()
+
+    // Test data class for API response parsing
+    data class TestApiResponse(
+        val success: Boolean = false,
+        val data: Any? = null,
+        val error: ApiError? = null
+    )
 
     // MARK: - Timeout Tests
 
@@ -53,7 +58,7 @@ class NetworkErrorTests {
         val malformedJson = "{ invalid json }"
 
         try {
-            gson.fromJson(malformedJson, APIResponse::class.java)
+            gson.fromJson(malformedJson, TestApiResponse::class.java)
             throw AssertionError("Should have thrown JsonSyntaxException")
         } catch (e: JsonSyntaxException) {
             // Expected
@@ -62,15 +67,13 @@ class NetworkErrorTests {
     }
 
     @Test
-    fun `empty response throws exception`() {
+    fun `empty response parses as null`() {
         val emptyJson = ""
 
-        try {
-            gson.fromJson(emptyJson, APIResponse::class.java)
-            // Gson returns null for empty string
-        } catch (e: Exception) {
-            // Some form of exception is acceptable
-        }
+        val response = gson.fromJson(emptyJson, TestApiResponse::class.java)
+
+        // Gson returns null for empty string
+        assertThat(response).isNull()
     }
 
     @Test
@@ -82,7 +85,7 @@ class NetworkErrorTests {
             }
         """.trimIndent()
 
-        val response = gson.fromJson(unexpectedJson, APIResponse::class.java)
+        val response = gson.fromJson(unexpectedJson, TestApiResponse::class.java)
 
         // Fields should be null/default when not present
         assertThat(response.success).isFalse()
@@ -103,7 +106,7 @@ class NetworkErrorTests {
             }
         """.trimIndent()
 
-        val response = gson.fromJson(errorJson, APIResponse::class.java)
+        val response = gson.fromJson(errorJson, TestApiResponse::class.java)
 
         assertThat(response.success).isFalse()
         assertThat(response.error).isNotNull()
@@ -123,7 +126,7 @@ class NetworkErrorTests {
             }
         """.trimIndent()
 
-        val response = gson.fromJson(errorJson, APIResponse::class.java)
+        val response = gson.fromJson(errorJson, TestApiResponse::class.java)
 
         assertThat(response.success).isFalse()
         assertThat(response.error?.code).isEqualTo("VALIDATION_ERROR")
@@ -142,7 +145,7 @@ class NetworkErrorTests {
             }
         """.trimIndent()
 
-        val response = gson.fromJson(errorJson, APIResponse::class.java)
+        val response = gson.fromJson(errorJson, TestApiResponse::class.java)
 
         assertThat(response.success).isFalse()
         assertThat(response.error?.code).isEqualTo("INTERNAL_SERVER_ERROR")
@@ -160,7 +163,7 @@ class NetworkErrorTests {
             }
         """.trimIndent()
 
-        val response = gson.fromJson(errorJson, APIResponse::class.java)
+        val response = gson.fromJson(errorJson, TestApiResponse::class.java)
 
         assertThat(response.success).isFalse()
         assertThat(response.error?.code).isEqualTo("RATE_LIMITED")
@@ -232,15 +235,11 @@ class NetworkErrorTests {
         )
 
         retryableExceptions.forEach { exception ->
-            assertThat(isRetryableException(exception))
-                .named("${exception::class.simpleName} should be retryable")
-                .isTrue()
+            assertThat(isRetryableException(exception)).isTrue()
         }
 
         nonRetryableExceptions.forEach { exception ->
-            assertThat(isRetryableException(exception))
-                .named("${exception::class.simpleName} should not be retryable")
-                .isFalse()
+            assertThat(isRetryableException(exception)).isFalse()
         }
     }
 
@@ -252,15 +251,11 @@ class NetworkErrorTests {
         val errorCodes = listOf(400, 401, 403, 404, 422, 429, 500, 502, 503, 504)
 
         successCodes.forEach { code ->
-            assertThat(isSuccessStatusCode(code))
-                .named("$code should be success")
-                .isTrue()
+            assertThat(isSuccessStatusCode(code)).isTrue()
         }
 
         errorCodes.forEach { code ->
-            assertThat(isSuccessStatusCode(code))
-                .named("$code should not be success")
-                .isFalse()
+            assertThat(isSuccessStatusCode(code)).isFalse()
         }
     }
 
@@ -270,15 +265,11 @@ class NetworkErrorTests {
         val nonClientErrorCodes = listOf(200, 201, 500, 503)
 
         clientErrorCodes.forEach { code ->
-            assertThat(isClientError(code))
-                .named("$code should be client error")
-                .isTrue()
+            assertThat(isClientError(code)).isTrue()
         }
 
         nonClientErrorCodes.forEach { code ->
-            assertThat(isClientError(code))
-                .named("$code should not be client error")
-                .isFalse()
+            assertThat(isClientError(code)).isFalse()
         }
     }
 
@@ -288,15 +279,11 @@ class NetworkErrorTests {
         val nonServerErrorCodes = listOf(200, 201, 400, 401, 404)
 
         serverErrorCodes.forEach { code ->
-            assertThat(isServerErrorCode(code))
-                .named("$code should be server error")
-                .isTrue()
+            assertThat(isServerErrorCode(code)).isTrue()
         }
 
         nonServerErrorCodes.forEach { code ->
-            assertThat(isServerErrorCode(code))
-                .named("$code should not be server error")
-                .isFalse()
+            assertThat(isServerErrorCode(code)).isFalse()
         }
     }
 
@@ -368,7 +355,7 @@ class NetworkErrorTests {
 
     private fun extractErrorMessage(responseBody: String): String {
         return try {
-            val response = gson.fromJson(responseBody, APIResponse::class.java)
+            val response = gson.fromJson(responseBody, TestApiResponse::class.java)
             response.error?.message ?: "An unknown error occurred"
         } catch (e: Exception) {
             "An unknown error occurred"
