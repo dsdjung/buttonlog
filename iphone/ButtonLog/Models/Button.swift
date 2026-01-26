@@ -357,6 +357,17 @@ enum FriendAlertMode: String, CaseIterable {
     }
 }
 
+// Identifiable wrapper for choices to avoid SwiftUI ForEach index issues
+struct IdentifiedChoice: Identifiable {
+    let id: UUID
+    var text: String
+
+    init(text: String = "") {
+        self.id = UUID()
+        self.text = text
+    }
+}
+
 // Button creation form data
 struct ButtonFormData {
     var name: String = ""
@@ -368,11 +379,40 @@ struct ButtonFormData {
     var autoStopEnabled: Bool = false
     var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var calendarSyncEnabled: Bool = false
-    var choices: [String] = []  // Multiple choice options for one-time buttons
+    var choices: [IdentifiedChoice] = []  // Multiple choice options for one-time buttons
 
     // Friend alert configuration
     var friendAlertMode: FriendAlertMode = .none
     var selectedFriendIds: [String] = []
+
+    /// Initialize with string choices (converts to IdentifiedChoice)
+    init(
+        name: String = "",
+        description: String = "",
+        type: ButtonType = .instant,
+        icon: String = "star.fill",
+        color: String = "#00BFA5",
+        alertsEnabled: Bool = true,
+        autoStopEnabled: Bool = false,
+        autoStopMinutes: Int? = nil,
+        calendarSyncEnabled: Bool = false,
+        choices: [String] = [],
+        friendAlertMode: FriendAlertMode = .none,
+        selectedFriendIds: [String] = []
+    ) {
+        self.name = name
+        self.description = description
+        self.type = type
+        self.icon = icon
+        self.color = color
+        self.alertsEnabled = alertsEnabled
+        self.autoStopEnabled = autoStopEnabled
+        self.autoStopMinutes = autoStopMinutes
+        self.calendarSyncEnabled = calendarSyncEnabled
+        self.choices = choices.map { IdentifiedChoice(text: $0) }
+        self.friendAlertMode = friendAlertMode
+        self.selectedFriendIds = selectedFriendIds
+    }
 
     var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -380,8 +420,13 @@ struct ButtonFormData {
 
     /// True if this form has valid choices (for one-time buttons)
     var hasValidChoices: Bool {
-        let validChoices = choices.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        let validChoices = choices.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         return validChoices.count >= 2
+    }
+
+    /// Get the choice strings for display/submission
+    var choiceStrings: [String] {
+        choices.map { $0.text }
     }
 
     /// Available auto-stop duration options
@@ -418,7 +463,7 @@ struct ButtonFormData {
 
         // Include choices for one-time buttons if valid
         if type == .oneTime {
-            let validChoices = choices.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            let validChoices = choices.map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
                                       .filter { !$0.isEmpty }
             if validChoices.count >= 2 {
                 body["choices"] = validChoices

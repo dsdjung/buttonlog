@@ -6,7 +6,7 @@ struct CreateButtonView: View {
 
     @State private var formData: ButtonFormData = {
         var data = ButtonFormData()
-        data.choices = ["", ""]  // Initialize with 2 empty choices for one-time buttons
+        data.choices = [IdentifiedChoice(), IdentifiedChoice()]  // Initialize with 2 empty choices for one-time buttons
         return data
     }()
     @State private var isLoading = false
@@ -39,7 +39,7 @@ struct CreateButtonView: View {
                                 color: .purple
                             ) {
                                 formData.type = .oneTime
-                                formData.choices = ["Yes", "No"]
+                                formData.choices = [IdentifiedChoice(text: "Yes"), IdentifiedChoice(text: "No")]
                             }
 
                             TemplateButton(
@@ -48,7 +48,7 @@ struct CreateButtonView: View {
                                 color: .green
                             ) {
                                 formData.type = .oneTime
-                                formData.choices = ["Done", "Skip"]
+                                formData.choices = [IdentifiedChoice(text: "Done"), IdentifiedChoice(text: "Skip")]
                             }
 
                             TemplateButton(
@@ -57,7 +57,7 @@ struct CreateButtonView: View {
                                 color: .blue
                             ) {
                                 formData.type = .oneTime
-                                formData.choices = ["Good", "Okay", "Bad"]
+                                formData.choices = [IdentifiedChoice(text: "Good"), IdentifiedChoice(text: "Okay"), IdentifiedChoice(text: "Bad")]
                             }
                         }
                         .padding(.vertical, 4)
@@ -90,9 +90,9 @@ struct CreateButtonView: View {
                     }
                     .pickerStyle(.menu)
                     .onChange(of: formData.type) { oldValue, newValue in
-                        // Initialize choices with 2 empty strings when switching to one-time
+                        // Initialize choices with 2 empty choices when switching to one-time
                         if newValue == .oneTime && formData.choices.isEmpty {
-                            formData.choices = ["", ""]
+                            formData.choices = [IdentifiedChoice(), IdentifiedChoice()]
                         }
                     }
                 }
@@ -100,13 +100,13 @@ struct CreateButtonView: View {
                 // Choices Section (only for one-time buttons)
                 if formData.type == .oneTime {
                     Section(header: Text("Choices (Optional)"), footer: Text("Add multiple choice options for this button (minimum 2, maximum 10)")) {
-                        ForEach(formData.choices.indices, id: \.self) { index in
+                        ForEach($formData.choices) { $choice in
                             HStack {
-                                TextField("Choice \(index + 1)", text: $formData.choices[index])
+                                TextField("Choice", text: $choice.text)
 
                                 if formData.choices.count > 2 {
                                     SwiftUI.Button(action: {
-                                        formData.choices.remove(at: index)
+                                        formData.choices.removeAll { $0.id == choice.id }
                                     }) {
                                         Image(systemName: "minus.circle.fill")
                                             .foregroundColor(.red)
@@ -118,7 +118,7 @@ struct CreateButtonView: View {
 
                         if formData.choices.count < 10 {
                             SwiftUI.Button(action: {
-                                formData.choices.append("")
+                                formData.choices.append(IdentifiedChoice())
                             }) {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
@@ -313,7 +313,7 @@ struct ButtonPreview: View {
                         .foregroundColor(.secondary)
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                        ForEach(formData.choices.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, id: \.self) { choice in
+                        ForEach(formData.choiceStrings.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, id: \.self) { choice in
                             SwiftUI.Button(choice) {
                                 // Preview button - no action
                             }
@@ -584,7 +584,7 @@ struct CreateGiftButtonView: View {
 
     @State private var formData: ButtonFormData = {
         var data = ButtonFormData(type: .oneTime)
-        data.choices = ["", ""]  // Initialize with 2 empty choices for one-time buttons
+        data.choices = [IdentifiedChoice(), IdentifiedChoice()]  // Initialize with 2 empty choices for one-time buttons
         return data
     }()
     @State private var giftMessage: String = ""
@@ -623,7 +623,7 @@ struct CreateGiftButtonView: View {
                                 color: .purple
                             ) {
                                 formData.type = .oneTime
-                                formData.choices = ["Yes", "No"]
+                                formData.choices = [IdentifiedChoice(text: "Yes"), IdentifiedChoice(text: "No")]
                             }
 
                             TemplateButton(
@@ -632,7 +632,7 @@ struct CreateGiftButtonView: View {
                                 color: .green
                             ) {
                                 formData.type = .oneTime
-                                formData.choices = ["Done", "Skip"]
+                                formData.choices = [IdentifiedChoice(text: "Done"), IdentifiedChoice(text: "Skip")]
                             }
 
                             TemplateButton(
@@ -641,7 +641,7 @@ struct CreateGiftButtonView: View {
                                 color: .blue
                             ) {
                                 formData.type = .oneTime
-                                formData.choices = ["Good", "Okay", "Bad"]
+                                formData.choices = [IdentifiedChoice(text: "Good"), IdentifiedChoice(text: "Okay"), IdentifiedChoice(text: "Bad")]
                             }
                         }
                         .padding(.vertical, 4)
@@ -674,9 +674,9 @@ struct CreateGiftButtonView: View {
                     }
                     .pickerStyle(.menu)
                     .onChange(of: formData.type) { oldValue, newValue in
-                        // Initialize choices with 2 empty strings when switching to one-time
+                        // Initialize choices with 2 empty choices when switching to one-time
                         if newValue == .oneTime && formData.choices.isEmpty {
-                            formData.choices = ["", ""]
+                            formData.choices = [IdentifiedChoice(), IdentifiedChoice()]
                         }
                     }
                 }
@@ -684,13 +684,13 @@ struct CreateGiftButtonView: View {
                 // Choices Section (only for one-time buttons)
                 if formData.type == .oneTime {
                     Section(header: Text("Choices (Optional)"), footer: Text("Add multiple choice options for this button (minimum 2, maximum 10)")) {
-                        ForEach(formData.choices.indices, id: \.self) { index in
+                        ForEach($formData.choices) { $choice in
                             HStack {
-                                TextField("Choice \(index + 1)", text: $formData.choices[index])
+                                TextField("Choice", text: $choice.text)
 
                                 if formData.choices.count > 2 {
                                     SwiftUI.Button(action: {
-                                        formData.choices.remove(at: index)
+                                        formData.choices.removeAll { $0.id == choice.id }
                                     }) {
                                         Image(systemName: "minus.circle.fill")
                                             .foregroundColor(.red)
@@ -702,7 +702,7 @@ struct CreateGiftButtonView: View {
 
                         if formData.choices.count < 10 {
                             SwiftUI.Button(action: {
-                                formData.choices.append("")
+                                formData.choices.append(IdentifiedChoice())
                             }) {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
@@ -884,7 +884,7 @@ struct GiftButtonPreview: View {
                         .foregroundColor(.secondary)
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                        ForEach(formData.choices.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, id: \.self) { choice in
+                        ForEach(formData.choiceStrings.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, id: \.self) { choice in
                             SwiftUI.Button(choice) {
                                 // Preview button - no action
                             }

@@ -267,11 +267,11 @@ struct EditGiftButtonView: View {
 
                 if formData.type == .oneTime {
                     Section(header: Text("Choices (Optional)")) {
-                        ForEach(formData.choices.indices, id: \.self) { index in
+                        ForEach($formData.choices) { $choice in
                             HStack {
-                                TextField("Choice \(index + 1)", text: $formData.choices[index])
+                                TextField("Choice", text: $choice.text)
                                 SwiftUI.Button(action: {
-                                    formData.choices.remove(at: index)
+                                    formData.choices.removeAll { $0.id == choice.id }
                                 }) {
                                     Image(systemName: "minus.circle.fill")
                                         .foregroundColor(.red)
@@ -281,7 +281,7 @@ struct EditGiftButtonView: View {
 
                         if formData.choices.count < 4 {
                             SwiftUI.Button(action: {
-                                formData.choices.append("")
+                                formData.choices.append(IdentifiedChoice())
                             }) {
                                 Label("Add Choice", systemImage: "plus.circle")
                             }
