@@ -597,6 +597,85 @@ defmodule ButtonLogWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Renders a button icon as an emoji.
+
+  Handles both simple names ("star", "heart") and SF Symbol names ("star.fill", "heart.fill").
+
+  ## Examples
+
+      <.button_icon name="star" />
+      <.button_icon name="star.fill" />
+      <.button_icon name="heart" class="text-2xl" />
+  """
+  attr :name, :string, required: true
+  attr :class, :string, default: nil
+
+  def button_icon(assigns) do
+    # Normalize icon name: remove .fill suffix, convert to simple name
+    normalized = assigns.name
+      |> to_string()
+      |> String.replace(~r/\.fill$/, "")
+      |> String.replace(~r/\.circle.*$/, "")
+      |> String.downcase()
+
+    emoji = case normalized do
+      "star" -> "⭐"
+      "heart" -> "❤️"
+      "bolt" -> "⚡"
+      "flame" -> "🔥"
+      "leaf" -> "🍃"
+      "drop" -> "💧"
+      "sun" -> "☀️"
+      "moon" -> "🌙"
+      "car" -> "🚗"
+      "book" -> "📚"
+      "pencil" -> "✏️"
+      "gear" -> "⚙️"
+      "figure.run" -> "🏃"
+      "figure" -> "🏃"
+      "dumbbell" -> "🏋️"
+      "fork.knife" -> "🍽️"
+      "cup.and.saucer" -> "☕"
+      "bed.double" -> "🛏️"
+      "pills" -> "💊"
+      "cross.case" -> "🏥"
+      "brain" -> "🧠"
+      "gamecontroller" -> "🎮"
+      "tv" -> "📺"
+      "music.note" -> "🎵"
+      "phone" -> "📱"
+      "envelope" -> "✉️"
+      "cart" -> "🛒"
+      "creditcard" -> "💳"
+      "dollarsign" -> "💵"
+      "house" -> "🏠"
+      "briefcase" -> "💼"
+      "graduationcap" -> "🎓"
+      "airplane" -> "✈️"
+      "wifi" -> "📶"
+      "battery.100" -> "🔋"
+      "battery" -> "🔋"
+      "lightbulb" -> "💡"
+      "camera" -> "📷"
+      "gift" -> "🎁"
+      "bell" -> "🔔"
+      "clock" -> "🕐"
+      "calendar" -> "📅"
+      "checkmark" -> "✅"
+      "xmark" -> "❌"
+      "plus" -> "➕"
+      "minus" -> "➖"
+      _ -> "📱"  # Default fallback
+    end
+
+    assigns = assign(assigns, :emoji, emoji)
+
+    ~H"""
+    <span class={@class}><%= @emoji %></span>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

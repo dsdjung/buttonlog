@@ -109,9 +109,9 @@
                     <%= for in_progress <- @summary.in_progress_toggle_buttons do %>
                       <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
                         <div class="flex items-center space-x-3">
-                          <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold" 
+                          <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold"
                                style={"background-color: #{in_progress.button.color}"}>
-                            <%= in_progress.button.icon %>
+                            <.button_icon name={in_progress.button.icon} />
                           </div>
                           <div>
                             <div class="font-medium text-green-900"><%= in_progress.button.name %></div>
@@ -154,9 +154,9 @@
                   <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <div class="flex items-center justify-between mb-3">
                       <div class="flex items-center space-x-3">
-                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold" 
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold"
                              style={"background-color: #{activity.button.color}"}>
-                          <%= activity.button.icon %>
+                          <.button_icon name={activity.button.icon} />
                         </div>
                         <div>
                           <h3 class="text-lg font-semibold text-gray-900"><%= activity.button.name %></h3>
