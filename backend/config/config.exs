@@ -72,22 +72,13 @@ config :buttonlog,
   stripe_cancel_url: "http://localhost:14015/account?payment=cancelled",
   stripe_return_url: "http://localhost:14015/account"
 
-# OAuth Configuration
-  config :ueberauth, Ueberauth,
-    providers: [
-      google: {Ueberauth.Strategy.Google, [
-        client_id: System.get_env("GOOGLE_CLIENT_ID"),
-        client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
-      ]},
-      facebook: {Ueberauth.Strategy.Facebook, [
-        client_id: System.get_env("FACEBOOK_CLIENT_ID"),
-        client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
-      ]},
-      apple: {Ueberauth.Strategy.Apple, [
-        client_id: System.get_env("APPLE_CLIENT_ID"),
-        client_secret: System.get_env("APPLE_CLIENT_SECRET")
-      ]}
-    ]
+# OAuth Configuration - credentials set in runtime.exs
+config :ueberauth, Ueberauth,
+  providers: [
+    google: {Ueberauth.Strategy.Google, []},
+    facebook: {Ueberauth.Strategy.Facebook, []},
+    apple: {Ueberauth.Strategy.Apple, []}
+  ]
 
   # Import environment specific config. This must remain at the bottom
   # of this file so it overrides the configuration defined above.

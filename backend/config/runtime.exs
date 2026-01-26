@@ -48,6 +48,19 @@ if config_env() == :prod do
     secret_key_base: secret_key_base,
     server: true
 
+  # OAuth Configuration - read from environment at runtime
+  config :ueberauth, Ueberauth.Strategy.Google.OAuth,
+    client_id: System.get_env("GOOGLE_CLIENT_ID"),
+    client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
+
+  config :ueberauth, Ueberauth.Strategy.Facebook.OAuth,
+    client_id: System.get_env("FACEBOOK_CLIENT_ID"),
+    client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
+
+  config :ueberauth, Ueberauth.Strategy.Apple.OAuth,
+    client_id: System.get_env("APPLE_CLIENT_ID"),
+    client_secret: System.get_env("APPLE_CLIENT_SECRET")
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key
