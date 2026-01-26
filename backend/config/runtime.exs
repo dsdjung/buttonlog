@@ -131,9 +131,20 @@ end
 
 # Stripe configuration (all environments)
 if stripe_secret_key = System.get_env("STRIPE_SECRET_KEY") do
+  webhook_secret = System.get_env("STRIPE_WEBHOOK_SECRET")
+
+  # Require webhook secret in production for security
+  if config_env() == :prod and is_nil(webhook_secret) do
+    raise """
+    STRIPE_WEBHOOK_SECRET is required in production!
+    Stripe webhooks without signature verification are a security risk.
+    Get your webhook signing secret from the Stripe dashboard.
+    """
+  end
+
   config :stripity_stripe,
     api_key: stripe_secret_key,
-    webhook_secret: System.get_env("STRIPE_WEBHOOK_SECRET")
+    webhook_secret: webhook_secret
 
   # Update Stripe URLs based on host
   base_url =

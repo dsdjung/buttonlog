@@ -11,7 +11,9 @@ config :buttonlog, ButtonLogWeb.Endpoint,
     ip: {0, 0, 0, 0, 0, 0, 0, 0},
     port: String.to_integer(System.get_env("PORT") || "4000")
   ],
-  secret_key_base: System.get_env("SECRET_KEY_BASE")
+  secret_key_base: System.get_env("SECRET_KEY_BASE"),
+  # Force HTTPS in production - redirects HTTP to HTTPS and enables HSTS
+  force_ssl: [hsts: true, subdomains: true, preload: true]
 
 # ## SSL Support
 #

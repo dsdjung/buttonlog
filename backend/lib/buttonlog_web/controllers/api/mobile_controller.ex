@@ -9,17 +9,12 @@ defmodule ButtonLogWeb.API.MobileController do
   def register_device(conn, params) do
     user = conn.assigns.current_user
 
-    IO.puts "=== DEVICE REGISTRATION DEBUG ==="
-    IO.puts "params: #{inspect(params)}"
-
     device_attrs = %{
       device_token: params["device_token"],
       platform: params["platform"],
       app_version: params["app_version"],
       os_version: params["os_version"]
     }
-
-    IO.puts "device_attrs: #{inspect(device_attrs)}"
 
     case Mobile.register_device(device_attrs, user.id) do
       {:ok, connection} ->
@@ -36,8 +31,6 @@ defmodule ButtonLogWeb.API.MobileController do
         })
 
       {:error, changeset} ->
-        IO.puts "=== DEVICE REGISTRATION ERROR ==="
-        IO.puts "changeset errors: #{inspect(changeset.errors)}"
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{

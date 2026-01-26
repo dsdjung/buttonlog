@@ -7,11 +7,6 @@ defmodule ButtonLogWeb.PageController do
   end
 
   def debug(conn, _params) do
-    IO.puts "=== DEBUG CONTROLLER ==="
-    IO.puts "Request reached PageController.debug"
-    IO.puts "Conn: #{inspect(conn)}"
-    IO.puts "========================"
-
     conn
     |> put_resp_content_type("text/plain")
     |> send_resp(200, "ButtonLog debug endpoint reached successfully!")

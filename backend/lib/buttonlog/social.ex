@@ -48,9 +48,6 @@ defmodule ButtonLog.Social do
   Returns the list of friends for a user.
   """
   def get_user_friends(user_id) do
-    IO.puts "=== GET USER FRIENDS DEBUG ==="
-    IO.puts "user_id: #{user_id}"
-
     # Get friends from both directions: where user is user_id and where user is friend_id
     friends_as_user = Repo.all(
       from f in Friendship,
@@ -63,9 +60,6 @@ defmodule ButtonLog.Social do
       where: f.friend_id == ^user_id and f.status == "accepted",
       preload: [:user]
     )
-
-    IO.puts "friends_as_user count: #{length(friends_as_user)}"
-    IO.puts "friends_as_friend count: #{length(friends_as_friend)}"
 
     # Combine both lists and map to consistent format
     all_friends =
@@ -95,11 +89,8 @@ defmodule ButtonLog.Social do
       )
 
     # Remove duplicates (in case both directions exist)
-    unique_friends = all_friends
+    all_friends
     |> Enum.uniq_by(& &1.id)
-
-    IO.puts "total unique friends: #{length(unique_friends)}"
-    unique_friends
   end
 
   @doc """
@@ -130,15 +121,11 @@ defmodule ButtonLog.Social do
   This is a utility function to set up permissions for users who became friends before the notification system was implemented.
   """
   def create_default_notification_permissions_for_friendships() do
-    IO.puts "=== CREATING DEFAULT NOTIFICATION PERMISSIONS ==="
-
     # Get all accepted friendships
     friendships = Repo.all(
       from f in Friendship,
       where: f.status == "accepted"
     )
-
-    IO.puts "Found #{length(friendships)} accepted friendships"
 
     Enum.each(friendships, fn friendship ->
       # Create permissions for both directions
@@ -157,7 +144,6 @@ defmodule ButtonLog.Social do
       }, friendship.friend_id, friendship.user_id)
     end)
 
-    IO.puts "Default notification permissions created for all friendships"
     {:ok, length(friendships)}
   end
 
@@ -192,20 +178,9 @@ defmodule ButtonLog.Social do
   Creates a friendship request.
   """
   def create_friendship(attrs \\ %{}, user_id, friend_id) do
-    IO.puts "=== CREATE FRIENDSHIP DEBUG ==="
-    IO.puts "attrs: #{inspect(attrs)}"
-    IO.puts "user_id: #{user_id}"
-    IO.puts "friend_id: #{friend_id}"
-
-    changeset = %Friendship{}
+    %Friendship{}
     |> Friendship.create_changeset(attrs, user_id, friend_id)
-
-    IO.puts "changeset valid?: #{changeset.valid?}"
-    IO.puts "changeset errors: #{inspect(changeset.errors)}"
-
-    result = Repo.insert(changeset)
-    IO.puts "Repo.insert result: #{inspect(result)}"
-    result
+    |> Repo.insert()
   end
 
   @doc """
@@ -233,79 +208,61 @@ defmodule ButtonLog.Social do
   Accepts a friendship request by the recipient.
   """
   def accept_friend_request(friendship_id, user_id) do
-    IO.puts "=== ACCEPT FRIEND REQUEST DEBUG ==="
-    IO.puts "friendship_id: #{friendship_id}"
-    IO.puts "user_id: #{user_id}"
-
     case get_friendship!(friendship_id) do
       friendship ->
-        IO.puts "Found friendship: #{inspect(friendship)}"
-
         if friendship.friend_id == user_id do
-          IO.puts "User authorized to accept this request"
-
           # Update the existing friendship to accepted
           case update_friendship(friendship, %{status: "accepted"}) do
             {:ok, updated_friendship} ->
-              IO.puts "Updated friendship to accepted: #{inspect(updated_friendship)}"
-
               # Create the reverse friendship so both users can see each other
               reverse_friendship = %Friendship{}
               |> Friendship.create_changeset(%{}, user_id, friendship.user_id)
               |> put_change(:status, "accepted")
 
-              IO.puts "Creating reverse friendship..."
-                                          case Repo.insert(reverse_friendship) do
-                              {:ok, reverse} ->
-                                IO.puts "Reverse friendship created: #{inspect(reverse)}"
+              case Repo.insert(reverse_friendship) do
+                {:ok, _reverse} ->
+                  # Create default notification permissions for both users
+                  ButtonLog.Notifications.upsert_friend_notification_permissions(%{
+                    can_receive_button_notifications: true,
+                    can_receive_friend_requests: true,
+                    can_receive_general_notifications: true,
+                    notification_frequency: "immediate"
+                  }, user_id, friendship.user_id)
 
-                                # Create default notification permissions for both users
-                                ButtonLog.Notifications.upsert_friend_notification_permissions(%{
-                                  can_receive_button_notifications: true,
-                                  can_receive_friend_requests: true,
-                                  can_receive_general_notifications: true,
-                                  notification_frequency: "immediate"
-                                }, user_id, friendship.user_id)
+                  ButtonLog.Notifications.upsert_friend_notification_permissions(%{
+                    can_receive_button_notifications: true,
+                    can_receive_friend_requests: true,
+                    can_receive_general_notifications: true,
+                    notification_frequency: "immediate"
+                  }, friendship.user_id, user_id)
 
-                                ButtonLog.Notifications.upsert_friend_notification_permissions(%{
-                                  can_receive_button_notifications: true,
-                                  can_receive_friend_requests: true,
-                                  can_receive_general_notifications: true,
-                                  notification_frequency: "immediate"
-                                }, friendship.user_id, user_id)
+                  # Send push notification to the original requester
+                  accepter = ButtonLog.Accounts.get_user!(user_id)
+                  Task.start(fn ->
+                    ButtonLog.PushNotifications.send_friend_accepted_notification(
+                      friendship.user_id,
+                      accepter.display_name || accepter.username || accepter.email
+                    )
+                  end)
 
-                                # Send push notification to the original requester
-                                accepter = ButtonLog.Accounts.get_user!(user_id)
-                                Task.start(fn ->
-                                  ButtonLog.PushNotifications.send_friend_accepted_notification(
-                                    friendship.user_id,
-                                    accepter.display_name || accepter.username || accepter.email
-                                  )
-                                end)
+                  {:ok, updated_friendship}
 
-                                {:ok, updated_friendship}
-
-                              {:error, reason} ->
-                                IO.puts "Failed to create reverse friendship: #{inspect(reason)}"
-                                # Even if reverse creation fails, the original friendship is accepted
-                                {:ok, updated_friendship}
-                            end
+                {:error, _reason} ->
+                  # Even if reverse creation fails, the original friendship is accepted
+                  {:ok, updated_friendship}
+              end
 
             {:error, reason} ->
-              IO.puts "Failed to update friendship: #{inspect(reason)}"
               {:error, reason}
           end
         else
-          IO.puts "User not authorized to accept this request"
           {:error, :unauthorized}
         end
     end
   rescue
     Ecto.NoResultsError ->
-      IO.puts "NoResultsError: friendship not found"
       {:error, :not_found}
     Ecto.QueryError ->
-      IO.puts "Query error: friendship not found"
       {:error, :not_found}
   end
 
@@ -392,31 +349,20 @@ defmodule ButtonLog.Social do
   Sends a friend request.
   """
   def send_friend_request(user_id, friend_id) do
-    IO.puts "=== SEND FRIEND REQUEST DEBUG ==="
-    IO.puts "user_id: #{user_id}"
-    IO.puts "friend_id: #{friend_id}"
-
     # Check if already friends or request pending in both directions
     existing_forward = Repo.get_by(Friendship, user_id: user_id, friend_id: friend_id)
     existing_reverse = Repo.get_by(Friendship, user_id: friend_id, friend_id: user_id)
 
-    IO.puts "existing_forward: #{inspect(existing_forward)}"
-    IO.puts "existing_reverse: #{inspect(existing_reverse)}"
-
     # Check if either friendship exists (not nil)
     if existing_forward != nil or existing_reverse != nil do
-      IO.puts "Already friends or request pending"
       {:error, :already_friends}
     else
       # Check if friend exists
       case ButtonLog.Accounts.get_user(friend_id) do
         nil ->
-          IO.puts "User not found"
           {:error, :user_not_found}
         _user ->
-          IO.puts "Creating friendship..."
           result = create_friendship(%{}, user_id, friend_id)
-          IO.puts "create_friendship result: #{inspect(result)}"
 
           # Send push notification for friend request
           case result do
@@ -440,26 +386,15 @@ defmodule ButtonLog.Social do
   Removes a friend.
   """
   def remove_friend(friendship_id, user_id) do
-    IO.puts "=== REMOVE FRIEND DEBUG ==="
-    IO.puts "friendship_id: #{friendship_id}"
-    IO.puts "user_id: #{user_id}"
-
     case get_friendship!(friendship_id) do
       friendship ->
-        IO.puts "Found friendship: #{inspect(friendship)}"
-
         if friendship.user_id == user_id or friendship.friend_id == user_id do
-          IO.puts "User authorized to remove friendship"
-
           # Determine the other user in this friendship
           other_user_id = if friendship.user_id == user_id, do: friendship.friend_id, else: friendship.user_id
-          IO.puts "other_user_id: #{other_user_id}"
 
           # Remove the original friendship
           case Repo.delete(friendship) do
             {:ok, _deleted_friendship} ->
-              IO.puts "Original friendship deleted"
-
               # Find and remove the reverse friendship
               reverse_friendship = Repo.get_by(Friendship,
                 user_id: other_user_id,
@@ -467,36 +402,22 @@ defmodule ButtonLog.Social do
               )
 
               if reverse_friendship do
-                IO.puts "Found reverse friendship, deleting it too"
-                case Repo.delete(reverse_friendship) do
-                  {:ok, _deleted_reverse} ->
-                    IO.puts "Reverse friendship deleted"
-                    {:ok, :deleted}
-                  {:error, reason} ->
-                    IO.puts "Failed to delete reverse friendship: #{inspect(reason)}"
-                    # Even if reverse deletion fails, the main friendship is gone
-                    {:ok, :deleted}
-                end
-              else
-                IO.puts "No reverse friendship found"
-                {:ok, :deleted}
+                Repo.delete(reverse_friendship)
               end
 
+              {:ok, :deleted}
+
             {:error, reason} ->
-              IO.puts "Failed to delete original friendship: #{inspect(reason)}"
               {:error, reason}
           end
         else
-          IO.puts "User not authorized to remove this friendship"
           {:error, :unauthorized}
         end
     end
   rescue
     Ecto.NoResultsError ->
-      IO.puts "NoResultsError: friendship not found"
       {:error, :not_found}
     Ecto.QueryError ->
-      IO.puts "Query error: friendship not found"
       {:error, :not_found}
   end
 

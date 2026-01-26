@@ -33,20 +33,14 @@ defmodule ButtonLogWeb.DiaryLive do
 
   @impl true
   def handle_event("select_date", params, socket) do
-    IO.inspect(params, label: "select_date params received")
-    IO.inspect(socket.assigns.selected_date, label: "current selected_date")
-
     case params do
       %{"date" => date_string} when is_binary(date_string) and date_string != "" ->
-        IO.inspect(date_string, label: "date_string received from date key")
         process_date_selection(date_string, socket)
 
       %{"value" => date_string} when is_binary(date_string) and date_string != "" ->
-        IO.inspect(date_string, label: "date_string received from value key")
         process_date_selection(date_string, socket)
 
       _ ->
-        IO.inspect(params, label: "unexpected params format")
         {:noreply, socket |> put_flash(:error, "Invalid date selection")}
     end
   end

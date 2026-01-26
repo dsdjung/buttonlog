@@ -3,7 +3,6 @@ defmodule ButtonLogWeb.TestLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    IO.puts "=== TEST LIVEVIEW MOUNT ==="
     {:ok, assign(socket, :message, "Hello from Test LiveView!")}
   end
 
@@ -22,7 +21,6 @@ defmodule ButtonLogWeb.TestLive do
 
   @impl true
   def handle_event("test_click", _params, socket) do
-    IO.puts "=== TEST CLICK EVENT ==="
     {:noreply, assign(socket, :message, "Button clicked!")}
   end
 end
