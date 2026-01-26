@@ -1,114 +1,160 @@
 # ButtonLog iOS Tests
 
-This directory contains unit tests for the ButtonLog iOS application.
+This directory contains unit tests and integration tests for the ButtonLog iOS application.
+
+## Test Files Overview
+
+### Unit Tests (14 files)
+| File | Description |
+|------|-------------|
+| `APIServiceTests.swift` | Tests for HTTP methods, API errors, and response decoding |
+| `AppStateTests.swift` | Tests for main AppState class and state management |
+| `AuthenticationManagerTests.swift` | Tests for authentication flows and token management |
+| `KeychainManagerTests.swift` | Tests for secure keychain operations |
+| `ModelTests.swift` | Tests for all data models (Button, User, Friend, etc.) |
+| `PushNotificationTests.swift` | Tests for push notification handling |
+| `OfflineTests.swift` | Tests for offline functionality |
+| `TestHelpers.swift` | Utility functions for creating mock data |
+
+### Integration Tests (5 files in `Integration/`)
+| File | Description |
+|------|-------------|
+| `BaseIntegrationTest.swift` | Base class for integration tests |
+| `IntegrationTestConfig.swift` | Configuration for integration testing |
+| `AuthIntegrationTests.swift` | End-to-end authentication tests |
+| `ButtonIntegrationTests.swift` | End-to-end button operation tests |
+| `FriendsIntegrationTests.swift` | End-to-end social feature tests |
+| `NetworkErrorTests.swift` | Tests for network error handling |
 
 ## Setup Instructions
 
-The test files need to be added to the Xcode project. Follow these steps:
-
-### 1. Add Test Target in Xcode
+### Step 1: Add Test Targets in Xcode
 
 1. Open `ButtonLog.xcodeproj` in Xcode
-2. Click on the project in the Navigator
+2. Click on the project in the Navigator (left sidebar)
 3. Click the `+` button at the bottom of the targets list
 4. Select **Unit Testing Bundle**
-5. Name it `ButtonLogTests`
-6. Set the **Host Application** to `ButtonLog`
-7. Click **Finish**
+5. Configure:
+   - **Product Name**: `ButtonLogTests`
+   - **Team**: Your development team
+   - **Host Application**: `ButtonLog`
+6. Click **Finish**
 
-### 2. Add Test Files to Target
+### Step 2: Add Test Files to Target
 
-1. Right-click on the `ButtonLogTests` folder in Xcode Navigator
-2. Select **Add Files to "ButtonLog"...**
-3. Navigate to the `ButtonLogTests` folder
-4. Select all `.swift` files:
+1. In Xcode Navigator, expand the `ButtonLogTests` folder
+2. Select all `.swift` files in `ButtonLogTests/`:
+   - `APIServiceTests.swift`
    - `AppStateTests.swift`
+   - `AuthenticationManagerTests.swift`
+   - `KeychainManagerTests.swift`
    - `ModelTests.swift`
+   - `PushNotificationTests.swift`
+   - `OfflineTests.swift`
    - `TestHelpers.swift`
-5. Ensure **ButtonLogTests** is checked in "Add to targets"
-6. Click **Add**
+3. Select all files in `ButtonLogTests/Integration/`:
+   - `BaseIntegrationTest.swift`
+   - `IntegrationTestConfig.swift`
+   - `AuthIntegrationTests.swift`
+   - `ButtonIntegrationTests.swift`
+   - `FriendsIntegrationTests.swift`
+   - `NetworkErrorTests.swift`
+4. In the File Inspector (right sidebar), ensure **ButtonLogTests** is checked under "Target Membership"
 
-### 3. Configure Test Target
+### Step 3: (Optional) Add UI Test Target
 
-Ensure the test target has access to the main app module:
+1. Click `+` in targets list
+2. Select **UI Testing Bundle**
+3. Configure:
+   - **Product Name**: `ButtonLogUITests`
+   - **Host Application**: `ButtonLog`
+4. Add the UI test files from `ButtonLogUITests/`:
+   - `AuthenticationUITests.swift`
+   - `ButtonsUITests.swift`
+   - `FriendsUITests.swift`
+
+### Step 4: Configure Test Target Build Settings
 
 1. Select the `ButtonLogTests` target
-2. Go to **Build Settings**
-3. Search for "Host Application"
-4. Ensure it's set to `ButtonLog`
+2. Go to **Build Settings** tab
+3. Ensure these settings:
+   - **Host Application**: `ButtonLog`
+   - **iOS Deployment Target**: Matches main app
+4. Go to **Build Phases** tab
+5. Ensure **Link Binary With Libraries** includes necessary frameworks
 
 ## Running Tests
 
 ### From Xcode
-
-- Press `⌘ + U` to run all tests
-- Click the test navigator (diamond icon) to see test results
+- Press `Cmd + U` to run all tests
+- Open Test Navigator (`Cmd + 6`) to see test results
 - Click the play button next to individual tests to run specific tests
 
 ### From Command Line
-
 ```bash
+# Run unit tests
 xcodebuild test \
   -project ButtonLog.xcodeproj \
   -scheme ButtonLog \
-  -destination 'platform=iOS Simulator,name=iPhone 15'
+  -destination 'platform=iOS Simulator,name=iPhone 15' \
+  -only-testing:ButtonLogTests
+
+# Run UI tests
+xcodebuild test \
+  -project ButtonLog.xcodeproj \
+  -scheme ButtonLog \
+  -destination 'platform=iOS Simulator,name=iPhone 15' \
+  -only-testing:ButtonLogUITests
 ```
 
-## Test Structure
+### From Fastlane
+```bash
+# Add to Fastfile:
+lane :test do
+  scan(
+    project: "ButtonLog.xcodeproj",
+    scheme: "ButtonLog",
+    devices: ["iPhone 15"]
+  )
+end
 
-### AppStateTests.swift
-Tests for the main `AppState` class:
-- Initial state verification
-- Button management (add, update, remove)
-- Friend management
-- Notification handling
-- Error handling
-
-### ModelTests.swift
-Tests for all model classes:
-- `Button` model and `ButtonFormData`
-- `User` and `PublicUser` models
-- `Friend` and `FriendPermissions` models
-- `AppNotification` model
-- `SubscriptionPlan` and related models
-- `ButtonClick` and `FriendButton` models
-
-### TestHelpers.swift
-Utility functions for creating mock data:
-- `createMockButton()`
-- `createMockFriend()`
-- `createMockNotification()`
-- `createMockButtonClick()`
-- etc.
+# Then run:
+fastlane test
+```
 
 ## Writing New Tests
 
-### Adding a New Test File
+### Test File Template
+```swift
+import XCTest
+@testable import ButtonLog
 
-1. Create a new Swift file in the `ButtonLogTests` directory
-2. Import XCTest and the app module:
-   ```swift
-   import XCTest
-   @testable import ButtonLog
-   ```
-3. Create a test class extending `XCTestCase`:
-   ```swift
-   final class MyNewTests: XCTestCase {
-       func testSomething() {
-           // Test code
-       }
-   }
-   ```
-4. Add the file to the test target in Xcode
+final class MyFeatureTests: XCTestCase {
 
-### Test Naming Conventions
+    override func setUp() {
+        super.setUp()
+        // Setup code
+    }
 
-- Test methods should start with `test`
-- Use descriptive names: `testButtonCreationWithValidData()`
-- Group related tests in the same class
+    override func tearDown() {
+        // Cleanup code
+        super.tearDown()
+    }
+
+    func testFeatureBehavior() {
+        // Arrange
+        let expected = "expected value"
+
+        // Act
+        let result = // ... call your code
+
+        // Assert
+        XCTAssertEqual(result, expected)
+    }
+}
+```
 
 ### Using Test Helpers
-
 ```swift
 import XCTest
 @testable import ButtonLog
@@ -124,10 +170,47 @@ final class MyTests: XCTestCase {
 }
 ```
 
+## Test Categories
+
+### Unit Tests
+- Fast, isolated tests for individual components
+- No network calls or external dependencies
+- Use mock data from `TestHelpers.swift`
+
+### Integration Tests
+- Test interactions between components
+- May require backend server running
+- Configure endpoint in `IntegrationTestConfig.swift`
+
+### UI Tests
+- Test user interface flows
+- Slower but comprehensive
+- Verify end-to-end user journeys
+
+## CI/CD Integration
+
+### GitHub Actions Example
+```yaml
+name: iOS Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Tests
+        run: |
+          xcodebuild test \
+            -project iphone/ButtonLog.xcodeproj \
+            -scheme ButtonLog \
+            -destination 'platform=iOS Simulator,name=iPhone 15'
+```
+
 ## Best Practices
 
-1. **Isolate tests**: Each test should be independent
-2. **Use setup/teardown**: Use `setUp()` and `tearDown()` for common setup
-3. **Test edge cases**: Include tests for error conditions
-4. **Mock external dependencies**: Use mock services for API calls
-5. **Keep tests fast**: Avoid network calls in unit tests
+1. **Isolate tests**: Each test should be independent and not rely on other tests
+2. **Use descriptive names**: `testLoginWithValidCredentialsSucceeds()`
+3. **Test edge cases**: Include tests for error conditions and boundary values
+4. **Keep tests fast**: Use mocks for network calls in unit tests
+5. **Clean up state**: Use `setUp()` and `tearDown()` properly
