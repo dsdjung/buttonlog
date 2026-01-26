@@ -11,13 +11,13 @@ struct CreateButtonView: View {
     }()
     @State private var isLoading = false
     @State private var showingColorPicker = false
-    
+
     let buttonColors = [
         "#007AFF", "#FF3B30", "#FF9500", "#FFCC00",
         "#34C759", "#00C7BE", "#5AC8FA", "#AF52DE",
         "#FF2D92", "#8E8E93", "#000000", "#6D6D6D"
     ]
-    
+
     let buttonIcons = [
         "star.fill", "heart.fill", "bolt.fill", "flame.fill",
         "leaf.fill", "drop.fill", "sun.max.fill", "moon.fill",
@@ -25,7 +25,7 @@ struct CreateButtonView: View {
         "gamecontroller.fill", "book.fill", "pencil", "scissors",
         "wrench.fill", "hammer.fill", "gear", "house.fill"
     ]
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -148,7 +148,7 @@ struct CreateButtonView: View {
                             }
                         }
                     }
-                    
+
                     // Color Selection
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 16) {
                         ForEach(buttonColors, id: \.self) { color in
@@ -167,7 +167,7 @@ struct CreateButtonView: View {
                         }
                     }
                 }
-                
+
                 Section(header: Text("Settings")) {
                     Toggle("Enable Alerts", isOn: $formData.alertsEnabled)
 
@@ -238,7 +238,7 @@ struct CreateButtonView: View {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     SwiftUI.Button("Create") {
                         createButton()
@@ -249,13 +249,13 @@ struct CreateButtonView: View {
         }
         .disabled(isLoading)
     }
-    
+
     private func createButton() {
         isLoading = true
-        
+
         Task {
             let success = await appState.createButton(formData)
-            
+
             await MainActor.run {
                 isLoading = false
                 if success {
@@ -268,7 +268,7 @@ struct CreateButtonView: View {
 
 struct ButtonPreview: View {
     let formData: ButtonFormData
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -276,22 +276,22 @@ struct ButtonPreview: View {
                     Circle()
                         .fill(Color(hex: formData.color))
                         .frame(width: 44, height: 44)
-                    
+
                     Image(systemName: formData.icon)
                         .foregroundColor(.white)
                         .font(.title3)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(formData.name.isEmpty ? "Button Name" : formData.name)
                         .font(.headline)
-                    
+
                     if !formData.description.isEmpty {
                         Text(formData.description)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     HStack(spacing: 8) {
                         Text(formData.type.displayName)
                             .font(.caption)
@@ -301,10 +301,10 @@ struct ButtonPreview: View {
                             .cornerRadius(8)
                     }
                 }
-                
+
                 Spacer()
             }
-            
+
             // Show choice buttons if valid choices exist, otherwise show single button
             if formData.type == .oneTime && formData.hasValidChoices {
                 VStack(spacing: 8) {
