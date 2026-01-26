@@ -155,7 +155,9 @@ final class PushNotificationTests: XCTestCase {
 
         let grouped = groupNotifications(notifications)
 
-        XCTAssertEqual(grouped.count, 2) // Two unique buttons
+        // All three notifications have type "button_click", so they're grouped together
+        XCTAssertEqual(grouped.count, 1)
+        XCTAssertEqual(grouped["button_click"]?.count, 3)
     }
 
     func testNotificationGrouping_mixedTypes() {

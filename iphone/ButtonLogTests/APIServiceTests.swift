@@ -91,7 +91,7 @@ final class APIServiceTests: XCTestCase {
             "meta": {
                 "count": 10,
                 "limit": 20,
-                "hasMore": true
+                "has_more": true
             }
         }
         """.data(using: .utf8)!
