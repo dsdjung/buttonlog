@@ -28,6 +28,8 @@
     "test:android:navigation": "maestro test android/navigation.yaml",
     "test:android:friends:multi": "./scripts/run-multi-user-android.sh",
 
+    "test:cross-platform:multi": "./scripts/run-multi-user-cross-platform.sh",
+
     "record:ios": "maestro record ios/",
     "record:android": "maestro record android/"
   },
