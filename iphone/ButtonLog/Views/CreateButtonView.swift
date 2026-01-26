@@ -1,16 +1,11 @@
 import SwiftUI
 
 struct CreateButtonView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     @EnvironmentObject private var appState: AppState
 
-    @State private var formData: ButtonFormData = {
-        var data = ButtonFormData()
-        data.choices = [IdentifiedChoice(), IdentifiedChoice()]  // Initialize with 2 empty choices for one-time buttons
-        return data
-    }()
+    @State private var formData = ButtonFormData()
     @State private var isLoading = false
-    @State private var showingColorPicker = false
 
     let buttonColors = [
         "#007AFF", "#FF3B30", "#FF9500", "#FFCC00",
@@ -78,14 +73,7 @@ struct CreateButtonView: View {
                 Section(header: Text("Button Type")) {
                     Picker("Type", selection: $formData.type) {
                         ForEach(ButtonType.allCases, id: \.self) { type in
-                            VStack(alignment: .leading) {
-                                Text(type.displayName)
-                                    .font(.headline)
-                                Text(type.description)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .tag(type)
+                            Text(type.displayName).tag(type)
                         }
                     }
                     .pickerStyle(.menu)
@@ -99,35 +87,7 @@ struct CreateButtonView: View {
 
                 // Choices Section (only for one-time buttons)
                 if formData.type == .oneTime {
-                    Section(header: Text("Choices (Optional)"), footer: Text("Add multiple choice options for this button (minimum 2, maximum 10)")) {
-                        ForEach($formData.choices) { $choice in
-                            HStack {
-                                TextField("Choice", text: $choice.text)
-
-                                if formData.choices.count > 2 {
-                                    SwiftUI.Button(action: {
-                                        formData.choices.removeAll { $0.id == choice.id }
-                                    }) {
-                                        Image(systemName: "minus.circle.fill")
-                                            .foregroundColor(.red)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-
-                        if formData.choices.count < 10 {
-                            SwiftUI.Button(action: {
-                                formData.choices.append(IdentifiedChoice())
-                            }) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.green)
-                                    Text("Add Choice")
-                                }
-                            }
-                        }
-                    }
+                    ChoicesSection(choices: $formData.choices)
                 }
 
                 Section(header: Text("Appearance")) {
@@ -235,7 +195,7 @@ struct CreateButtonView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     SwiftUI.Button("Cancel") {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
 
@@ -259,7 +219,7 @@ struct CreateButtonView: View {
             await MainActor.run {
                 isLoading = false
                 if success {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }
             }
         }
@@ -354,7 +314,7 @@ struct ButtonPreview: View {
 }
 
 struct EditButtonView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     @EnvironmentObject private var appState: AppState
 
     let button: ButtonModel
@@ -483,7 +443,7 @@ struct EditButtonView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     SwiftUI.Button("Cancel") {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
 
@@ -554,7 +514,7 @@ struct EditButtonView: View {
             await MainActor.run {
                 isLoading = false
                 if buttonSuccess && sharingSuccess {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }
             }
         }
@@ -569,7 +529,7 @@ struct EditButtonView: View {
             await MainActor.run {
                 isLoading = false
                 if success {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }
             }
         }
@@ -577,16 +537,12 @@ struct EditButtonView: View {
 }
 
 struct CreateGiftButtonView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     @EnvironmentObject private var appState: AppState
 
     let friend: Friend
 
-    @State private var formData: ButtonFormData = {
-        var data = ButtonFormData(type: .oneTime)
-        data.choices = [IdentifiedChoice(), IdentifiedChoice()]  // Initialize with 2 empty choices for one-time buttons
-        return data
-    }()
+    @State private var formData = ButtonFormData(type: .oneTime)
     @State private var giftMessage: String = ""
     @State private var isLoading = false
 
@@ -683,35 +639,7 @@ struct CreateGiftButtonView: View {
 
                 // Choices Section (only for one-time buttons)
                 if formData.type == .oneTime {
-                    Section(header: Text("Choices (Optional)"), footer: Text("Add multiple choice options for this button (minimum 2, maximum 10)")) {
-                        ForEach($formData.choices) { $choice in
-                            HStack {
-                                TextField("Choice", text: $choice.text)
-
-                                if formData.choices.count > 2 {
-                                    SwiftUI.Button(action: {
-                                        formData.choices.removeAll { $0.id == choice.id }
-                                    }) {
-                                        Image(systemName: "minus.circle.fill")
-                                            .foregroundColor(.red)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-
-                        if formData.choices.count < 10 {
-                            SwiftUI.Button(action: {
-                                formData.choices.append(IdentifiedChoice())
-                            }) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.green)
-                                    Text("Add Choice")
-                                }
-                            }
-                        }
-                    }
+                    ChoicesSection(choices: $formData.choices)
                 }
 
                 Section(header: Text("Appearance")) {
@@ -774,7 +702,7 @@ struct CreateGiftButtonView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     SwiftUI.Button("Cancel") {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }
                 }
 
@@ -802,7 +730,7 @@ struct CreateGiftButtonView: View {
 
                 await MainActor.run {
                     isLoading = false
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }
             } catch let error as APIError {
                 await MainActor.run {
@@ -921,6 +849,61 @@ struct GiftButtonPreview: View {
         .background(Color(.systemBackground))
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+    }
+}
+
+// Extracted choices section to avoid ForEach binding issues
+struct ChoicesSection: View {
+    @Binding var choices: [IdentifiedChoice]
+
+    var body: some View {
+        Section(header: Text("Choices (Optional)"), footer: Text("Add multiple choice options for this button (minimum 2, maximum 10)")) {
+            ForEach(choices) { choice in
+                ChoiceRow(choice: choice, choices: $choices)
+            }
+
+            if choices.count < 10 {
+                SwiftUI.Button(action: {
+                    choices.append(IdentifiedChoice())
+                }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(.green)
+                        Text("Add Choice")
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ChoiceRow: View {
+    let choice: IdentifiedChoice
+    @Binding var choices: [IdentifiedChoice]
+
+    var body: some View {
+        HStack {
+            TextField("Choice", text: Binding(
+                get: {
+                    choices.first { $0.id == choice.id }?.text ?? ""
+                },
+                set: { newValue in
+                    if let index = choices.firstIndex(where: { $0.id == choice.id }) {
+                        choices[index].text = newValue
+                    }
+                }
+            ))
+
+            if choices.count > 2 {
+                SwiftUI.Button(action: {
+                    choices.removeAll { $0.id == choice.id }
+                }) {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 
