@@ -140,7 +140,7 @@ defmodule ButtonLog.Subscriptions.StripeWebhookHandler do
 
       # Add trial dates if present
       attrs =
-        if subscription.trial_start do
+        if Map.get(subscription, :trial_start) do
           attrs
           |> Map.put(:trial_start, unix_to_datetime(subscription.trial_start))
           |> Map.put(:trial_end, unix_to_datetime(subscription.trial_end))

@@ -14,6 +14,7 @@ defmodule ButtonLog.Subscriptions.SubscriptionEvent do
     :created,
     :activated,
     :trial_started,
+    :trial_ending,
     :trial_ended,
     :plan_changed,
     :renewed,
