@@ -55,8 +55,15 @@ class APIService {
 
         // Add body if provided
         if let body = body {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            print("DEBUG API: Request body: \(body)")
+            print("DEBUG API: Attempting to serialize body: \(body)")
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                print("DEBUG API: Request body serialized successfully")
+            } catch {
+                print("DEBUG API: JSON serialization FAILED: \(error)")
+                print("DEBUG API: Body that failed: \(body)")
+                throw APIError.serverError("Failed to serialize request: \(error.localizedDescription)")
+            }
         }
 
         print("DEBUG API: Making \(method.rawValue) request to \(url)")
@@ -125,7 +132,12 @@ class APIService {
         }
 
         if let body = body {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            } catch {
+                print("DEBUG API: JSON serialization FAILED in makeRequestWithMeta: \(error)")
+                throw APIError.serverError("Failed to serialize request: \(error.localizedDescription)")
+            }
         }
 
         let (data, response) = try await session.data(for: request)
@@ -186,7 +198,12 @@ class APIService {
         }
 
         if let body = body {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            } catch {
+                print("DEBUG API: JSON serialization FAILED in makeOptionalRequest: \(error)")
+                throw APIError.serverError("Failed to serialize request: \(error.localizedDescription)")
+            }
         }
 
         let (data, response) = try await session.data(for: request)
@@ -241,7 +258,12 @@ class APIService {
         }
 
         if let body = body {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            } catch {
+                print("DEBUG API: JSON serialization FAILED in makeVoidRequest: \(error)")
+                throw APIError.serverError("Failed to serialize request: \(error.localizedDescription)")
+            }
         }
 
         let (data, response) = try await session.data(for: request)
