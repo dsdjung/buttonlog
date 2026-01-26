@@ -29,7 +29,6 @@ android {
     productFlavors {
         create("development") {
             dimension = "environment"
-            applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "ButtonLog Dev")
             // Set by scripts/set-environment.sh - currently: staging
