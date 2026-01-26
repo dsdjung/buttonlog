@@ -184,8 +184,11 @@ class ButtonRepository @Inject constructor(
         return try {
             _error.value = null
 
-            val request = if (choice != null) ClickButtonRequest(choice = choice) else null
-            val response = apiService.clickButton(buttonId, request)
+            val response = if (choice != null) {
+                apiService.clickButtonWithChoice(buttonId, ClickButtonRequest(choice = choice))
+            } else {
+                apiService.clickButton(buttonId)
+            }
             if (response.success && response.data != null) {
                 // Refetch buttons to get updated state from server
                 // This ensures we have the latest button state after clicking
