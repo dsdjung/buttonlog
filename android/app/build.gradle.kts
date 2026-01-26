@@ -84,6 +84,8 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/LICENSE-notice.md"
         }
     }
 }
@@ -166,6 +168,10 @@ dependencies {
     androidTestImplementation("io.mockk:mockk-android:1.13.9")
     androidTestImplementation("com.google.dagger:hilt-android-testing:2.50")
     kspAndroidTest("com.google.dagger:hilt-android-compiler:2.50")
+
+    // Testing - Integration Tests (real API calls)
+    androidTestImplementation("com.google.truth:truth:1.2.0")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
     // Debug implementations
     debugImplementation("androidx.compose.ui:ui-tooling")
