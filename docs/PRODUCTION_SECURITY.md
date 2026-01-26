@@ -102,6 +102,17 @@ If any of these have been exposed (e.g., committed to git):
 - [ ] Database not publicly accessible
 - [ ] Firewall rules configured
 
+### Rate Limiting
+- [ ] Auth endpoints limited to 5 requests/minute/IP (brute force protection)
+- [ ] API endpoints limited to 100 requests/minute/IP
+- [ ] Rate limit headers exposed (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)
+
+### Token Security
+- [ ] JWT tokens have 24-hour expiration
+- [ ] Token blacklist enabled for logout/revocation
+- [ ] Logout endpoint (`POST /api/auth/logout`) revokes tokens
+- [ ] Password change should trigger `Token.revoke_all_user_tokens(user_id)`
+
 ### Monitoring
 - [ ] Error tracking configured (Sentry, etc.)
 - [ ] Logging to centralized service

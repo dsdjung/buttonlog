@@ -53,6 +53,10 @@ config :logger, level: :info
 # Runtime configuration
 config :buttonlog, :env, config_env()
 
+# Rate limiting configuration (Hammer)
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 2, cleanup_interval_ms: 60_000 * 10]}
+
 # Push notification configuration (APNs for iOS, FCM for Android)
 # These will be loaded from environment variables in runtime.exs
 config :buttonlog, :apns,

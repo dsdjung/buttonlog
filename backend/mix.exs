@@ -51,6 +51,7 @@ defmodule ButtonLog.MixProject do
       # Authentication and security
       {:bcrypt_elixir, "~> 3.0"},
       {:joken, "~> 2.6"},
+      {:hammer, "~> 6.1"},
 
       # OAuth support
       {:ueberauth, "~> 0.10"},

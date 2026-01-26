@@ -15,6 +15,16 @@ defmodule ButtonLogWeb.Router do
     plug ButtonLogWeb.Plugs.ClientVersionPlug
   end
 
+  # Strict rate limiting for auth endpoints (5 requests per minute per IP per endpoint)
+  pipeline :auth_rate_limit do
+    plug ButtonLogWeb.Plugs.RateLimitPlug, scale_ms: 60_000, limit: 5, bucket_prefix: "auth"
+  end
+
+  # Standard rate limiting for API endpoints (100 requests per minute per IP)
+  pipeline :api_rate_limit do
+    plug ButtonLogWeb.Plugs.RateLimitPlug, scale_ms: 60_000, limit: 100, bucket_prefix: "api"
+  end
+
   pipeline :auth do
     plug ButtonLogWeb.Plugs.AuthPlug
   end
@@ -77,7 +87,7 @@ defmodule ButtonLogWeb.Router do
   end
 
   scope "/api", ButtonLogWeb do
-    pipe_through [:api, :auth]
+    pipe_through [:api, :api_rate_limit, :auth]
 
     # Diary endpoint
     get "/diary", API.ButtonController, :diary
@@ -259,7 +269,7 @@ defmodule ButtonLogWeb.Router do
 
   # Admin API routes
   scope "/api/admin", ButtonLogWeb.API.Admin do
-    pipe_through [:api, :auth, :admin]
+    pipe_through [:api, :api_rate_limit, :auth, :admin]
 
     # Support ticket management (admin)
     get "/support/tickets", SupportController, :index
@@ -278,20 +288,31 @@ defmodule ButtonLogWeb.Router do
     live "/support/:id", AdminLive.Support, :show
   end
 
+  # Auth endpoints with strict rate limiting (5 req/min to prevent brute force)
   scope "/api", ButtonLogWeb do
-    pipe_through :api
+    pipe_through [:api, :auth_rate_limit]
 
-    # Public endpoints (no auth required)
     post "/auth/register", API.AuthController, :register
     post "/auth/login", API.AuthController, :login
     post "/auth/refresh", API.AuthController, :refresh
     post "/auth/oauth/callback", API.AuthController, :oauth_callback
+    post "/auth/logout", API.AuthController, :logout
+  end
+
+  # Public API endpoints (no auth, standard rate limiting)
+  scope "/api", ButtonLogWeb do
+    pipe_through [:api, :api_rate_limit]
 
     # Public subscription plans (pricing page)
     get "/subscriptions/plans", API.SubscriptionController, :index
 
     # App configuration (public - used by mobile apps on startup)
     get "/config", API.ConfigController, :index
+  end
+
+  # Webhook endpoints (no rate limiting - uses signature verification)
+  scope "/api", ButtonLogWeb do
+    pipe_through :api
 
     # Stripe webhook endpoint (no auth - uses signature verification)
     post "/webhooks/stripe", API.StripeWebhookController, :handle

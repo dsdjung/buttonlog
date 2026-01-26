@@ -4,7 +4,6 @@ defmodule ButtonLogWeb.LiveHelpers do
   """
 
   import Phoenix.LiveView
-  import Phoenix.Component
 
   alias ButtonLog.Accounts
 

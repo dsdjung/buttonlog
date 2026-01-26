@@ -120,6 +120,26 @@ defmodule ButtonLogWeb.API.AuthController do
   end
 
   @doc """
+  Logout endpoint - revokes the current JWT token.
+
+  This invalidates the token so it can no longer be used for authentication.
+  The client should discard the token after calling this endpoint.
+  """
+  def logout(conn, _params) do
+    case get_auth_token(conn) do
+      nil ->
+        # No token provided, but that's fine for logout
+        conn
+        |> json(%{success: true, message: "Logged out"})
+
+      token ->
+        Token.revoke_token(token)
+        conn
+        |> json(%{success: true, message: "Logged out successfully"})
+    end
+  end
+
+  @doc """
   Mobile OAuth callback endpoint.
   Accepts OAuth provider info directly from mobile apps and returns a JWT token.
 

@@ -12,6 +12,10 @@ defmodule ButtonLog.Application do
       ButtonLogWeb.Telemetry,
       # Start the Ecto repository
       ButtonLog.Repo,
+      # Start rate limiter (Hammer with ETS backend)
+      {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 2, cleanup_interval_ms: 60_000 * 10]},
+      # Start JWT token blacklist for token revocation
+      ButtonLog.Auth.TokenBlacklist,
       # Start the PubSub system
       {Phoenix.PubSub, name: ButtonLog.PubSub},
       # Start Finch for HTTP/2 requests (APNs push notifications)
