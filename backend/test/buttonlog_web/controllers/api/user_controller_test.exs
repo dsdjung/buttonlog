@@ -124,18 +124,37 @@ defmodule ButtonLogWeb.API.UserControllerTest do
       assert data["language"] == "ja"
     end
 
-    test "returns error for username that is too short", %{conn: conn, token: token} do
+    test "returns error for display_name that is too long", %{conn: conn, token: token} do
+      # display_name has max: 100 validation in profile_changeset
+      long_name = String.duplicate("a", 101)
+
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{token}")
         |> put("/api/users/profile", %{
-          "user" => %{"username" => "ab"}
+          "user" => %{"display_name" => long_name}
         })
 
       assert %{
         "success" => false,
         "error" => %{"code" => "VALIDATION_ERROR"}
       } = json_response(conn, 422)
+    end
+
+    test "ignores username in profile update (username not updatable via profile)", %{conn: conn, token: token} do
+      # The profile endpoint doesn't cast username, so it should be ignored
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> put("/api/users/profile", %{
+          "user" => %{"username" => "newusername", "display_name" => "Valid Name"}
+        })
+
+      # Should succeed but username remains unchanged
+      assert %{"success" => true, "data" => data} = json_response(conn, 200)
+      assert data["display_name"] == "Valid Name"
+      # Username should not have changed (still the original)
+      refute data["username"] == "newusername"
     end
 
     test "requires authentication", %{conn: conn} do
