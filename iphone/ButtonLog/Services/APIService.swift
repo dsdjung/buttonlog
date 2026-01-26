@@ -42,6 +42,7 @@ class APIService {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.timeoutInterval = 30 // 30 second timeout
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         addCommonHeaders(to: &request)
 
         // Add auth token if required
@@ -110,6 +111,7 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         addCommonHeaders(to: &request)
 
         if requiresAuth, let token = KeychainManager.shared.getToken() {
@@ -167,6 +169,7 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         addCommonHeaders(to: &request)
 
         if requiresAuth, let token = KeychainManager.shared.getToken() {
@@ -178,11 +181,11 @@ class APIService {
         }
 
         let (data, response) = try await session.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
-        
+
         if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
             // Handle empty response (204 No Content) or null data
             if httpResponse.statusCode == 204 || data.isEmpty {
@@ -218,6 +221,7 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         addCommonHeaders(to: &request)
 
         if requiresAuth, let token = KeychainManager.shared.getToken() {
@@ -229,11 +233,11 @@ class APIService {
         }
 
         let (data, response) = try await session.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
-        
+
         if !(httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
             let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
             throw APIError.serverError(errorResponse?.error?.message ?? "HTTP \(httpResponse.statusCode)")
@@ -251,6 +255,7 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = HTTPMethod.GET.rawValue
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         addCommonHeaders(to: &request)
 
         let (data, response) = try await session.data(for: request)
@@ -398,6 +403,7 @@ class APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = HTTPMethod.GET.rawValue
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         addCommonHeaders(to: &request)
 
         if let token = KeychainManager.shared.getToken() {
