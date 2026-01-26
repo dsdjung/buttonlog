@@ -1,0 +1,10 @@
+// Staging Environment Configuration
+// Used for testing against staging.buttonlog.com
+
+APP_ENVIRONMENT = Staging
+
+// Bundle ID suffix for staging (allows multiple app versions)
+PRODUCT_BUNDLE_IDENTIFIER = com.buttonlog.app.staging
+
+// App display name
+PRODUCT_NAME = ButtonLog Staging

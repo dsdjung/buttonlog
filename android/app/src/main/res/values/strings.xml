@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ButtonLog</string>
+    <!-- app_name is defined in build.gradle.kts product flavors for environment-specific names -->
 
     <!-- Navigation -->
     <string name="nav_buttons">Buttons</string>

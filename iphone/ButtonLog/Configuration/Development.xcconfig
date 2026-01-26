@@ -1,0 +1,10 @@
+// Development Environment Configuration
+// Used for local development against localhost backend
+
+APP_ENVIRONMENT = Development
+
+// Bundle ID suffix for development (allows multiple app versions)
+PRODUCT_BUNDLE_IDENTIFIER = com.buttonlog.app.dev
+
+// App display name
+PRODUCT_NAME = ButtonLog Dev

@@ -24,6 +24,37 @@ android {
         }
     }
 
+    // Product flavors for different environments
+    flavorDimensions += "environment"
+    productFlavors {
+        create("development") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue("string", "app_name", "ButtonLog Dev")
+            // API URL for local development (Android emulator uses 10.0.2.2 for host localhost)
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:14015/api/\"")
+            buildConfigField("String", "WEB_BASE_URL", "\"http://10.0.2.2:14015\"")
+            buildConfigField("Boolean", "DEBUG_LOGGING", "true")
+        }
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            resValue("string", "app_name", "ButtonLog Staging")
+            buildConfigField("String", "API_BASE_URL", "\"https://staging.buttonlog.com/api/\"")
+            buildConfigField("String", "WEB_BASE_URL", "\"https://staging.buttonlog.com\"")
+            buildConfigField("Boolean", "DEBUG_LOGGING", "true")
+        }
+        create("production") {
+            dimension = "environment"
+            resValue("string", "app_name", "ButtonLog")
+            buildConfigField("String", "API_BASE_URL", "\"https://buttonlog.com/api/\"")
+            buildConfigField("String", "WEB_BASE_URL", "\"https://buttonlog.com\"")
+            buildConfigField("Boolean", "DEBUG_LOGGING", "false")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

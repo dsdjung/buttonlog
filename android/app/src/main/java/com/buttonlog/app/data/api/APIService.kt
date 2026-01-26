@@ -1,5 +1,6 @@
 package com.buttonlog.app.data.api
 
+import com.buttonlog.app.BuildConfig
 import com.buttonlog.app.data.model.*
 import com.google.gson.annotations.SerializedName
 import retrofit2.http.*
@@ -824,7 +825,12 @@ data class FeatureFlags(
 // MARK: - API Configuration
 
 object ApiConfig {
-    const val BASE_URL = "http://10.0.2.2:14015/api/" // Android emulator localhost (port 14015)
+    // API URL is determined by build flavor (development, staging, production)
+    // BuildConfig fields are generated from build.gradle.kts product flavors
+    val BASE_URL: String = BuildConfig.API_BASE_URL
+    val WEB_BASE_URL: String = BuildConfig.WEB_BASE_URL
+    val DEBUG_LOGGING: Boolean = BuildConfig.DEBUG_LOGGING
+
     const val TIMEOUT_SECONDS = 30L
 
     // Headers

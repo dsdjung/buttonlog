@@ -98,5 +98,7 @@
     <array>
         <string>remote-notification</string>
     </array>
+    <key>APP_ENVIRONMENT</key>
+    <string>$(APP_ENVIRONMENT)</string>
 </dict>
 </plist>

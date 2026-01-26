@@ -1,0 +1,10 @@
+// Production Environment Configuration
+// Used for App Store release against buttonlog.com
+
+APP_ENVIRONMENT = Production
+
+// Production bundle ID
+PRODUCT_BUNDLE_IDENTIFIER = com.buttonlog.app
+
+// App display name
+PRODUCT_NAME = ButtonLog

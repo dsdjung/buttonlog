@@ -5,10 +5,12 @@ import UIKit
 class APIService {
     static let shared = APIService()
 
-    private let baseURL = "http://localhost:14015/api"
+    private let baseURL: String
     private let session = URLSession.shared
-    
-    private init() {}
+
+    private init() {
+        self.baseURL = AppConfiguration.shared.apiBaseURL
+    }
     
     // MARK: - Generic Request Method
     
@@ -359,7 +361,7 @@ class APIService {
 
     // Get OAuth URL for provider
     var oauthBaseURL: String {
-        return baseURL.replacingOccurrences(of: "/api", with: "")
+        return AppConfiguration.shared.webBaseURL
     }
     
     // MARK: - User Management
