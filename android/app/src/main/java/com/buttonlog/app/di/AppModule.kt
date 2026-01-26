@@ -81,7 +81,29 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(authInterceptor: Interceptor): OkHttpClient {
+    @Named("authResponseInterceptor")
+    fun provideAuthResponseInterceptor(sharedPreferences: SharedPreferences): Interceptor {
+        return Interceptor { chain ->
+            val response = chain.proceed(chain.request())
+
+            // Auto-logout on 401 Unauthorized responses
+            if (response.code == 401) {
+                // Clear auth token - app will detect logged out state
+                sharedPreferences.edit()
+                    .remove(KEY_AUTH_TOKEN)
+                    .apply()
+            }
+
+            response
+        }
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        authInterceptor: Interceptor,
+        @Named("authResponseInterceptor") authResponseInterceptor: Interceptor
+    ): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
@@ -89,6 +111,7 @@ object AppModule {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
+            .addInterceptor(authResponseInterceptor)  // Check responses for 401
             .connectTimeout(ApiConfig.TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(ApiConfig.TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(ApiConfig.TIMEOUT_SECONDS, TimeUnit.SECONDS)

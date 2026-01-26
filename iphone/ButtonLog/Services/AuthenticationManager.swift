@@ -249,11 +249,9 @@ class AuthenticationManager: NSObject, ObservableObject {
             currentUser = user
             setOnboardingCompleted(user.onboardingCompleted)
         } catch let error as APIError {
-            // Only logout on authentication errors (401), not network issues
-            if case .serverError(let message) = error,
-               message.lowercased().contains("401") ||
-               message.lowercased().contains("unauthorized") ||
-               message.lowercased().contains("invalid token") {
+            // Auto-logout on authentication errors (401)
+            if error.isUnauthorized {
+                print("Auth error: \(error.localizedDescription) - logging out")
                 await logout()
             }
             // For other errors (network, server down, etc.), keep the user logged in

@@ -37,6 +37,25 @@ class AuthRepository @Inject constructor(
     private val _onboardingCompleted = MutableStateFlow(getStoredOnboardingStatus())
     val onboardingCompleted: StateFlow<Boolean> = _onboardingCompleted.asStateFlow()
 
+    // Listen for auth token changes (e.g., from 401 response interceptor)
+    private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == KEY_AUTH_TOKEN) {
+            val hasToken = hasToken()
+            if (_isLoggedIn.value != hasToken) {
+                Log.d(TAG, "Auth token changed, updating logged in state to: $hasToken")
+                _isLoggedIn.value = hasToken
+                if (!hasToken) {
+                    _onboardingCompleted.value = false
+                }
+            }
+        }
+    }
+
+    init {
+        // Register listener for auth token changes
+        sharedPreferences.registerOnSharedPreferenceChangeListener(prefsListener)
+    }
+
     private fun getStoredOnboardingStatus(): Boolean {
         return sharedPreferences.getBoolean(KEY_ONBOARDING_COMPLETED, false)
     }

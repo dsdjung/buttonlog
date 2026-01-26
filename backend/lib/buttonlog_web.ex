@@ -55,6 +55,8 @@ defmodule ButtonLogWeb do
       use Phoenix.LiveView,
         layout: {ButtonLogWeb.Layouts, :buttonlog}
 
+      import ButtonLogWeb.LiveHelpers
+
       unquote(html_helpers())
     end
   end

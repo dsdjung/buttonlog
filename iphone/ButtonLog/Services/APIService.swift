@@ -94,6 +94,10 @@ class APIService {
                 )
                 throw APIError.upgradeRequired(info)
             }
+        } else if httpResponse.statusCode == 401 {
+            // Authentication error - user should be logged out
+            let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
+            throw APIError.unauthorized(errorResponse?.error?.message ?? "Authentication failed")
         } else {
             let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
             throw APIError.serverError(errorResponse?.error?.message ?? "HTTP \(httpResponse.statusCode)")
@@ -153,6 +157,9 @@ class APIService {
                 )
                 throw APIError.upgradeRequired(info)
             }
+        } else if httpResponse.statusCode == 401 {
+            let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
+            throw APIError.unauthorized(errorResponse?.error?.message ?? "Authentication failed")
         } else {
             let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
             throw APIError.serverError(errorResponse?.error?.message ?? "HTTP \(httpResponse.statusCode)")
@@ -205,12 +212,15 @@ class APIService {
                 // If decoding fails, it might be because data is null - return nil
                 return nil
             }
+        } else if httpResponse.statusCode == 401 {
+            let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
+            throw APIError.unauthorized(errorResponse?.error?.message ?? "Authentication failed")
         } else {
             let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
             throw APIError.serverError(errorResponse?.error?.message ?? "HTTP \(httpResponse.statusCode)")
         }
     }
-    
+
     private func makeVoidRequest(
         endpoint: String,
         method: HTTPMethod = .GET,
@@ -240,12 +250,15 @@ class APIService {
             throw APIError.invalidResponse
         }
 
-        if !(httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
+        if httpResponse.statusCode == 401 {
+            let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
+            throw APIError.unauthorized(errorResponse?.error?.message ?? "Authentication failed")
+        } else if !(httpResponse.statusCode >= 200 && httpResponse.statusCode < 300) {
             let errorResponse = try? JSONDecoder.iso8601.decode(APIErrorResponse.self, from: data)
             throw APIError.serverError(errorResponse?.error?.message ?? "HTTP \(httpResponse.statusCode)")
         }
     }
-    
+
     // MARK: - App Configuration
 
     /// Fetch app configuration from server
@@ -1153,6 +1166,7 @@ enum APIError: Error, LocalizedError {
     case networkError
     case decodingError
     case upgradeRequired(UpgradeInfo)
+    case unauthorized(String)  // Authentication failed - user should be logged out
 
     var errorDescription: String? {
         switch self {
@@ -1168,11 +1182,18 @@ enum APIError: Error, LocalizedError {
             return "Failed to decode response"
         case .upgradeRequired(let info):
             return info.message
+        case .unauthorized(let message):
+            return message
         }
     }
 
     var isUpgradeRequired: Bool {
         if case .upgradeRequired = self { return true }
+        return false
+    }
+
+    var isUnauthorized: Bool {
+        if case .unauthorized = self { return true }
         return false
     }
 

@@ -8,27 +8,29 @@ defmodule ButtonLogWeb.AccountLive do
   def mount(_params, session, socket) do
     user_id = session["user_id"]
 
-    if user_id do
-      current_user = Accounts.get_user!(user_id)
-      subscription_info = SubscriptionService.get_user_subscription(user_id)
-      plans = SubscriptionService.get_available_plans()
+    case user_id && Accounts.get_user(user_id) do
+      nil ->
+        # No user_id in session or user not found - redirect to login
+        {:ok,
+         socket
+         |> put_flash(:error, "Please log in to access account settings")
+         |> redirect(to: ~p"/auth/login")}
 
-      {:ok,
-       socket
-       |> assign(:current_user, current_user)
-       |> assign(:subscription_info, subscription_info)
-       |> assign(:plans, plans)
-       |> assign(:page_title, "Account Settings")
-       |> assign(:editing_profile, false)
-       |> assign(:profile_form, build_profile_form(current_user))
-       |> assign(:editing_password, false)
-       |> assign(:password_form, %{"current_password" => "", "new_password" => "", "confirm_password" => ""})
-       |> assign(:password_error, nil)}
-    else
-      {:ok,
-       socket
-       |> put_flash(:error, "Please log in to access account settings")
-       |> redirect(to: ~p"/auth/login")}
+      current_user ->
+        subscription_info = SubscriptionService.get_user_subscription(user_id)
+        plans = SubscriptionService.get_available_plans()
+
+        {:ok,
+         socket
+         |> assign(:current_user, current_user)
+         |> assign(:subscription_info, subscription_info)
+         |> assign(:plans, plans)
+         |> assign(:page_title, "Account Settings")
+         |> assign(:editing_profile, false)
+         |> assign(:profile_form, build_profile_form(current_user))
+         |> assign(:editing_password, false)
+         |> assign(:password_form, %{"current_password" => "", "new_password" => "", "confirm_password" => ""})
+         |> assign(:password_error, nil)}
     end
   end
 
