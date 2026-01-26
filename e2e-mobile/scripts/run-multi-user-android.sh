@@ -10,6 +10,9 @@
 
 set -e
 
+# Add Maestro to PATH
+export PATH="$PATH:$HOME/.maestro/bin"
+
 echo ""
 echo "========================================"
 echo "Android Multi-User Friend Tests"

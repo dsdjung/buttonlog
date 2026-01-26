@@ -10,6 +10,9 @@
 
 set -e
 
+# Add Maestro to PATH
+export PATH="$PATH:$HOME/.maestro/bin"
+
 echo ""
 echo "========================================"
 echo "iOS Multi-User Friend Tests"
@@ -41,24 +44,14 @@ echo "  User 1: $SIM1"
 echo "  User 2: $SIM2"
 echo ""
 
-# Run tests in parallel
-echo "Starting User 1 tests on $SIM1..."
-maestro test --device "$SIM1" ios/friends-multi-user1.yaml &
-PID1=$!
-
-echo "Starting User 2 tests on $SIM2..."
-maestro test --device "$SIM2" ios/friends-multi-user2.yaml &
-PID2=$!
-
-# Wait for both to complete
-echo ""
-echo "Running tests in parallel..."
-echo ""
-
-wait $PID1
+# Run tests sequentially (iOS limitation: only one gesture at a time across simulators)
+echo "Running User 1 tests on $SIM1..."
+maestro test --device "$SIM1" ios/friends-multi-user1.yaml
 STATUS1=$?
 
-wait $PID2
+echo ""
+echo "Running User 2 tests on $SIM2..."
+maestro test --device "$SIM2" ios/friends-multi-user2.yaml
 STATUS2=$?
 
 echo ""
