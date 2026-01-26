@@ -1,5 +1,8 @@
-appId: com.buttonlog.ButtonLog
+appId: com.buttonlog.app
 ---
+
+# Launch the app
+- launchApp
 # iOS Navigation Test
 # Tests all tab navigation in the app
 # Requires: User must be logged in (pre-authenticated state)

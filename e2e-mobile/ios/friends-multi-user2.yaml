@@ -1,5 +1,8 @@
-appId: com.buttonlog.ButtonLog
+appId: com.buttonlog.app
 ---
+
+# Launch the app
+- launchApp
 # iOS Multi-User Friend Tests - User 2's Perspective
 #
 # Run on User 2's simulator while User 1 runs their flow on another simulator.

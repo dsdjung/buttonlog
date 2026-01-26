@@ -3,6 +3,9 @@ appId: com.buttonlog.app
 # Android Buttons Flow Test
 # Requires: User must be logged in (pre-authenticated state)
 
+# Launch the app
+- launchApp
+
 # Wait for home screen to load
 - waitForAnimationToEnd
 

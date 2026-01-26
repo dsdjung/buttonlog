@@ -1,5 +1,6 @@
 package com.buttonlog.app.ui.viewmodels
 
+import android.util.Log
 import app.cash.turbine.test
 import com.buttonlog.app.data.model.ButtonState
 import com.buttonlog.app.data.model.ButtonType
@@ -16,6 +17,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -78,6 +81,16 @@ class FriendsViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+
+        // Mock Android Log class for unit tests
+        mockkStatic(Log::class)
+        every { Log.d(any(), any()) } returns 0
+        every { Log.e(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+        every { Log.i(any(), any()) } returns 0
+        every { Log.w(any(), any<String>()) } returns 0
+        every { Log.v(any(), any()) } returns 0
+
         friendsRepository = mockk(relaxed = true)
 
         every { friendsRepository.friends } returns MutableStateFlow(emptyList())
@@ -90,6 +103,7 @@ class FriendsViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkStatic(Log::class)
     }
 
     @Test

@@ -1,5 +1,8 @@
-appId: com.buttonlog.ButtonLog
+appId: com.buttonlog.app
 ---
+
+# Launch the app
+- launchApp
 # iOS Buttons Flow Test with API Data Validation
 # Requires: User must be logged in (pre-authenticated state)
 # This test validates both UI state AND backend API data

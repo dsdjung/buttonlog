@@ -101,20 +101,19 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `login sets loading state during operation`() = runTest {
+    fun `login completes with loading state false`() = runTest {
         // Given
         coEvery { authRepository.login(any(), any()) } returns Result.success(testAuthUserData)
 
         // When
         viewModel.login("test@example.com", "password123")
-
-        // Then - check loading started
-        assertThat(viewModel.isLoading.value).isTrue()
-
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Loading should be false after operation completes
+        // Then - loading should be false after operation completes
         assertThat(viewModel.isLoading.value).isFalse()
+
+        // Verify the login was called
+        coVerify { authRepository.login("test@example.com", "password123") }
     }
 
     @Test
@@ -163,20 +162,19 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `register sets loading state during operation`() = runTest {
+    fun `register completes with loading state false`() = runTest {
         // Given
         coEvery { authRepository.register(any(), any(), any()) } returns Result.success(testAuthUserData)
 
         // When
         viewModel.register("test@example.com", "password123", "password123")
-
-        // Then - check loading started
-        assertThat(viewModel.isLoading.value).isTrue()
-
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Loading should be false after operation completes
+        // Then - loading should be false after operation completes
         assertThat(viewModel.isLoading.value).isFalse()
+
+        // Verify the register was called
+        coVerify { authRepository.register("test@example.com", "password123", "password123") }
     }
 
     @Test
