@@ -41,8 +41,57 @@ object AppModule {
     @Singleton
     fun provideGson(): Gson {
         return GsonBuilder()
-            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            .registerTypeAdapter(java.util.Date::class.java, ISO8601DateAdapter())
             .create()
+    }
+
+    /**
+     * Custom TypeAdapter that properly handles ISO8601 dates with UTC timezone.
+     * The backend sends dates like "2026-01-26T15:30:00Z" or "2026-01-26T15:30:00.123456Z"
+     * The 'Z' suffix indicates UTC time, which needs to be converted to local timezone for display.
+     */
+    private class ISO8601DateAdapter : com.google.gson.TypeAdapter<java.util.Date>() {
+        private val formats = listOf(
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            },
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            },
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            },
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.US),
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+        )
+
+        override fun write(out: com.google.gson.stream.JsonWriter, value: java.util.Date?) {
+            if (value == null) {
+                out.nullValue()
+            } else {
+                val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                }
+                out.value(format.format(value))
+            }
+        }
+
+        override fun read(reader: com.google.gson.stream.JsonReader): java.util.Date? {
+            if (reader.peek() == com.google.gson.stream.JsonToken.NULL) {
+                reader.nextNull()
+                return null
+            }
+            val dateString = reader.nextString()
+            for (format in formats) {
+                try {
+                    return format.parse(dateString)
+                } catch (_: java.text.ParseException) {
+                    // Try next format
+                }
+            }
+            // If all formats fail, return null
+            return null
+        }
     }
 
     @SuppressLint("HardwareIds")

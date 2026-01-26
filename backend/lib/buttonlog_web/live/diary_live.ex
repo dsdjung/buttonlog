@@ -10,11 +10,14 @@ defmodule ButtonLogWeb.DiaryLive do
 
     if user_id do
       current_user = Accounts.get_user!(user_id)
-      today = get_local_today()
+      # Default to UTC until we get timezone from browser
+      # The timezone_offset will be updated by the client-side hook
+      timezone_offset = 0
+      today = get_local_today(timezone_offset)
 
       # Get today's activities by default
-      activities = get_daily_activities(user_id, today)
-      summary = generate_daily_summary(activities, today)
+      activities = get_daily_activities(user_id, today, timezone_offset)
+      summary = generate_daily_summary(activities, today, timezone_offset)
 
       {:ok,
        socket
@@ -22,6 +25,7 @@ defmodule ButtonLogWeb.DiaryLive do
        |> assign(:selected_date, today)
        |> assign(:activities, activities)
        |> assign(:summary, summary)
+       |> assign(:timezone_offset, timezone_offset)
        |> assign(:page_title, "Diary")}
     else
       {:ok,
@@ -29,6 +33,29 @@ defmodule ButtonLogWeb.DiaryLive do
        |> put_flash(:error, "Please log in to view your diary")
        |> redirect(to: ~p"/auth/login")}
     end
+  end
+
+  @impl true
+  def handle_event("set_timezone", %{"offset" => offset}, socket) when is_integer(offset) do
+    # offset is in minutes from UTC (e.g., -300 for EST, -240 for EDT)
+    # Convert to hours for our calculations (negative because JS gives opposite sign)
+    timezone_offset = -div(offset, 60)
+
+    user_id = socket.assigns.current_user.id
+    today = get_local_today(timezone_offset)
+    activities = get_daily_activities(user_id, today, timezone_offset)
+    summary = generate_daily_summary(activities, today, timezone_offset)
+
+    {:noreply,
+     socket
+     |> assign(:timezone_offset, timezone_offset)
+     |> assign(:selected_date, today)
+     |> assign(:activities, activities)
+     |> assign(:summary, summary)}
+  end
+
+  def handle_event("set_timezone", _params, socket) do
+    {:noreply, socket}
   end
 
   @impl true
@@ -48,10 +75,11 @@ defmodule ButtonLogWeb.DiaryLive do
   def handle_event("previous_day", _params, socket) do
     current_date = socket.assigns.selected_date
     previous_date = Date.add(current_date, -1)
+    timezone_offset = socket.assigns.timezone_offset
 
     user_id = socket.assigns.current_user.id
-    activities = get_daily_activities(user_id, previous_date)
-    summary = generate_daily_summary(activities, previous_date)
+    activities = get_daily_activities(user_id, previous_date, timezone_offset)
+    summary = generate_daily_summary(activities, previous_date, timezone_offset)
 
     {:noreply,
      socket
@@ -63,15 +91,16 @@ defmodule ButtonLogWeb.DiaryLive do
   def handle_event("next_day", _params, socket) do
     current_date = socket.assigns.selected_date
     next_date = Date.add(current_date, 1)
+    timezone_offset = socket.assigns.timezone_offset
 
     # Don't allow future dates
-    today = get_local_today()
+    today = get_local_today(timezone_offset)
     if Date.compare(next_date, today) == :gt do
       {:noreply, socket |> put_flash(:error, "Cannot view future dates")}
     else
       user_id = socket.assigns.current_user.id
-      activities = get_daily_activities(user_id, next_date)
-      summary = generate_daily_summary(activities, next_date)
+      activities = get_daily_activities(user_id, next_date, timezone_offset)
+      summary = generate_daily_summary(activities, next_date, timezone_offset)
 
               {:noreply,
          socket
@@ -82,10 +111,11 @@ defmodule ButtonLogWeb.DiaryLive do
   end
 
   def handle_event("go_to_today", _params, socket) do
-    today = get_local_today()
+    timezone_offset = socket.assigns.timezone_offset
+    today = get_local_today(timezone_offset)
     user_id = socket.assigns.current_user.id
-    activities = get_daily_activities(user_id, today)
-    summary = generate_daily_summary(activities, today)
+    activities = get_daily_activities(user_id, today, timezone_offset)
+    summary = generate_daily_summary(activities, today, timezone_offset)
 
     {:noreply,
      socket
@@ -98,8 +128,9 @@ defmodule ButtonLogWeb.DiaryLive do
     # Refresh the current date's activities and summary to get updated durations
     user_id = socket.assigns.current_user.id
     selected_date = socket.assigns.selected_date
-    activities = get_daily_activities(user_id, selected_date)
-    summary = generate_daily_summary(activities, selected_date)
+    timezone_offset = socket.assigns.timezone_offset
+    activities = get_daily_activities(user_id, selected_date, timezone_offset)
+    summary = generate_daily_summary(activities, selected_date, timezone_offset)
 
     {:noreply,
      socket
@@ -122,8 +153,9 @@ defmodule ButtonLogWeb.DiaryLive do
     case Date.from_iso8601(date_string) do
       {:ok, selected_date} ->
         user_id = socket.assigns.current_user.id
-        activities = get_daily_activities(user_id, selected_date)
-        summary = generate_daily_summary(activities, selected_date)
+        timezone_offset = socket.assigns.timezone_offset
+        activities = get_daily_activities(user_id, selected_date, timezone_offset)
+        summary = generate_daily_summary(activities, selected_date, timezone_offset)
 
         {:noreply,
          socket
@@ -137,20 +169,21 @@ defmodule ButtonLogWeb.DiaryLive do
     end
   end
 
-  defp get_daily_activities(user_id, date) do
+  defp get_daily_activities(user_id, date, timezone_offset) do
     # Convert local date to UTC start/end times for database query
     # Since button clicks are stored in UTC, we need to query the UTC range
     # that corresponds to the local date, accounting for timezone offset
-
-    # For EST (-5 hours), local midnight corresponds to UTC 5:00 AM
-    # So for local date 2025-08-24, we want UTC range 2025-08-24 05:00:00 to 2025-08-25 04:59:59
-    timezone_offset_hours = 5  # EST is 5 hours behind UTC
+    #
+    # timezone_offset is hours from UTC (e.g., -5 for EST, -4 for EDT, +1 for CET)
+    # To convert local midnight to UTC, we subtract the offset
+    # For EST (-5): local midnight = UTC 5:00 AM, so we add abs(-5) = 5 hours
+    offset_seconds = -timezone_offset * 3600
 
     start_of_day = DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
-    |> DateTime.add(timezone_offset_hours * 3600, :second)
+    |> DateTime.add(offset_seconds, :second)
 
     end_of_day = DateTime.new!(date, ~T[23:59:59], "Etc/UTC")
-    |> DateTime.add(timezone_offset_hours * 3600, :second)
+    |> DateTime.add(offset_seconds, :second)
 
     # Get all button clicks for the user on the specified date
     clicks = Repo.all(
@@ -186,7 +219,7 @@ defmodule ButtonLogWeb.DiaryLive do
     |> Enum.sort_by(fn activity -> activity.total_clicks end, :desc)
   end
 
-  defp generate_daily_summary(activities, date) do
+  defp generate_daily_summary(activities, date, timezone_offset) do
     total_buttons_used = length(activities)
     total_clicks = Enum.reduce(activities, 0, fn activity, acc -> acc + activity.total_clicks end)
 
@@ -235,7 +268,7 @@ defmodule ButtonLogWeb.DiaryLive do
       formatted_activities: formatted_activities,
       in_progress_toggle_buttons: in_progress_toggle_buttons,
       total_active_time: total_active_time,
-      is_today: Date.compare(date, get_local_today()) == :eq,
+      is_today: Date.compare(date, get_local_today(timezone_offset)) == :eq,
       is_empty: activities == []
     }
   end
@@ -312,41 +345,36 @@ defmodule ButtonLogWeb.DiaryLive do
     Calendar.strftime(date, "%B %d, %Y")
   end
 
-  defp is_today?(date) do
-    Date.compare(date, get_local_today()) == :eq
+  defp is_today?(date, timezone_offset) do
+    Date.compare(date, get_local_today(timezone_offset)) == :eq
   end
 
-  defp is_yesterday?(date) do
-    Date.compare(date, Date.add(get_local_today(), -1)) == :eq
+  defp is_yesterday?(date, timezone_offset) do
+    Date.compare(date, Date.add(get_local_today(timezone_offset), -1)) == :eq
   end
 
-  defp is_tomorrow?(date) do
-    Date.compare(date, Date.add(get_local_today(), 1)) == :eq
+  defp is_tomorrow?(date, timezone_offset) do
+    Date.compare(date, Date.add(get_local_today(timezone_offset), 1)) == :eq
   end
 
-  defp get_relative_date_text(date) do
+  defp get_relative_date_text(date, timezone_offset) do
     cond do
-      is_today?(date) -> "Today"
-      is_yesterday?(date) -> "Yesterday"
-      is_tomorrow?(date) -> "Tomorrow"
+      is_today?(date, timezone_offset) -> "Today"
+      is_yesterday?(date, timezone_offset) -> "Yesterday"
+      is_tomorrow?(date, timezone_offset) -> "Tomorrow"
       true -> format_date(date)
     end
   end
 
-    # Get today's date in local timezone
-  defp get_local_today() do
-    # Get current time in local timezone
-    # For now, use a simple approach: get UTC time and adjust for typical timezone offset
-    # This will give us the local date for most users
+  # Get today's date in local timezone based on the provided offset
+  defp get_local_today(timezone_offset) when is_integer(timezone_offset) do
     utc_now = DateTime.utc_now()
-
-    # Adjust for typical timezone offset (e.g., -5 hours for Eastern Time)
-    # You can adjust this offset based on your location
-    timezone_offset_hours = -5  # Eastern Time (EST/EDT)
-
-    local_now = DateTime.add(utc_now, timezone_offset_hours * 3600, :second)
+    # timezone_offset is hours from UTC (e.g., -5 for EST, +1 for CET)
+    local_now = DateTime.add(utc_now, timezone_offset * 3600, :second)
     DateTime.to_date(local_now)
   end
+
+  defp get_local_today(_), do: Date.utc_today()
 
     # Calculate total active duration for a toggle button within a date range
   # This handles sessions that started before the date and multiple active periods

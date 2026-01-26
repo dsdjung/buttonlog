@@ -61,6 +61,11 @@ Hooks.TimezoneDetector = {
 // Hook to handle date input changes reliably
 Hooks.DateSelector = {
   mounted() {
+    // Send the browser's timezone offset to the server
+    // getTimezoneOffset() returns minutes from UTC (e.g., 300 for EST, 240 for EDT)
+    const offset = new Date().getTimezoneOffset();
+    this.pushEvent('set_timezone', {offset: offset});
+
     this.el.addEventListener('change', (e) => {
       const selectedDate = e.target.value;
       if (selectedDate) {

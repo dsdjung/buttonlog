@@ -27,7 +27,7 @@
               
               <div class="text-center">
                 <h3 class="text-2xl font-bold text-gray-900">
-                  <%= get_relative_date_text(@selected_date) %>
+                  <%= get_relative_date_text(@selected_date, @timezone_offset) %>
                 </h3>
                 <p class="text-gray-600">
                   <%= Calendar.strftime(@selected_date, "%A, %B %d, %Y") %>
@@ -49,7 +49,7 @@
                      value={Date.to_string(@selected_date)}
                      phx-hook="DateSelector"
                      class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                     max={Date.to_string(get_local_today())}>
+                     max={Date.to_string(get_local_today(@timezone_offset))}>
               <div class="text-sm text-gray-500 mt-2">
                 Select a date to view activities
               </div>
