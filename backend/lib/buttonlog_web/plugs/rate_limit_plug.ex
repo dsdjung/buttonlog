@@ -31,11 +31,20 @@ defmodule ButtonLogWeb.Plugs.RateLimitPlug do
 
   def call(conn, opts) do
     # Skip rate limiting in test environment
-    if Application.get_env(:buttonlog, :env) == :test do
-      conn
-    else
-      check_rate_limit(conn, opts)
+    # Also skip for localhost in dev mode (for integration testing)
+    cond do
+      Application.get_env(:buttonlog, :env) == :test ->
+        conn
+      Application.get_env(:buttonlog, :env) == :dev && is_localhost?(conn) ->
+        conn
+      true ->
+        check_rate_limit(conn, opts)
     end
+  end
+
+  defp is_localhost?(conn) do
+    ip = get_client_ip(conn)
+    ip in ["127.0.0.1", "::1", "localhost"]
   end
 
   defp check_rate_limit(conn, opts) do

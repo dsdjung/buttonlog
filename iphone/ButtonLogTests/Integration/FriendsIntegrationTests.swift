@@ -175,7 +175,8 @@ final class FriendsIntegrationTests: BaseIntegrationTest {
         ]
 
         do {
-            let _: FriendResponseData = try await makeRequest(
+            // Friend request returns a simple message, not full friend data
+            let _: FriendRequestResponseData = try await makeRequest(
                 endpoint: "/friends/request",
                 method: "POST",
                 body: sendBody
@@ -290,5 +291,16 @@ struct NotificationResponseData: Decodable {
     enum CodingKeys: String, CodingKey {
         case id, type, title, message
         case isRead = "is_read"
+    }
+}
+
+struct FriendRequestResponseData: Decodable {
+    let message: String
+    let email: String
+    let inviteSent: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case message, email
+        case inviteSent = "invite_sent"
     }
 }

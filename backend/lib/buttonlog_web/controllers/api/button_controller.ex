@@ -183,13 +183,7 @@ defmodule ButtonLogWeb.API.ButtonController do
       {:ok, _button} ->
         conn
         |> put_status(:no_content)
-        |> json(%{
-          success: true,
-          meta: %{
-            timestamp: DateTime.utc_now(),
-            request_id: generate_request_id()
-          }
-        })
+        |> send_resp(204, "")
 
       {:error, :not_found} ->
         conn
