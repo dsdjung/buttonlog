@@ -39,21 +39,21 @@ object IntegrationTestConfig {
 
     /**
      * Test user credentials for integration tests.
-     * These should exist in the target environment.
+     * These accounts exist in both local dev and staging environments.
      *
-     * For local dev: Create via backend seed data or manually
-     * For staging: Pre-created test accounts
+     * Android uses: dsdjungtest1@gmail.com
+     * iOS uses: dsdjungtest@gmail.com
      */
     object TestCredentials {
-        // Integration test user - should be created in each environment
-        const val TEST_EMAIL = "integration-test@buttonlog.com"
-        const val TEST_PASSWORD = "IntegrationTest123!"
-        const val TEST_USERNAME = "integration_test_user"
+        // Primary Android test user
+        const val TEST_EMAIL = "dsdjungtest1@gmail.com"
+        const val TEST_PASSWORD = "Test123!"  // Update this to the actual password
+        const val TEST_USERNAME = "dsdjungtest1"
 
-        // Secondary test user for friend operations
-        const val TEST_EMAIL_2 = "integration-test-2@buttonlog.com"
-        const val TEST_PASSWORD_2 = "IntegrationTest123!"
-        const val TEST_USERNAME_2 = "integration_test_user_2"
+        // Secondary test user (iOS test account) for friend operations
+        const val TEST_EMAIL_2 = "dsdjungtest@gmail.com"
+        const val TEST_PASSWORD_2 = "Test123!"  // Update this to the actual password
+        const val TEST_USERNAME_2 = "dsdjungtest"
     }
 
     /**
