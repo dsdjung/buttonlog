@@ -395,17 +395,21 @@ struct ButtonFormData {
     ]
 
     func toRequestBody() -> [String: Any] {
-        let descriptionValue: String? = description.isEmpty ? nil : description
         var body: [String: Any] = [
             "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
-            "description": descriptionValue as Any,
             "type": type.rawValue,
             "icon": icon,
             "color": color,
             "alerts_enabled": alertsEnabled,
             "auto_stop_enabled": autoStopEnabled,
             "calendar_sync_enabled": calendarSyncEnabled
-        ].compactMapValues { $0 }
+        ]
+
+        // Only include description if not empty
+        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedDescription.isEmpty {
+            body["description"] = trimmedDescription
+        }
 
         // Only include auto_stop_minutes if auto-stop is enabled
         if autoStopEnabled, let minutes = autoStopMinutes {
