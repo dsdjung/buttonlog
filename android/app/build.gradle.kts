@@ -38,7 +38,6 @@ android {
         }
         create("staging") {
             dimension = "environment"
-            applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
             resValue("string", "app_name", "ButtonLog Staging")
             buildConfigField("String", "API_BASE_URL", "\"https://staging.buttonlog.com/api/\"")
