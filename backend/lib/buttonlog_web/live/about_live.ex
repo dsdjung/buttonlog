@@ -1,9 +1,11 @@
 defmodule ButtonLogWeb.AboutLive do
   use ButtonLogWeb, :live_view
+  alias ButtonLog.Accounts
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(_params, session, socket) do
+    current_user = if session["user_id"], do: Accounts.get_user(session["user_id"]), else: nil
+    {:ok, assign(socket, :current_user, current_user)}
   end
 
   @impl true
