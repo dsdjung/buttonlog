@@ -6,27 +6,40 @@ final class ModelTests: XCTestCase {
     // MARK: - Button Model Tests
 
     func testButtonCreation() {
-        let button = Button(
+        let button = ButtonModel(
             id: "test-id",
             name: "Test Button",
             description: "A test button",
             type: .instant,
             icon: "star",
             color: "#007AFF",
-            clickCount: 5,
+            isActive: true,
             currentState: .idle,
+            stateChangedAt: nil,
             alertsEnabled: true,
             autoStopEnabled: false,
+            autoStopMinutes: nil,
+            scheduledStopAt: nil,
             calendarSyncEnabled: false,
+            userId: "user-1",
             createdAt: Date(),
             updatedAt: Date(),
-            latestClick: nil
+            createdByFriendId: nil,
+            createdByFriend: nil,
+            giftMessage: nil,
+            choices: nil,
+            sharingMode: nil,
+            shareToken: nil,
+            shareTokenExpiresAt: nil,
+            isSharedWithMe: nil,
+            ownerId: nil,
+            ownerName: nil
         )
 
         XCTAssertEqual(button.id, "test-id")
         XCTAssertEqual(button.name, "Test Button")
         XCTAssertEqual(button.type, .instant)
-        XCTAssertEqual(button.clickCount, 5)
+        XCTAssertTrue(button.isActive)
         XCTAssertEqual(button.currentState, .idle)
     }
 
@@ -43,44 +56,25 @@ final class ModelTests: XCTestCase {
     }
 
     func testButtonFormDataCreation() {
-        let formData = ButtonFormData(
-            name: "New Button",
-            description: "Description",
-            type: .toggle,
-            icon: "heart",
-            color: "#FF0000"
-        )
+        var formData = ButtonFormData()
+        formData.name = "New Button"
+        formData.description = "Description"
+        formData.type = .toggle
+        formData.icon = "heart"
+        formData.color = "#FF0000"
 
         XCTAssertEqual(formData.name, "New Button")
         XCTAssertEqual(formData.type, .toggle)
         XCTAssertEqual(formData.color, "#FF0000")
     }
 
-    func testButtonFormDataFromButton() {
-        let button = Button(
-            id: "test-id",
-            name: "Existing Button",
-            description: "Existing description",
-            type: .toggle,
-            icon: "bolt",
-            color: "#00FF00",
-            clickCount: 10,
-            currentState: .active,
-            alertsEnabled: false,
-            autoStopEnabled: true,
-            calendarSyncEnabled: true,
-            createdAt: Date(),
-            updatedAt: Date(),
-            latestClick: nil
-        )
+    func testButtonFormDataIsValid() {
+        var emptyFormData = ButtonFormData()
+        XCTAssertFalse(emptyFormData.isValid)
 
-        let formData = ButtonFormData(from: button)
-
-        XCTAssertEqual(formData.name, button.name)
-        XCTAssertEqual(formData.description, button.description)
-        XCTAssertEqual(formData.type, button.type)
-        XCTAssertEqual(formData.icon, button.icon)
-        XCTAssertEqual(formData.color, button.color)
+        var validFormData = ButtonFormData()
+        validFormData.name = "Valid Button"
+        XCTAssertTrue(validFormData.isValid)
     }
 
     // MARK: - User Model Tests
@@ -91,8 +85,14 @@ final class ModelTests: XCTestCase {
             email: "test@example.com",
             username: "testuser",
             displayName: "Test User",
-            avatar: nil,
-            isVerified: true,
+            firstName: "Test",
+            lastName: "User",
+            profileVisibility: .friends,
+            activityVisibility: .friends,
+            subscriptionTier: .free,
+            isActive: true,
+            emailVerified: true,
+            onboardingCompleted: true,
             createdAt: Date(),
             updatedAt: Date()
         )
@@ -100,7 +100,7 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(user.id, "user-123")
         XCTAssertEqual(user.email, "test@example.com")
         XCTAssertEqual(user.username, "testuser")
-        XCTAssertTrue(user.isVerified)
+        XCTAssertTrue(user.emailVerified)
     }
 
     func testPublicUserDisplayNameOrUsername() {
@@ -108,14 +108,18 @@ final class ModelTests: XCTestCase {
             id: "1",
             username: "testuser",
             displayName: "Display Name",
-            avatar: nil
+            firstName: nil,
+            lastName: nil,
+            profileVisibility: .friends
         )
 
         let userWithoutDisplayName = PublicUser(
             id: "2",
             username: "testuser2",
             displayName: nil,
-            avatar: nil
+            firstName: nil,
+            lastName: nil,
+            profileVisibility: .friends
         )
 
         XCTAssertEqual(userWithDisplayName.displayNameOrUsername, "Display Name")
@@ -123,11 +127,24 @@ final class ModelTests: XCTestCase {
     }
 
     func testPublicUserFullName() {
-        let userWithDisplayName = PublicUser(
+        let userWithNames = PublicUser(
             id: "1",
             username: "testuser",
+            displayName: "Display Name",
+            firstName: "John",
+            lastName: "Doe",
+            profileVisibility: .friends
+        )
+
+        XCTAssertEqual(userWithNames.fullName, "John Doe")
+
+        let userWithDisplayName = PublicUser(
+            id: "2",
+            username: "testuser2",
             displayName: "Full Display Name",
-            avatar: nil
+            firstName: nil,
+            lastName: nil,
+            profileVisibility: .friends
         )
 
         XCTAssertEqual(userWithDisplayName.fullName, "Full Display Name")
@@ -140,7 +157,9 @@ final class ModelTests: XCTestCase {
             id: "friend-user-id",
             username: "frienduser",
             displayName: "Friend User",
-            avatar: nil
+            firstName: nil,
+            lastName: nil,
+            profileVisibility: .friends
         )
         let permissions = FriendPermissions(
             canSeeButtons: true,
@@ -154,7 +173,8 @@ final class ModelTests: XCTestCase {
             friendUser: publicUser,
             status: .accepted,
             permissions: permissions,
-            createdAt: Date()
+            createdAt: Date(),
+            updatedAt: Date()
         )
 
         XCTAssertEqual(friend.id, "friendship-id")
@@ -167,6 +187,7 @@ final class ModelTests: XCTestCase {
     func testFriendshipStatus() {
         XCTAssertEqual(FriendshipStatus.pending.rawValue, "pending")
         XCTAssertEqual(FriendshipStatus.accepted.rawValue, "accepted")
+        XCTAssertEqual(FriendshipStatus.blocked.rawValue, "blocked")
     }
 
     func testFriendRequest() {
@@ -188,7 +209,7 @@ final class ModelTests: XCTestCase {
         requestWithUsername.username = "testuser"
         XCTAssertTrue(requestWithUsername.isValid)
 
-        var emptyRequest = FriendRequest()
+        let emptyRequest = FriendRequest()
         XCTAssertFalse(emptyRequest.isValid)
     }
 
@@ -228,22 +249,41 @@ final class ModelTests: XCTestCase {
     // MARK: - Subscription Model Tests
 
     func testSubscriptionPlanCreation() {
+        let features = SubscriptionFeatures(
+            analytics: true,
+            calendarSync: true,
+            apiAccess: true,
+            customThemes: true,
+            prioritySupport: true,
+            teamFeatures: false,
+            whiteLabelOptions: false
+        )
+        let limits = SubscriptionLimits(
+            maxButtons: 100,
+            maxFriends: 100,
+            maxClicksPerMonth: 10000,
+            analyticsHistoryDays: 365,
+            exportHistoryDays: 365
+        )
         let plan = SubscriptionPlan(
             id: "plan-123",
-            slug: "premium",
             name: "Premium",
+            slug: "premium",
             description: "Premium features",
-            monthlyPrice: "9.99",
-            yearlyPrice: "99.99",
-            features: ["Unlimited buttons", "Priority support"],
-            limits: ["max_buttons": 100],
-            isActive: true
+            monthlyPrice: 9.99,
+            yearlyPrice: 99.99,
+            features: features,
+            limits: limits,
+            trialDays: 14,
+            isActive: true,
+            createdAt: Date(),
+            updatedAt: Date()
         )
 
         XCTAssertEqual(plan.slug, "premium")
-        XCTAssertEqual(plan.monthlyPrice, "9.99")
+        XCTAssertEqual(plan.monthlyPrice, 9.99)
         XCTAssertTrue(plan.isActive)
-        XCTAssertEqual(plan.features.count, 2)
+        XCTAssertTrue(plan.features.analytics)
     }
 
     func testBillingCycle() {
@@ -253,9 +293,10 @@ final class ModelTests: XCTestCase {
 
     func testSubscriptionStatus() {
         XCTAssertEqual(SubscriptionStatus.active.rawValue, "active")
-        XCTAssertEqual(SubscriptionStatus.canceled.rawValue, "canceled")
+        XCTAssertEqual(SubscriptionStatus.cancelled.rawValue, "cancelled")
         XCTAssertEqual(SubscriptionStatus.paused.rawValue, "paused")
-        XCTAssertEqual(SubscriptionStatus.expired.rawValue, "expired")
+        XCTAssertEqual(SubscriptionStatus.pastDue.rawValue, "past_due")
+        XCTAssertEqual(SubscriptionStatus.trialing.rawValue, "trialing")
     }
 
     // MARK: - Button Click Model Tests
@@ -264,12 +305,16 @@ final class ModelTests: XCTestCase {
         let click = ButtonClick(
             id: "click-123",
             buttonId: "button-456",
-            action: "click",
+            userId: "user-789",
             clickedAt: Date(),
             duration: 30,
-            location: nil,
+            locationLat: nil,
+            locationLng: nil,
             device: "iPhone 15",
-            platform: "iphone"
+            platform: "iphone",
+            action: "click",
+            selectedChoice: nil,
+            createdAt: Date()
         )
 
         XCTAssertEqual(click.id, "click-123")
@@ -279,21 +324,25 @@ final class ModelTests: XCTestCase {
     }
 
     func testButtonClickWithLocation() {
-        let location = ClickLocation(lat: 37.7749, lng: -122.4194)
         let click = ButtonClick(
             id: "click-123",
             buttonId: "button-456",
-            action: "start",
+            userId: "user-789",
             clickedAt: Date(),
             duration: nil,
-            location: location,
+            locationLat: 37.7749,
+            locationLng: -122.4194,
             device: "iPhone 15",
-            platform: "iphone"
+            platform: "iphone",
+            action: "start",
+            selectedChoice: nil,
+            createdAt: Date()
         )
 
-        XCTAssertNotNil(click.location)
-        XCTAssertEqual(click.location?.lat, 37.7749)
-        XCTAssertEqual(click.location?.lng, -122.4194)
+        XCTAssertNotNil(click.locationLat)
+        XCTAssertNotNil(click.locationLng)
+        XCTAssertEqual(click.locationLat, 37.7749)
+        XCTAssertEqual(click.locationLng, -122.4194)
     }
 
     // MARK: - FriendButton Model Tests
@@ -302,10 +351,19 @@ final class ModelTests: XCTestCase {
         let friendButton = FriendButton(
             id: "button-id",
             name: "Friend's Button",
+            description: nil,
             type: .instant,
             icon: "star",
             color: "#FF0000",
+            isActive: true,
             currentState: .idle,
+            stateChangedAt: nil,
+            alertsEnabled: true,
+            autoStopEnabled: false,
+            calendarSyncEnabled: false,
+            userId: "friend-user-1",
+            createdAt: Date(),
+            updatedAt: Date(),
             latestClickAt: Date(),
             latestClickAction: "click",
             latestClickLocation: nil,
@@ -336,38 +394,64 @@ final class ModelTests: XCTestCase {
     // MARK: - Equality Tests
 
     func testButtonEquality() {
-        let button1 = Button(
+        let button1 = ButtonModel(
             id: "same-id",
             name: "Button",
             description: nil,
             type: .instant,
             icon: "star",
             color: "#007AFF",
-            clickCount: 0,
+            isActive: true,
             currentState: .idle,
+            stateChangedAt: nil,
             alertsEnabled: true,
             autoStopEnabled: false,
+            autoStopMinutes: nil,
+            scheduledStopAt: nil,
             calendarSyncEnabled: false,
+            userId: "user-1",
             createdAt: Date(),
             updatedAt: Date(),
-            latestClick: nil
+            createdByFriendId: nil,
+            createdByFriend: nil,
+            giftMessage: nil,
+            choices: nil,
+            sharingMode: nil,
+            shareToken: nil,
+            shareTokenExpiresAt: nil,
+            isSharedWithMe: nil,
+            ownerId: nil,
+            ownerName: nil
         )
 
-        let button2 = Button(
+        let button2 = ButtonModel(
             id: "same-id",
             name: "Button",
             description: nil,
             type: .instant,
             icon: "star",
             color: "#007AFF",
-            clickCount: 0,
+            isActive: true,
             currentState: .idle,
+            stateChangedAt: nil,
             alertsEnabled: true,
             autoStopEnabled: false,
+            autoStopMinutes: nil,
+            scheduledStopAt: nil,
             calendarSyncEnabled: false,
+            userId: "user-1",
             createdAt: Date(),
             updatedAt: Date(),
-            latestClick: nil
+            createdByFriendId: nil,
+            createdByFriend: nil,
+            giftMessage: nil,
+            choices: nil,
+            sharingMode: nil,
+            shareToken: nil,
+            shareTokenExpiresAt: nil,
+            isSharedWithMe: nil,
+            ownerId: nil,
+            ownerName: nil
         )
 
         XCTAssertEqual(button1.id, button2.id)

@@ -4,16 +4,18 @@ import XCTest
 final class KeychainManagerTests: XCTestCase {
 
     let testToken = "test-jwt-token-123"
-    let testUserId = "user-id-456"
+    let testKey = "test-data-key"
 
     override func setUpWithError() throws {
         // Clean up any existing test data
-        KeychainManager.shared.clearAll()
+        KeychainManager.shared.deleteToken()
+        KeychainManager.shared.delete(forKey: testKey)
     }
 
     override func tearDownWithError() throws {
         // Clean up after each test
-        KeychainManager.shared.clearAll()
+        KeychainManager.shared.deleteToken()
+        KeychainManager.shared.delete(forKey: testKey)
     }
 
     // MARK: - Singleton Tests
@@ -28,8 +30,7 @@ final class KeychainManagerTests: XCTestCase {
 
     func testSaveAndRetrieveToken() {
         // Save token
-        let saveResult = KeychainManager.shared.saveToken(testToken)
-        XCTAssertTrue(saveResult)
+        KeychainManager.shared.saveToken(testToken)
 
         // Retrieve token
         let retrievedToken = KeychainManager.shared.getToken()
@@ -58,80 +59,67 @@ final class KeychainManagerTests: XCTestCase {
         KeychainManager.shared.saveToken(testToken)
 
         // Overwrite with new token
-        let saveResult = KeychainManager.shared.saveToken(newToken)
-        XCTAssertTrue(saveResult)
+        KeychainManager.shared.saveToken(newToken)
 
         // Should return new token
         let retrievedToken = KeychainManager.shared.getToken()
         XCTAssertEqual(retrievedToken, newToken)
     }
 
-    // MARK: - User ID Storage Tests
+    // MARK: - Generic Data Storage Tests
 
-    func testSaveAndRetrieveUserId() {
-        // Save user ID
-        let saveResult = KeychainManager.shared.saveUserId(testUserId)
-        XCTAssertTrue(saveResult)
+    func testSaveAndRetrieveData() {
+        let testData = "Test data value".data(using: .utf8)!
 
-        // Retrieve user ID
-        let retrievedUserId = KeychainManager.shared.getUserId()
-        XCTAssertEqual(retrievedUserId, testUserId)
+        // Save data
+        KeychainManager.shared.save(testData, forKey: testKey)
+
+        // Retrieve data
+        let retrievedData = KeychainManager.shared.getData(forKey: testKey)
+        XCTAssertEqual(retrievedData, testData)
     }
 
-    func testGetUserIdReturnsNilWhenNotSet() {
-        let userId = KeychainManager.shared.getUserId()
-        XCTAssertNil(userId)
+    func testGetDataReturnsNilWhenNotSet() {
+        let data = KeychainManager.shared.getData(forKey: "nonexistent-key")
+        XCTAssertNil(data)
     }
 
-    func testDeleteUserId() {
+    func testDeleteData() {
+        let testData = "Test data".data(using: .utf8)!
+
         // Save then delete
-        KeychainManager.shared.saveUserId(testUserId)
-        KeychainManager.shared.deleteUserId()
+        KeychainManager.shared.save(testData, forKey: testKey)
+        KeychainManager.shared.delete(forKey: testKey)
 
         // Should be nil after deletion
-        let userId = KeychainManager.shared.getUserId()
-        XCTAssertNil(userId)
+        let data = KeychainManager.shared.getData(forKey: testKey)
+        XCTAssertNil(data)
     }
 
-    // MARK: - Clear All Tests
+    func testOverwriteData() {
+        let initialData = "Initial".data(using: .utf8)!
+        let newData = "New data".data(using: .utf8)!
 
-    func testClearAllRemovesBothTokenAndUserId() {
-        // Save both
-        KeychainManager.shared.saveToken(testToken)
-        KeychainManager.shared.saveUserId(testUserId)
+        // Save initial data
+        KeychainManager.shared.save(initialData, forKey: testKey)
 
-        // Clear all
-        KeychainManager.shared.clearAll()
+        // Overwrite with new data
+        KeychainManager.shared.save(newData, forKey: testKey)
 
-        // Both should be nil
-        XCTAssertNil(KeychainManager.shared.getToken())
-        XCTAssertNil(KeychainManager.shared.getUserId())
-    }
-
-    // MARK: - Token Validity Tests
-
-    func testHasValidToken() {
-        // Initially should not have valid token
-        XCTAssertFalse(KeychainManager.shared.hasValidToken())
-
-        // After saving, should have valid token
-        KeychainManager.shared.saveToken(testToken)
-        XCTAssertTrue(KeychainManager.shared.hasValidToken())
-
-        // After clearing, should not have valid token
-        KeychainManager.shared.clearAll()
-        XCTAssertFalse(KeychainManager.shared.hasValidToken())
+        // Should return new data
+        let retrievedData = KeychainManager.shared.getData(forKey: testKey)
+        XCTAssertEqual(retrievedData, newData)
     }
 
     // MARK: - Edge Case Tests
 
     func testSaveEmptyToken() {
         let emptyToken = ""
-        let saveResult = KeychainManager.shared.saveToken(emptyToken)
 
-        // Empty token should still be saveable
-        XCTAssertTrue(saveResult)
+        // Save empty token
+        KeychainManager.shared.saveToken(emptyToken)
 
+        // Should be retrievable
         let retrievedToken = KeychainManager.shared.getToken()
         XCTAssertEqual(retrievedToken, emptyToken)
     }
@@ -139,8 +127,7 @@ final class KeychainManagerTests: XCTestCase {
     func testSaveLongToken() {
         // Create a very long token (simulating a real JWT)
         let longToken = String(repeating: "a", count: 2000)
-        let saveResult = KeychainManager.shared.saveToken(longToken)
-        XCTAssertTrue(saveResult)
+        KeychainManager.shared.saveToken(longToken)
 
         let retrievedToken = KeychainManager.shared.getToken()
         XCTAssertEqual(retrievedToken, longToken)
@@ -149,20 +136,29 @@ final class KeychainManagerTests: XCTestCase {
     func testSaveTokenWithSpecialCharacters() {
         let specialToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 
-        let saveResult = KeychainManager.shared.saveToken(specialToken)
-        XCTAssertTrue(saveResult)
+        KeychainManager.shared.saveToken(specialToken)
 
         let retrievedToken = KeychainManager.shared.getToken()
         XCTAssertEqual(retrievedToken, specialToken)
     }
 
-    func testSaveUserIdWithUUID() {
-        let uuidUserId = "550e8400-e29b-41d4-a716-446655440000"
-        let saveResult = KeychainManager.shared.saveUserId(uuidUserId)
-        XCTAssertTrue(saveResult)
+    func testSaveEmptyData() {
+        let emptyData = Data()
 
-        let retrievedUserId = KeychainManager.shared.getUserId()
-        XCTAssertEqual(retrievedUserId, uuidUserId)
+        KeychainManager.shared.save(emptyData, forKey: testKey)
+
+        let retrievedData = KeychainManager.shared.getData(forKey: testKey)
+        XCTAssertEqual(retrievedData, emptyData)
+    }
+
+    func testSaveLargeData() {
+        // Create large data (10KB)
+        let largeData = Data(repeating: 0xAB, count: 10240)
+
+        KeychainManager.shared.save(largeData, forKey: testKey)
+
+        let retrievedData = KeychainManager.shared.getData(forKey: testKey)
+        XCTAssertEqual(retrievedData, largeData)
     }
 
     // MARK: - Concurrent Access Tests
@@ -198,5 +194,41 @@ final class KeychainManagerTests: XCTestCase {
             let token = KeychainManager.shared.getToken()
             XCTAssertEqual(token, testToken)
         }
+    }
+
+    func testDataPersistsAfterMultipleRetrievals() {
+        let testData = "Persistent data".data(using: .utf8)!
+        KeychainManager.shared.save(testData, forKey: testKey)
+
+        // Retrieve multiple times
+        for _ in 0..<5 {
+            let data = KeychainManager.shared.getData(forKey: testKey)
+            XCTAssertEqual(data, testData)
+        }
+    }
+
+    // MARK: - Key Isolation Tests
+
+    func testDifferentKeysAreIsolated() {
+        let key1 = "key1"
+        let key2 = "key2"
+        let data1 = "Data for key 1".data(using: .utf8)!
+        let data2 = "Data for key 2".data(using: .utf8)!
+
+        // Save different data for different keys
+        KeychainManager.shared.save(data1, forKey: key1)
+        KeychainManager.shared.save(data2, forKey: key2)
+
+        // Each key should return its own data
+        XCTAssertEqual(KeychainManager.shared.getData(forKey: key1), data1)
+        XCTAssertEqual(KeychainManager.shared.getData(forKey: key2), data2)
+
+        // Deleting one key shouldn't affect the other
+        KeychainManager.shared.delete(forKey: key1)
+        XCTAssertNil(KeychainManager.shared.getData(forKey: key1))
+        XCTAssertEqual(KeychainManager.shared.getData(forKey: key2), data2)
+
+        // Clean up
+        KeychainManager.shared.delete(forKey: key2)
     }
 }

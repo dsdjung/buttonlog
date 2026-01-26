@@ -55,7 +55,7 @@ final class NetworkErrorTests: XCTestCase {
         let url = URL(string: "http://invalid.host.that.does.not.exist.buttonlog.test/api/test")!
 
         do {
-            let _ = try await session.data(for: request: URLRequest(url: url))
+            let _ = try await session.data(for: URLRequest(url: url))
             XCTFail("Should have failed with invalid host")
         } catch let error as URLError {
             XCTAssertTrue(

@@ -55,8 +55,14 @@ final class AuthenticationManagerTests: XCTestCase {
             email: "test@example.com",
             username: "testuser",
             displayName: "Test User",
-            avatar: nil,
-            isVerified: true,
+            firstName: "Test",
+            lastName: "User",
+            profileVisibility: .friends,
+            activityVisibility: .friends,
+            subscriptionTier: .free,
+            isActive: true,
+            emailVerified: true,
+            onboardingCompleted: true,
             createdAt: Date(),
             updatedAt: Date()
         )

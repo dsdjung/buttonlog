@@ -10,23 +10,22 @@ final class APIServiceTests: XCTestCase {
         XCTAssertEqual(HTTPMethod.POST.rawValue, "POST")
         XCTAssertEqual(HTTPMethod.PUT.rawValue, "PUT")
         XCTAssertEqual(HTTPMethod.DELETE.rawValue, "DELETE")
-        XCTAssertEqual(HTTPMethod.PATCH.rawValue, "PATCH")
     }
 
     // MARK: - API Error Tests
 
     func testAPIErrorDescriptions() {
         let invalidURLError = APIError.invalidURL
-        XCTAssertNotNil(invalidURLError.localizedDescription)
+        XCTAssertNotNil(invalidURLError.errorDescription)
 
         let invalidResponseError = APIError.invalidResponse
-        XCTAssertNotNil(invalidResponseError.localizedDescription)
+        XCTAssertNotNil(invalidResponseError.errorDescription)
 
         let serverError = APIError.serverError("Test error message")
-        XCTAssertTrue(serverError.localizedDescription.contains("Test error message"))
+        XCTAssertNotNil(serverError.errorDescription)
 
-        let authError = APIError.unauthorized
-        XCTAssertNotNil(authError.localizedDescription)
+        let authError = APIError.unauthorized("Auth failed")
+        XCTAssertNotNil(authError.errorDescription)
     }
 
     func testAPIErrorEquality() {
@@ -76,8 +75,6 @@ final class APIServiceTests: XCTestCase {
             }
         }
         """.data(using: .utf8)!
-
-        struct EmptyData: Codable {}
 
         // This should decode with error
         let response = try? JSONDecoder().decode(APIErrorResponse.self, from: json)
@@ -148,35 +145,8 @@ final class APIServiceTests: XCTestCase {
         let instance2 = APIService.shared
         XCTAssertTrue(instance1 === instance2)
     }
-}
 
-// MARK: - Mock URL Session for Testing
-
-class MockURLSession: URLSession {
-    var mockData: Data?
-    var mockResponse: URLResponse?
-    var mockError: Error?
-
-    override func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        if let error = mockError {
-            throw error
-        }
-
-        let data = mockData ?? Data()
-        let response = mockResponse ?? HTTPURLResponse(
-            url: request.url!,
-            statusCode: 200,
-            httpVersion: nil,
-            headerFields: nil
-        )!
-
-        return (data, response)
-    }
-}
-
-// MARK: - Integration Test Helpers
-
-extension APIServiceTests {
+    // MARK: - Helper Methods
 
     // Helper to create mock HTTP response
     func createMockHTTPResponse(statusCode: Int, url: URL) -> HTTPURLResponse {
@@ -188,33 +158,17 @@ extension APIServiceTests {
         )!
     }
 
-    // Helper to create mock success response data
-    func createSuccessResponseData<T: Encodable>(data: T) throws -> Data {
-        struct SuccessResponse<D: Encodable>: Encodable {
-            let success: Bool
-            let data: D
-        }
-
-        let response = SuccessResponse(success: true, data: data)
-        return try JSONEncoder().encode(response)
-    }
-
     // Helper to create mock error response data
     func createErrorResponseData(code: String, message: String) throws -> Data {
-        struct ErrorResponse: Encodable {
-            let success: Bool
-            let error: ErrorDetail
-
-            struct ErrorDetail: Encodable {
-                let code: String
-                let message: String
+        let json = """
+        {
+            "success": false,
+            "error": {
+                "code": "\(code)",
+                "message": "\(message)"
             }
         }
-
-        let response = ErrorResponse(
-            success: false,
-            error: ErrorResponse.ErrorDetail(code: code, message: message)
-        )
-        return try JSONEncoder().encode(response)
+        """
+        return json.data(using: .utf8)!
     }
 }

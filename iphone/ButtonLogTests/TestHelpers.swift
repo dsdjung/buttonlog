@@ -14,9 +14,14 @@ enum TestHelpers {
         type: ButtonType = .instant,
         icon: String = "star",
         color: String = "#007AFF",
-        clickCount: Int = 0,
+        isActive: Bool = true,
         currentState: ButtonState = .idle,
-        alertsEnabled: Bool = true
+        stateChangedAt: Date? = nil,
+        alertsEnabled: Bool = true,
+        autoStopEnabled: Bool = false,
+        autoStopMinutes: Int? = nil,
+        calendarSyncEnabled: Bool = false,
+        userId: String = "user-1"
     ) -> ButtonModel {
         return ButtonModel(
             id: id,
@@ -25,14 +30,27 @@ enum TestHelpers {
             type: type,
             icon: icon,
             color: color,
-            clickCount: clickCount,
+            isActive: isActive,
             currentState: currentState,
+            stateChangedAt: stateChangedAt,
             alertsEnabled: alertsEnabled,
-            autoStopEnabled: false,
-            calendarSyncEnabled: false,
+            autoStopEnabled: autoStopEnabled,
+            autoStopMinutes: autoStopMinutes,
+            scheduledStopAt: nil,
+            calendarSyncEnabled: calendarSyncEnabled,
+            userId: userId,
             createdAt: Date(),
             updatedAt: Date(),
-            latestClick: nil
+            createdByFriendId: nil,
+            createdByFriend: nil,
+            giftMessage: nil,
+            choices: nil,
+            sharingMode: nil,
+            shareToken: nil,
+            shareTokenExpiresAt: nil,
+            isSharedWithMe: nil,
+            ownerId: nil,
+            ownerName: nil
         )
     }
 
@@ -41,13 +59,17 @@ enum TestHelpers {
         id: String = UUID().uuidString,
         username: String = "testuser",
         displayName: String? = "Test User",
-        avatar: String? = nil
+        firstName: String? = nil,
+        lastName: String? = nil,
+        profileVisibility: ProfileVisibility = .friends
     ) -> PublicUser {
         return PublicUser(
             id: id,
             username: username,
             displayName: displayName,
-            avatar: avatar
+            firstName: firstName,
+            lastName: lastName,
+            profileVisibility: profileVisibility
         )
     }
 
@@ -79,7 +101,8 @@ enum TestHelpers {
             friendUser: user,
             status: status,
             permissions: permissions,
-            createdAt: Date()
+            createdAt: Date(),
+            updatedAt: Date()
         )
     }
 
@@ -121,40 +144,66 @@ enum TestHelpers {
     static func createMockButtonClick(
         id: String = UUID().uuidString,
         buttonId: String = "button-1",
-        action: String = "click",
-        duration: Int? = nil
+        userId: String = "user-1",
+        action: String? = "click",
+        duration: Int? = nil,
+        selectedChoice: String? = nil
     ) -> ButtonClick {
         return ButtonClick(
             id: id,
             buttonId: buttonId,
-            action: action,
+            userId: userId,
             clickedAt: Date(),
             duration: duration,
-            location: nil,
+            locationLat: nil,
+            locationLng: nil,
             device: "Test Device",
-            platform: "iphone"
+            platform: "iphone",
+            action: action,
+            selectedChoice: selectedChoice,
+            createdAt: Date()
         )
     }
 
     /// Creates a mock SubscriptionPlan
     static func createMockSubscriptionPlan(
         id: String = UUID().uuidString,
-        slug: String = "free",
         name: String = "Free",
-        monthlyPrice: String = "0",
-        yearlyPrice: String = "0",
+        slug: String = "free",
+        description: String = "Test plan",
+        monthlyPrice: Double = 0.0,
+        yearlyPrice: Double = 0.0,
         isActive: Bool = true
     ) -> SubscriptionPlan {
+        let features = SubscriptionFeatures(
+            analytics: false,
+            calendarSync: false,
+            apiAccess: false,
+            customThemes: false,
+            prioritySupport: false,
+            teamFeatures: false,
+            whiteLabelOptions: false
+        )
+        let limits = SubscriptionLimits(
+            maxButtons: 5,
+            maxFriends: 10,
+            maxClicksPerMonth: 1000,
+            analyticsHistoryDays: 7,
+            exportHistoryDays: 7
+        )
         return SubscriptionPlan(
             id: id,
-            slug: slug,
             name: name,
-            description: "Test plan",
+            slug: slug,
+            description: description,
             monthlyPrice: monthlyPrice,
             yearlyPrice: yearlyPrice,
-            features: ["Feature 1", "Feature 2"],
-            limits: [:],
-            isActive: isActive
+            features: features,
+            limits: limits,
+            trialDays: nil,
+            isActive: isActive,
+            createdAt: Date(),
+            updatedAt: Date()
         )
     }
 
@@ -162,16 +211,34 @@ enum TestHelpers {
     static func createMockFriendButton(
         id: String = UUID().uuidString,
         name: String = "Friend's Button",
+        description: String? = nil,
         type: ButtonType = .instant,
-        currentState: ButtonState = .idle
+        icon: String = "star",
+        color: String = "#007AFF",
+        isActive: Bool = true,
+        currentState: ButtonState = .idle,
+        stateChangedAt: Date? = nil,
+        alertsEnabled: Bool = true,
+        autoStopEnabled: Bool = false,
+        calendarSyncEnabled: Bool = false,
+        userId: String = "friend-user-1"
     ) -> FriendButton {
         return FriendButton(
             id: id,
             name: name,
+            description: description,
             type: type,
-            icon: "star",
-            color: "#007AFF",
+            icon: icon,
+            color: color,
+            isActive: isActive,
             currentState: currentState,
+            stateChangedAt: stateChangedAt,
+            alertsEnabled: alertsEnabled,
+            autoStopEnabled: autoStopEnabled,
+            calendarSyncEnabled: calendarSyncEnabled,
+            userId: userId,
+            createdAt: Date(),
+            updatedAt: Date(),
             latestClickAt: Date(),
             latestClickAction: "click",
             latestClickLocation: nil,

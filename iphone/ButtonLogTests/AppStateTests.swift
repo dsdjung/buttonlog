@@ -104,7 +104,7 @@ final class AppStateTests: XCTestCase {
         id: String = "test-id-1",
         name: String = "Test Button",
         type: ButtonType = .instant,
-        clickCount: Int = 0
+        isActive: Bool = true
     ) -> ButtonModel {
         return ButtonModel(
             id: id,
@@ -113,14 +113,27 @@ final class AppStateTests: XCTestCase {
             type: type,
             icon: "star",
             color: "#007AFF",
-            clickCount: clickCount,
+            isActive: isActive,
             currentState: .idle,
+            stateChangedAt: nil,
             alertsEnabled: true,
             autoStopEnabled: false,
+            autoStopMinutes: nil,
+            scheduledStopAt: nil,
             calendarSyncEnabled: false,
+            userId: "user-1",
             createdAt: Date(),
             updatedAt: Date(),
-            latestClick: nil
+            createdByFriendId: nil,
+            createdByFriend: nil,
+            giftMessage: nil,
+            choices: nil,
+            sharingMode: nil,
+            shareToken: nil,
+            shareTokenExpiresAt: nil,
+            isSharedWithMe: nil,
+            ownerId: nil,
+            ownerName: nil
         )
     }
 
@@ -135,7 +148,9 @@ final class AppStateTests: XCTestCase {
             id: friendId,
             username: username,
             displayName: "Test User",
-            avatar: nil
+            firstName: nil,
+            lastName: nil,
+            profileVisibility: .friends
         )
         let permissions = FriendPermissions(
             canSeeButtons: true,
@@ -149,7 +164,8 @@ final class AppStateTests: XCTestCase {
             friendUser: user,
             status: status,
             permissions: permissions,
-            createdAt: Date()
+            createdAt: Date(),
+            updatedAt: Date()
         )
     }
 
@@ -160,14 +176,17 @@ final class AppStateTests: XCTestCase {
     ) -> AppNotification {
         return AppNotification(
             id: id,
-            userId: "user-1",
             type: .buttonClick,
             title: "Test Notification",
             message: "This is a test notification",
             data: nil,
             isRead: isRead,
             createdAt: Date(),
-            readAt: nil
+            sender: NotificationSender(
+                id: "user-1",
+                username: "testuser",
+                displayName: "Test User"
+            )
         )
     }
 
@@ -327,7 +346,7 @@ final class AppStateTests: XCTestCase {
 
     func testButtonCanBeUpdated() {
         let appState = AppState()
-        var button = createTestButton(id: "1", name: "Original Name")
+        let button = createTestButton(id: "1", name: "Original Name")
 
         appState.buttons = [button]
 
