@@ -61,11 +61,13 @@ class APIService {
 
         print("DEBUG API: Making \(method.rawValue) request to \(url)")
         let (data, response) = try await session.data(for: request)
-        print("DEBUG API: Got response")
 
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("DEBUG API: Invalid response (not HTTPURLResponse)")
             throw APIError.invalidResponse
         }
+
+        print("DEBUG API: Got response - Status: \(httpResponse.statusCode), Body: \(String(data: data, encoding: .utf8) ?? "nil")")
 
         if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
             let apiResponse = try JSONDecoder.iso8601.decode(APIResponse<T>.self, from: data)

@@ -15,8 +15,16 @@ defmodule ButtonLogWeb.Plugs.AuthPlug do
       token ->
         case verify_token(token) do
           {:ok, user_id} ->
-            user = ButtonLog.Accounts.get_user!(user_id)
-            assign(conn, :current_user, user)
+            case ButtonLog.Accounts.get_user(user_id) do
+              nil ->
+                conn
+                |> put_status(:unauthorized)
+                |> json(%{error: "User not found"})
+                |> halt()
+
+              user ->
+                assign(conn, :current_user, user)
+            end
 
           {:error, _reason} ->
             conn
