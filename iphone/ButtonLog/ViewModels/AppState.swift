@@ -58,13 +58,13 @@ class AppState: ObservableObject {
     
     func refreshData() async {
         await withTaskGroup(of: Void.self) { group in
-            group.addTask { await self.loadButtons() }
-            group.addTask { await self.loadNotifications() }
+            group.addTask { await self.silentLoadButtons() }
+            group.addTask { await self.silentLoadNotifications() }
         }
     }
     
     // MARK: - Buttons
-    
+
     func loadButtons() async {
         isLoadingButtons = true
         errorMessage = nil
@@ -81,6 +81,19 @@ class AppState: ObservableObject {
         }
 
         isLoadingButtons = false
+    }
+
+    /// Silent refresh that doesn't toggle loading state or clear errors (used by background timer)
+    private func silentLoadButtons() async {
+        do {
+            let newButtons = try await apiService.getButtons()
+            if newButtons.map({ $0.id }) != buttons.map({ $0.id }) ||
+               newButtons.count != buttons.count {
+                self.buttons = newButtons
+            }
+        } catch {
+            // Silently ignore errors during background refresh
+        }
     }
     
     func createButton(_ formData: ButtonFormData) async -> Bool {
@@ -256,15 +269,28 @@ class AppState: ObservableObject {
     
     func loadNotifications() async {
         isLoadingNotifications = true
-        
+
         do {
             let notifications = try await apiService.getNotifications()
             self.notifications = notifications
         } catch {
             errorMessage = "Failed to load notifications: \(error.localizedDescription)"
         }
-        
+
         isLoadingNotifications = false
+    }
+
+    /// Silent refresh that doesn't toggle loading state (used by background timer)
+    private func silentLoadNotifications() async {
+        do {
+            let newNotifications = try await apiService.getNotifications()
+            if newNotifications.map({ $0.id }) != notifications.map({ $0.id }) ||
+               newNotifications.count != notifications.count {
+                self.notifications = newNotifications
+            }
+        } catch {
+            // Silently ignore errors during background refresh
+        }
     }
     
     func markNotificationAsRead(id: String) async -> Bool {
