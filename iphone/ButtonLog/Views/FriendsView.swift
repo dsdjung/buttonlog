@@ -35,7 +35,7 @@ struct FriendsView: View {
                     ForEach(appState.pendingFriendRequests) { friend in
                         PendingFriendRequestRow(friend: friend) {
                             Task {
-                                await appState.acceptFriendRequest(friendId: friend.friendId)
+                                await appState.acceptFriendRequest(friendId: friend.id)
                             }
                         }
                     }
