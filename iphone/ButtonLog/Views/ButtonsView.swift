@@ -22,10 +22,20 @@ struct ButtonsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Search Bar
-            SearchBar(text: $searchText)
-                .padding(.horizontal, BLSpacing.lg)
-                .padding(.top, BLSpacing.sm)
+            // Search Bar with + button
+            HStack {
+                SearchBar(text: $searchText)
+
+                SwiftUI.Button(action: {
+                    showingCreateButton = true
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title)
+                        .foregroundColor(.blPrimary)
+                }
+            }
+            .padding(.horizontal, BLSpacing.lg)
+            .padding(.top, BLSpacing.sm)
 
             // Main content with pull-to-refresh support
             ScrollView {

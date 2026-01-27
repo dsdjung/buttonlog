@@ -10,6 +10,7 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             // Buttons Tab
+            // Note: ButtonsView has its own internal NavigationView and sheet for CreateButtonView
             NavigationView {
                 ButtonsView()
             }
@@ -61,37 +62,9 @@ struct MainTabView: View {
             }
             .tag(4)
         }
-        .overlay(
-            // Floating Create Button - only show on Buttons tab
-            Group {
-                if selectedTab == 0 {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-
-                            SwiftUI.Button(action: {
-                                showingCreateButton = true
-                            }) {
-                                Image(systemName: "plus")
-                                    .font(.title2)
-                                    .foregroundColor(.white)
-                                    .frame(width: 56, height: 56)
-                                    .background(Color.blPrimary)
-                                    .clipShape(Circle())
-                                    .blShadow(BLShadow.medium)
-                            }
-
-                            Spacer()
-                        }
-                        .padding(.bottom, 100) // Above tab bar
-                    }
-                }
-            }
-        )
-        .sheet(isPresented: $showingCreateButton) {
-            CreateButtonView()
-        }
+        // NOTE: The CreateButtonView sheet is now handled inside ButtonsView
+        // The floating overlay + button was causing freezes
+        // See ButtonsView.swift for the + button and sheet
         .task {
             await appState.loadInitialData()
         }

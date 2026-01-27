@@ -22,52 +22,11 @@ struct CreateButtonView: View {
     ]
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
-                // Quick Templates Section
-                Section(header: Text("Quick Templates")) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            TemplateButton(
-                                title: "Yes/No Question",
-                                icon: "questionmark.circle.fill",
-                                color: .purple
-                            ) {
-                                formData.type = .oneTime
-                                formData.choices = [IdentifiedChoice(text: "Yes"), IdentifiedChoice(text: "No")]
-                            }
-
-                            TemplateButton(
-                                title: "Done/Skip Task",
-                                icon: "checkmark.circle.fill",
-                                color: .green
-                            ) {
-                                formData.type = .oneTime
-                                formData.choices = [IdentifiedChoice(text: "Done"), IdentifiedChoice(text: "Skip")]
-                            }
-
-                            TemplateButton(
-                                title: "Rating",
-                                icon: "star.fill",
-                                color: .blue
-                            ) {
-                                formData.type = .oneTime
-                                formData.choices = [IdentifiedChoice(text: "Good"), IdentifiedChoice(text: "Okay"), IdentifiedChoice(text: "Bad")]
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-
-                    Text("Or create a custom button below")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Section(header: Text("Basic Information")) {
-                    TextField("Button Name", text: $formData.name)
-
-                    TextField("Description (optional)", text: $formData.description, axis: .vertical)
-                        .lineLimit(3)
+                Section(header: Text("Basic Info")) {
+                    TextField("Button name", text: $formData.name)
+                    TextField("Description", text: $formData.description)
                 }
 
                 Section(header: Text("Button Type")) {
@@ -78,7 +37,6 @@ struct CreateButtonView: View {
                     }
                     .pickerStyle(.menu)
                     .onChange(of: formData.type) { oldValue, newValue in
-                        // Initialize choices with 2 empty choices when switching to one-time
                         if newValue == .oneTime && formData.choices.isEmpty {
                             formData.choices = [IdentifiedChoice(), IdentifiedChoice()]
                         }
@@ -138,48 +96,7 @@ struct CreateButtonView: View {
                     Toggle("Calendar Sync", isOn: $formData.calendarSyncEnabled)
                 }
 
-                // Friend Notifications Section (only if user has friends)
-                if !appState.friends.isEmpty {
-                    Section(header: Text("Friend Notifications (Optional)"),
-                            footer: Text("Notify friends when you click this button")) {
-                        Picker("Notify", selection: $formData.friendAlertMode) {
-                            ForEach(FriendAlertMode.allCases, id: \.self) { mode in
-                                VStack(alignment: .leading) {
-                                    Text(mode.displayName)
-                                }
-                                .tag(mode)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-
-                        // Show friend selection when selectSpecific is chosen
-                        if formData.friendAlertMode == .selectSpecific {
-                            ForEach(appState.friends, id: \.friendId) { friend in
-                                Toggle(isOn: Binding(
-                                    get: { formData.selectedFriendIds.contains(friend.friendId) },
-                                    set: { isSelected in
-                                        if isSelected {
-                                            if !formData.selectedFriendIds.contains(friend.friendId) {
-                                                formData.selectedFriendIds.append(friend.friendId)
-                                            }
-                                        } else {
-                                            formData.selectedFriendIds.removeAll { $0 == friend.friendId }
-                                        }
-                                    }
-                                )) {
-                                    HStack {
-                                        Image(systemName: "person.circle.fill")
-                                            .foregroundColor(.secondary)
-                                        Text(friend.friendUser.displayNameOrUsername)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 Section {
-                    // Preview
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Preview")
                             .font(.headline)
@@ -191,14 +108,12 @@ struct CreateButtonView: View {
             }
             .navigationTitle("Create Button")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden()
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     SwiftUI.Button("Cancel") {
                         dismiss()
                     }
                 }
-
                 ToolbarItem(placement: .navigationBarTrailing) {
                     SwiftUI.Button("Create") {
                         createButton()
@@ -207,15 +122,12 @@ struct CreateButtonView: View {
                 }
             }
         }
-        .disabled(isLoading)
     }
 
     private func createButton() {
         isLoading = true
-
         Task {
             let success = await appState.createButton(formData)
-
             await MainActor.run {
                 isLoading = false
                 if success {
@@ -339,7 +251,8 @@ struct EditButtonView: View {
     ]
 
     var body: some View {
-        NavigationView {
+        // Use NavigationStack instead of NavigationView (iOS 16+)
+        NavigationStack {
             Form {
                 Section(header: Text("Basic Information")) {
                     TextField("Button Name", text: $formData.name)
@@ -561,7 +474,8 @@ struct CreateGiftButtonView: View {
     ]
 
     var body: some View {
-        NavigationView {
+        // Use NavigationStack instead of NavigationView (iOS 16+)
+        NavigationStack {
             Form {
                 Section(header: Text("Creating Button for \(friend.friendUser.displayNameOrUsername)")) {
                     Text("This button will appear in \(friend.friendUser.displayNameOrUsername)'s button list. You'll be notified when they use it.")
