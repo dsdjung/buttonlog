@@ -1,4 +1,4 @@
-package com.buttonlog.app.ui.screens
+package com.buttonlog.com.ui.screens
 
 import android.content.Intent
 import android.net.Uri
@@ -139,7 +139,7 @@ fun AboutScreen(
                         icon = Icons.Default.Description,
                         title = "Terms of Service",
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buttonlog.app/terms"))
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buttonlog.com/terms"))
                             context.startActivity(intent)
                         }
                     )
@@ -148,7 +148,7 @@ fun AboutScreen(
                         icon = Icons.Default.PrivacyTip,
                         title = "Privacy Policy",
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buttonlog.app/privacy"))
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buttonlog.com/privacy"))
                             context.startActivity(intent)
                         }
                     )
@@ -176,7 +176,7 @@ fun AboutScreen(
                         title = "Email Support",
                         onClick = {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                data = Uri.parse("mailto:support@buttonlog.app")
+                                data = Uri.parse("mailto:support@buttonlog.com")
                             }
                             context.startActivity(intent)
                         }
@@ -186,7 +186,7 @@ fun AboutScreen(
                         icon = Icons.Default.Language,
                         title = "Website",
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buttonlog.app"))
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buttonlog.com"))
                             context.startActivity(intent)
                         }
                     )

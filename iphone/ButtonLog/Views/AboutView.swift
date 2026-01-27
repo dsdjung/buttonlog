@@ -51,7 +51,7 @@ struct AboutView: View {
 
             // Legal Section
             Section("Legal") {
-                Link(destination: URL(string: "https://buttonlog.app/terms")!) {
+                Link(destination: URL(string: "https://buttonlog.com/terms")!) {
                     HStack {
                         Label("Terms of Service", systemImage: "doc.text")
                         Spacer()
@@ -60,7 +60,7 @@ struct AboutView: View {
                     }
                 }
 
-                Link(destination: URL(string: "https://buttonlog.app/privacy")!) {
+                Link(destination: URL(string: "https://buttonlog.com/privacy")!) {
                     HStack {
                         Label("Privacy Policy", systemImage: "hand.raised")
                         Spacer()
@@ -72,7 +72,7 @@ struct AboutView: View {
 
             // Contact Section
             Section("Contact") {
-                Link(destination: URL(string: "mailto:support@buttonlog.app")!) {
+                Link(destination: URL(string: "mailto:support@buttonlog.com")!) {
                     HStack {
                         Label("Email Support", systemImage: "envelope")
                         Spacer()
@@ -81,7 +81,7 @@ struct AboutView: View {
                     }
                 }
 
-                Link(destination: URL(string: "https://buttonlog.app")!) {
+                Link(destination: URL(string: "https://buttonlog.com")!) {
                     HStack {
                         Label("Website", systemImage: "globe")
                         Spacer()

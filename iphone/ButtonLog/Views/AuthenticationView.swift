@@ -48,12 +48,25 @@ struct AuthenticationView: View {
                     }
 
                     // Terms and Privacy
-                    Text("By continuing, you agree to our Terms of Service and Privacy Policy")
-                        .font(BLTypography.labelSmall)
-                        .foregroundColor(.blTextTertiary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, BLSpacing.xl)
-                        .padding(.top, BLSpacing.lg)
+                    VStack(spacing: 2) {
+                        Text("By continuing, you agree to our")
+                            .font(BLTypography.labelSmall)
+                            .foregroundColor(.blTextTertiary)
+                        HStack(spacing: 4) {
+                            Link("Terms of Service", destination: URL(string: "https://buttonlog.com/terms")!)
+                                .font(BLTypography.labelSmall)
+                                .foregroundColor(.accentColor)
+                            Text("and")
+                                .font(BLTypography.labelSmall)
+                                .foregroundColor(.blTextTertiary)
+                            Link("Privacy Policy", destination: URL(string: "https://buttonlog.com/privacy")!)
+                                .font(BLTypography.labelSmall)
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, BLSpacing.xl)
+                    .padding(.top, BLSpacing.lg)
 
                     Spacer(minLength: BLSpacing.xxxl)
                 }

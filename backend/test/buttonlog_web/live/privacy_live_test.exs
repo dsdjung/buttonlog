@@ -43,7 +43,7 @@ defmodule ButtonLogWeb.PrivacyLiveTest do
     test "has contact information", %{conn: conn} do
       {:ok, _view, html} = live(conn, "/privacy")
 
-      assert html =~ "privacy@buttonlog.app"
+      assert html =~ "privacy@buttonlog.com"
     end
 
     test "has back to home link", %{conn: conn} do

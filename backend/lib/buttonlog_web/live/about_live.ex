@@ -72,7 +72,7 @@ defmodule ButtonLogWeb.AboutLive do
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 class="text-lg font-semibold text-gray-900 mb-4">Contact</h2>
           <div class="space-y-3">
-            <a href="mailto:support@buttonlog.app" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <a href="mailto:support@buttonlog.com" class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
               <div class="flex items-center">
                 <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>

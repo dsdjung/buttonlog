@@ -54,6 +54,8 @@ defmodule ButtonLog.Accounts do
   def register_user(attrs \\ %{}) do
     # Auto-generate username and display_name from email if not provided
     attrs = maybe_generate_defaults(attrs)
+    # Record TOS acceptance at registration time
+    attrs = Map.put(attrs, "tos_accepted_at", NaiveDateTime.utc_now())
 
     %User{}
     |> User.registration_changeset(attrs)
@@ -308,7 +310,9 @@ defmodule ButtonLog.Accounts do
       email_verified: true,
       # Keep legacy fields for backwards compatibility
       provider: provider,
-      provider_uid: auth.uid
+      provider_uid: auth.uid,
+      # Record TOS acceptance at registration time
+      tos_accepted_at: NaiveDateTime.utc_now()
     }
 
     Repo.transaction(fn ->

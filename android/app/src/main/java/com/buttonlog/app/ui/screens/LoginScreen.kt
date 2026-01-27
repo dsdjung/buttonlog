@@ -1,6 +1,8 @@
 package com.buttonlog.app.ui.screens
 
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -207,11 +209,49 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Terms and Privacy
-        Text(
-            text = "By continuing, you agree to our Terms of Service and Privacy Policy",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "By continuing, you agree to our",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buttonlog.com/terms"))
+                        context.startActivity(intent)
+                    },
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    modifier = Modifier.height(24.dp)
+                ) {
+                    Text(
+                        text = "Terms of Service",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Text(
+                    text = "and",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buttonlog.com/privacy"))
+                        context.startActivity(intent)
+                    },
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    modifier = Modifier.height(24.dp)
+                ) {
+                    Text(
+                        text = "Privacy Policy",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
     }
 }

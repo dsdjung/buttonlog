@@ -15,7 +15,7 @@ defmodule ButtonLogWeb.TermsLive do
       <div class="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div class="bg-white rounded-lg shadow-md p-8">
           <h1 class="text-3xl font-bold text-gray-900 mb-6">Terms of Service</h1>
-          <p class="text-gray-500 text-sm mb-8">Last updated: January 2025</p>
+          <p class="text-gray-500 text-sm mb-8">Last updated: January 2026</p>
 
           <div class="prose prose-gray max-w-none">
             <h2 class="text-xl font-semibold text-gray-900 mt-6 mb-3">1. Acceptance of Terms</h2>
@@ -87,7 +87,7 @@ defmodule ButtonLogWeb.TermsLive do
             <h2 class="text-xl font-semibold text-gray-900 mt-6 mb-3">11. Contact Us</h2>
             <p class="text-gray-700 mb-4">
               If you have any questions about these Terms of Service, please contact us at
-              <a href="mailto:support@buttonlog.app" class="text-teal-600 hover:text-teal-700">support@buttonlog.app</a>.
+              <a href="mailto:support@buttonlog.com" class="text-teal-600 hover:text-teal-700">support@buttonlog.com</a>.
             </p>
           </div>
 

@@ -29,7 +29,7 @@ defmodule ButtonLogWeb.TermsLiveTest do
     test "has contact information", %{conn: conn} do
       {:ok, _view, html} = live(conn, "/terms")
 
-      assert html =~ "support@buttonlog.app"
+      assert html =~ "support@buttonlog.com"
     end
 
     test "has back to home link", %{conn: conn} do

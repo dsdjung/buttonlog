@@ -52,6 +52,9 @@ defmodule ButtonLog.Accounts.User do
     # Onboarding status
     field :onboarding_completed, :boolean, default: false
 
+    # Terms of Service acceptance
+    field :tos_accepted_at, :naive_datetime
+
     # Virtual fields for password handling
     field :password, :string, virtual: true
     field :password_confirmation, :string, virtual: true
@@ -73,7 +76,8 @@ defmodule ButtonLog.Accounts.User do
     |> cast(attrs, [:email, :username, :display_name, :first_name, :last_name, :avatar, :timezone, :language,
                     :provider, :provider_uid, :provider_token, :provider_refresh_token, :provider_expires_at,
                     :email_verified, :subscription_tier, :subscription_expires_at, :default_history_sharing,
-                    :allow_friend_requests, :profile_visibility, :activity_visibility, :onboarding_completed])
+                    :allow_friend_requests, :profile_visibility, :activity_visibility, :onboarding_completed,
+                    :tos_accepted_at])
     |> validate_required([:username, :display_name])
     |> validate_required([:email], message: "Email is required")
     |> validate_format(:email, ~r/@/)
