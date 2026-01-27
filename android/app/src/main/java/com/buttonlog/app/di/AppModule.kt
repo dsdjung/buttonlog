@@ -49,18 +49,18 @@ object AppModule {
      * Custom TypeAdapter that properly handles ISO8601 dates with UTC timezone.
      * The backend sends dates like "2026-01-26T15:30:00Z" or "2026-01-26T15:30:00.123456Z"
      * The 'Z' suffix indicates UTC time, which needs to be converted to local timezone for display.
+     *
+     * Note: SimpleDateFormat only supports milliseconds (SSS, 3 digits), not microseconds.
+     * We truncate microseconds to milliseconds before parsing.
      */
     private class ISO8601DateAdapter : com.google.gson.TypeAdapter<java.util.Date>() {
+        // All formats use UTC timezone for parsing
+        private val utcTimezone = java.util.TimeZone.getTimeZone("UTC")
+
         private val formats = listOf(
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", java.util.Locale.US).apply {
-                timeZone = java.util.TimeZone.getTimeZone("UTC")
-            },
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
-                timeZone = java.util.TimeZone.getTimeZone("UTC")
-            },
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
-                timeZone = java.util.TimeZone.getTimeZone("UTC")
-            },
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US),
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US),
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", java.util.Locale.US),
             java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.US),
             java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
         )
@@ -70,7 +70,7 @@ object AppModule {
                 out.nullValue()
             } else {
                 val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
-                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    timeZone = utcTimezone
                 }
                 out.value(format.format(value))
             }
@@ -81,8 +81,20 @@ object AppModule {
                 reader.nextNull()
                 return null
             }
-            val dateString = reader.nextString()
+            var dateString = reader.nextString()
+
+            // Normalize the date string:
+            // 1. Truncate microseconds to milliseconds (SimpleDateFormat only supports SSS)
+            //    e.g., "2026-01-26T15:30:00.123456Z" -> "2026-01-26T15:30:00.123Z"
+            val microsecondPattern = Regex("""(\.\d{3})\d+Z$""")
+            dateString = dateString.replace(microsecondPattern, "$1Z")
+
+            // 2. If no milliseconds but has Z, that's fine
+            // 3. If has timezone offset like +00:00, that's handled by XXX formats
+
             for (format in formats) {
+                // Set UTC timezone for all formats to ensure consistent parsing
+                format.timeZone = utcTimezone
                 try {
                     return format.parse(dateString)
                 } catch (_: java.text.ParseException) {
