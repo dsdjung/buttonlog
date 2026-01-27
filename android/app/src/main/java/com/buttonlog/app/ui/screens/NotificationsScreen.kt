@@ -453,7 +453,9 @@ fun formatRelativeTime(dateString: String): String {
             diffMinutes < 60 -> "${diffMinutes}m ago"
             diffHours < 24 -> "${diffHours}h ago"
             diffDays < 7 -> "${diffDays}d ago"
-            else -> SimpleDateFormat("MMM d", Locale.getDefault()).format(date)
+            else -> SimpleDateFormat("MMM d", Locale.getDefault()).apply {
+                timeZone = TimeZone.getDefault()
+            }.format(date)
         }
     } catch (e: Exception) {
         dateString

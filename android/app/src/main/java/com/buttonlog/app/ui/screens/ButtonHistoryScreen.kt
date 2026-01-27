@@ -145,8 +145,16 @@ fun ButtonHistoryScreen(
 
 @Composable
 private fun HistoryItem(click: ButtonClick) {
-    val dateFormat = remember { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()) }
-    val timeFormat = remember { SimpleDateFormat("h:mm a", Locale.getDefault()) }
+    val dateFormat = remember {
+        SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
+        }
+    }
+    val timeFormat = remember {
+        SimpleDateFormat("h:mm a", Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth()

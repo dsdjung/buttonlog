@@ -350,7 +350,9 @@ fun formatMessageTime(dateString: String): String {
 
         if (date == null) return dateString
 
-        SimpleDateFormat("h:mm a", Locale.getDefault()).format(date)
+        SimpleDateFormat("h:mm a", Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
+        }.format(date)
     } catch (e: Exception) {
         dateString
     }

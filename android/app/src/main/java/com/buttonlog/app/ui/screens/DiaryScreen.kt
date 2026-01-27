@@ -466,7 +466,9 @@ private fun formatClickTime(isoTime: String): String {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
         inputFormat.timeZone = TimeZone.getTimeZone("UTC")
         val date = inputFormat.parse(isoTime)
-        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
+        }
         outputFormat.format(date ?: Date())
     } catch (e: Exception) {
         isoTime.substringAfter("T").substringBefore(".")
