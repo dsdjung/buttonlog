@@ -214,7 +214,8 @@ defmodule ButtonLogWeb.API.ButtonControllerTest do
         |> put_req_header("authorization", "Bearer #{token}")
         |> delete("/api/buttons/#{button.id}")
 
-      assert %{"success" => true} = json_response(conn, 204)
+      # 204 No Content has no body
+      assert response(conn, 204)
 
       # Verify it's deleted
       assert {:error, :not_found} = Buttons.get_button(button.id, user.id)
