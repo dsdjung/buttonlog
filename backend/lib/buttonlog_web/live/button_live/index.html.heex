@@ -338,7 +338,7 @@
         <!-- Buttons List - Card Style like Mobile Apps -->
         <div class="mt-8 space-y-4 max-w-2xl mx-auto">
           <%= for button <- @buttons do %>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="button-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-button-id={button.id}>
               <div class="p-4">
                 <!-- Header Row: Icon, Name, Description, and Three-dot Menu -->
                 <div class="flex items-start">

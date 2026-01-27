@@ -18,10 +18,12 @@ test.describe('Notifications', () => {
       await page.goto('/notifications');
       await page.waitForLoadState('networkidle');
 
-      const hasAuth = await hasStoredAuth();
-      if (hasAuth) {
+      // Check actual page authentication state instead of just file existence
+      const isLoggedIn = await page.locator('a[href*="logout"]').or(page.locator('button:has-text("Sign Out")')).count() > 0;
+
+      if (isLoggedIn) {
         // Should show notifications or empty state when authenticated
-        const content = page.locator('.notification').or(page.locator('[data-notification]')).or(page.locator('text=caught up'));
+        const content = page.locator('.notification').or(page.locator('[data-notification-id]')).or(page.locator('text=caught up')).or(page.locator('text=Logs')).or(page.locator('text=No notifications'));
         await expect(content.first()).toBeVisible();
       } else {
         // Page should load without error

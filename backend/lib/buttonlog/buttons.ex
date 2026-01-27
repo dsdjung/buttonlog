@@ -255,8 +255,15 @@ defmodule ButtonLog.Buttons do
       {:ok, button} ->
         # Notify gift creator before deletion (if this is a gift button)
         # Only notify if the deleter is not the gift creator themselves
-        if button.created_by_friend_id != user_id do
-          notify_gift_creator_of_deletion(button)
+        # Wrap in try/rescue so notification failures don't prevent deletion
+        if button.created_by_friend_id && button.created_by_friend_id != user_id do
+          try do
+            notify_gift_creator_of_deletion(button)
+          rescue
+            e ->
+              require Logger
+              Logger.warning("Failed to notify gift creator of deletion: #{inspect(e)}")
+          end
         end
 
         Repo.delete(button)
@@ -904,50 +911,57 @@ defmodule ButtonLog.Buttons do
     if button.created_by_friend_id do
       alias ButtonLog.Notifications
 
-      owner = ButtonLog.Accounts.get_user!(button.user_id)
+      # Use get_user instead of get_user! to avoid raising on missing users
+      case ButtonLog.Accounts.get_user(button.user_id) do
+        nil ->
+          require Logger
+          Logger.warning("Cannot notify gift creator: owner user #{button.user_id} not found")
+          :ok
 
-      title = "Button Removed"
-      message = "#{owner.display_name || owner.username} deleted the '#{button.name}' button you created for them"
+        owner ->
+          title = "Button Removed"
+          message = "#{owner.display_name || owner.username} deleted the '#{button.name}' button you created for them"
 
-      # Create in-app notification (stored in notifications table, fetched by mobile apps)
-      Notifications.create_notification(%{
-        notification_type: "gift_button_deleted",
-        title: title,
-        message: message,
-        clicked_at: DateTime.utc_now(),
-        metadata: %{
-          button_name: button.name,
-          friend_id: button.user_id
-        }
-      }, button.created_by_friend_id, button.user_id, nil)
+          # Create in-app notification (stored in notifications table, fetched by mobile apps)
+          Notifications.create_notification(%{
+            notification_type: "gift_button_deleted",
+            title: title,
+            message: message,
+            clicked_at: DateTime.utc_now(),
+            metadata: %{
+              button_name: button.name,
+              friend_id: button.user_id
+            }
+          }, button.created_by_friend_id, button.user_id, nil)
 
-      # Send push notification to gift creator's mobile devices
-      Task.start(fn ->
-        ButtonLog.PushNotifications.send_to_user(
-          button.created_by_friend_id,
-          title,
-          message,
-          %{
-            "type" => "gift_button_deleted",
-            "action" => "view_notifications"
-          }
-        )
-      end)
+          # Send push notification to gift creator's mobile devices
+          Task.start(fn ->
+            ButtonLog.PushNotifications.send_to_user(
+              button.created_by_friend_id,
+              title,
+              message,
+              %{
+                "type" => "gift_button_deleted",
+                "action" => "view_notifications"
+              }
+            )
+          end)
 
-      # Broadcast via WebSocket for real-time update on mobile apps
-      ButtonLogWeb.Endpoint.broadcast(
-        "user:#{button.created_by_friend_id}",
-        "notification_received",
-        %{
-          type: "gift_button_deleted",
-          title: title,
-          message: message,
-          button_name: button.name,
-          friend_id: button.user_id,
-          friend_name: owner.display_name || owner.username,
-          timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
-        }
-      )
+          # Broadcast via WebSocket for real-time update on mobile apps
+          ButtonLogWeb.Endpoint.broadcast(
+            "user:#{button.created_by_friend_id}",
+            "notification_received",
+            %{
+              type: "gift_button_deleted",
+              title: title,
+              message: message,
+              button_name: button.name,
+              friend_id: button.user_id,
+              friend_name: owner.display_name || owner.username,
+              timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+            }
+          )
+      end
     end
   end
 

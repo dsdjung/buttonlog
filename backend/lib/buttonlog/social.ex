@@ -628,19 +628,26 @@ defmodule ButtonLog.Social do
   Returns {:ok, :invitation_sent} on success.
   """
   def send_friend_invitation(inviter_id, email) do
-    inviter = ButtonLog.Accounts.get_user!(inviter_id)
-    inviter_name = inviter.display_name || inviter.username || inviter.email
-
-    email_struct = ButtonLog.Emails.friend_invitation(email, inviter_name)
-
-    case ButtonLog.Mailer.deliver(email_struct) do
-      {:ok, _} ->
-        {:ok, :invitation_sent}
-
-      {:error, reason} ->
+    # Use get_user instead of get_user! to handle missing users gracefully
+    case ButtonLog.Accounts.get_user(inviter_id) do
+      nil ->
         require Logger
-        Logger.error("Failed to send invitation email to #{email}: #{inspect(reason)}")
-        {:error, :email_failed}
+        Logger.error("Cannot send friend invitation: inviter user #{inviter_id} not found")
+        {:error, :inviter_not_found}
+
+      inviter ->
+        inviter_name = inviter.display_name || inviter.username || inviter.email
+        email_struct = ButtonLog.Emails.friend_invitation(email, inviter_name)
+
+        case ButtonLog.Mailer.deliver(email_struct) do
+          {:ok, _} ->
+            {:ok, :invitation_sent}
+
+          {:error, reason} ->
+            require Logger
+            Logger.error("Failed to send invitation email to #{email}: #{inspect(reason)}")
+            {:error, :email_failed}
+        end
     end
   end
 end

@@ -318,7 +318,7 @@
                 <%= if length(@friends) > 0 do %>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <%= for friend <- @friends do %>
-              <a href={~p"/friends/#{friend.id}"} class="block p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <a href={~p"/friends/#{friend.id}"} class="friend-card block p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-md transition-all duration-200" data-friend-id={friend.id}>
                 <div class="flex items-center space-x-3">
                   <%= if friend.avatar do %>
                     <img src={friend.avatar} alt="Avatar" class="w-12 h-12 rounded-full">

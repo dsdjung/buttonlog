@@ -39,9 +39,10 @@
           <%= for alert <- @alerts do %>
             <div
               class={[
-                "p-6 transition-colors cursor-pointer hover:bg-gray-50",
+                "notification p-6 transition-colors cursor-pointer hover:bg-gray-50",
                 if(alert.read, do: "bg-white", else: "bg-blue-50 hover:bg-blue-100")
               ]}
+              data-notification-id={alert.id}
               phx-click="click_alert"
               phx-value-id={alert.id}
             >

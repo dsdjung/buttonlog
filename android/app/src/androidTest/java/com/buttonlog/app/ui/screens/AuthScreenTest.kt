@@ -90,6 +90,7 @@ class AuthScreenTest {
                 email.contains(".") &&
                 !email.startsWith("@") &&
                 !email.endsWith("@") &&
+                !email.contains("@.") &&  // Reject @. (no domain before dot)
                 email.indexOf("@") < email.lastIndexOf(".")
     }
 

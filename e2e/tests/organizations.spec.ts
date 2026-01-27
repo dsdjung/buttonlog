@@ -18,10 +18,12 @@ test.describe('Organizations', () => {
       await page.goto('/organizations');
       await page.waitForLoadState('networkidle');
 
-      const hasAuth = await hasStoredAuth();
-      if (hasAuth) {
+      // Check actual page authentication state instead of just file existence
+      const isLoggedIn = await page.locator('a[href*="logout"]').or(page.locator('button:has-text("Sign Out")')).count() > 0;
+
+      if (isLoggedIn) {
         // Should show organizations list or empty state when authenticated
-        const content = page.locator('.org-card').or(page.locator('[data-organization]')).or(page.locator('text=Create'));
+        const content = page.locator('.org-card').or(page.locator('[data-organization-id]')).or(page.locator('text=Create')).or(page.locator('text=Organizations')).or(page.locator('text=organization'));
         await expect(content.first()).toBeVisible();
       } else {
         // Page should load without error

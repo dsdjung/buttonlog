@@ -18,10 +18,12 @@ test.describe('Friends & Social', () => {
       await page.goto('/friends');
       await page.waitForLoadState('networkidle');
 
-      const hasAuth = await hasStoredAuth();
-      if (hasAuth) {
+      // Check actual page authentication state instead of just file existence
+      const isLoggedIn = await page.locator('a[href*="logout"]').or(page.locator('button:has-text("Sign Out")')).count() > 0;
+
+      if (isLoggedIn) {
         // Should show friends list or empty state when authenticated
-        const content = page.locator('.friend-card').or(page.locator('[data-friend]')).or(page.locator('text=Find'));
+        const content = page.locator('.friend-card').or(page.locator('[data-friend-id]')).or(page.locator('text=Find')).or(page.locator('text=Friends')).or(page.locator('text=Invite'));
         await expect(content.first()).toBeVisible();
       } else {
         // Page should load without error

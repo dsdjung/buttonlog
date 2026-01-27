@@ -18,10 +18,12 @@ test.describe('Buttons', () => {
       await page.goto('/buttons');
       await page.waitForLoadState('networkidle');
 
-      const hasAuth = await hasStoredAuth();
-      if (hasAuth) {
+      // Check actual page authentication state instead of just file existence
+      const isLoggedIn = await page.locator('a[href*="logout"]').or(page.locator('button:has-text("Sign Out")')).count() > 0;
+
+      if (isLoggedIn) {
         // Should show buttons or empty state when authenticated
-        const content = page.locator('.button-card').or(page.locator('[data-button]')).or(page.locator('text=Create'));
+        const content = page.locator('.button-card').or(page.locator('[data-button-id]')).or(page.locator('text=Create')).or(page.locator('text=No buttons'));
         await expect(content.first()).toBeVisible();
       } else {
         // Page should load without error

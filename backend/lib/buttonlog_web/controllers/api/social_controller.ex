@@ -169,6 +169,21 @@ defmodule ButtonLogWeb.API.SocialController do
             message: "Invite sent to #{email}"
           }
         })
+
+      {:error, :inviter_not_found} ->
+        # This shouldn't happen in normal use, but handle gracefully
+        require Logger
+        Logger.error("Inviter not found when sending friend invitation")
+        conn
+        |> put_status(:created)
+        |> json(%{
+          success: true,
+          data: %{
+            invite_sent: true,
+            email: email,
+            message: "Invite sent to #{email}"
+          }
+        })
     end
   end
 

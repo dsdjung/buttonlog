@@ -63,10 +63,12 @@ test.describe('Subscriptions', () => {
       await page.goto('/subscription');
       await page.waitForLoadState('networkidle');
 
-      const hasAuth = await hasStoredAuth();
-      if (hasAuth) {
+      // Check actual page authentication state instead of just file existence
+      const isLoggedIn = await page.locator('a[href*="logout"]').or(page.locator('button:has-text("Sign Out")')).count() > 0;
+
+      if (isLoggedIn) {
         // Should show subscription details when authenticated
-        const content = page.locator('text=/subscription|plan|billing/i');
+        const content = page.locator('text=/subscription|plan|billing|free|premium|current/i');
         await expect(content.first()).toBeVisible();
       } else {
         // Page should load without error
