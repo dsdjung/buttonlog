@@ -32,8 +32,8 @@ defmodule ButtonLogWeb.API.SocialController do
           receive_notifications: true,
           can_comment: true
         },
-        created_at: DateTime.utc_now() |> DateTime.to_iso8601(),
-        updated_at: DateTime.utc_now() |> DateTime.to_iso8601()
+        created_at: format_datetime(friend.inserted_at),
+        updated_at: format_datetime(friend.updated_at)
       }
     end) ++ Enum.map(pending_requests, fn request ->
       %{
@@ -54,8 +54,8 @@ defmodule ButtonLogWeb.API.SocialController do
           receive_notifications: false,
           can_comment: false
         },
-        created_at: DateTime.utc_now() |> DateTime.to_iso8601(),
-        updated_at: DateTime.utc_now() |> DateTime.to_iso8601()
+        created_at: format_datetime(request.inserted_at),
+        updated_at: format_datetime(request.inserted_at)
       }
     end)
 

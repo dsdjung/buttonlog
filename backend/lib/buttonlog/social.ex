@@ -71,7 +71,9 @@ defmodule ButtonLog.Social do
           display_name: friendship.friend.display_name,
           avatar: friendship.friend.avatar,
           friendship_status: friendship.status,
-          friendship_id: friendship.id  # Include the friendship ID for removal
+          friendship_id: friendship.id,
+          inserted_at: friendship.inserted_at,
+          updated_at: friendship.updated_at
         }
       end)
       |> Enum.concat(
@@ -83,7 +85,9 @@ defmodule ButtonLog.Social do
             display_name: friendship.user.display_name,
             avatar: friendship.user.avatar,
             friendship_status: friendship.status,
-            friendship_id: friendship.id  # Include the friendship ID for removal
+            friendship_id: friendship.id,
+            inserted_at: friendship.inserted_at,
+            updated_at: friendship.updated_at
           }
         end)
       )
