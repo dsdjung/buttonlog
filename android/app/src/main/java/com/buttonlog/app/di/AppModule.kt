@@ -98,7 +98,6 @@ object AppModule {
                     }
                     val date = format.parse(dateString)
                     if (date != null) {
-                        android.util.Log.d("ISO8601DateAdapter", "Parsed '$dateString' with pattern '$pattern' -> epoch=${date.time}, localTime=${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getDefault() }.format(date)}")
                         return date
                     }
                 } catch (_: java.text.ParseException) {
@@ -106,7 +105,6 @@ object AppModule {
                 }
             }
             // If all formats fail, return null
-            android.util.Log.w("ISO8601DateAdapter", "Failed to parse date: $dateString")
             return null
         }
     }

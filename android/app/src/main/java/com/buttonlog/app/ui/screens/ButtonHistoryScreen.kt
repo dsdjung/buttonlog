@@ -145,9 +145,6 @@ fun ButtonHistoryScreen(
 
 @Composable
 private fun HistoryItem(click: ButtonClick) {
-    val localTimezone = TimeZone.getDefault()
-    android.util.Log.d("HistoryItem", "Device timezone: ${localTimezone.id}, offset: ${localTimezone.rawOffset / 3600000}h, click.clickedAt epoch: ${click.clickedAt.time}")
-
     val dateFormat = remember {
         SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).apply {
             timeZone = TimeZone.getDefault()
