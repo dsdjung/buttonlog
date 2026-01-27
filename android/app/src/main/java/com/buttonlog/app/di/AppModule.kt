@@ -54,15 +54,16 @@ object AppModule {
      * We truncate microseconds to milliseconds before parsing.
      */
     private class ISO8601DateAdapter : com.google.gson.TypeAdapter<java.util.Date>() {
-        // All formats use UTC timezone for parsing
+        // UTC timezone for parsing - dates from backend are always in UTC
         private val utcTimezone = java.util.TimeZone.getTimeZone("UTC")
 
-        private val formats = listOf(
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US),
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US),
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", java.util.Locale.US),
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.US),
-            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+        // Format patterns to try (in order of preference)
+        private val formatPatterns = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",      // Most common: 2026-01-27T04:13:58Z
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",  // With millis: 2026-01-27T04:13:58.123Z
+            "yyyy-MM-dd'T'HH:mm:ssXXX",      // With offset: 2026-01-27T04:13:58+00:00
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // Millis + offset
+            "yyyy-MM-dd'T'HH:mm:ss"          // No timezone (assume UTC)
         )
 
         override fun write(out: com.google.gson.stream.JsonWriter, value: java.util.Date?) {
@@ -84,24 +85,28 @@ object AppModule {
             var dateString = reader.nextString()
 
             // Normalize the date string:
-            // 1. Truncate microseconds to milliseconds (SimpleDateFormat only supports SSS)
-            //    e.g., "2026-01-26T15:30:00.123456Z" -> "2026-01-26T15:30:00.123Z"
-            val microsecondPattern = Regex("""(\.\d{3})\d+Z$""")
-            dateString = dateString.replace(microsecondPattern, "$1Z")
+            // Truncate microseconds to milliseconds (SimpleDateFormat only supports SSS)
+            // e.g., "2026-01-26T15:30:00.123456Z" -> "2026-01-26T15:30:00.123Z"
+            val microsecondPattern = Regex("""(\.\d{3})\d+(Z|[+-])""")
+            dateString = dateString.replace(microsecondPattern, "$1$2")
 
-            // 2. If no milliseconds but has Z, that's fine
-            // 3. If has timezone offset like +00:00, that's handled by XXX formats
-
-            for (format in formats) {
-                // Set UTC timezone for all formats to ensure consistent parsing
-                format.timeZone = utcTimezone
+            // Try each format pattern - create new SimpleDateFormat each time for thread safety
+            for (pattern in formatPatterns) {
                 try {
-                    return format.parse(dateString)
+                    val format = java.text.SimpleDateFormat(pattern, java.util.Locale.US).apply {
+                        timeZone = utcTimezone
+                    }
+                    val date = format.parse(dateString)
+                    if (date != null) {
+                        android.util.Log.d("ISO8601DateAdapter", "Parsed '$dateString' with pattern '$pattern' -> epoch=${date.time}, localTime=${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getDefault() }.format(date)}")
+                        return date
+                    }
                 } catch (_: java.text.ParseException) {
                     // Try next format
                 }
             }
             // If all formats fail, return null
+            android.util.Log.w("ISO8601DateAdapter", "Failed to parse date: $dateString")
             return null
         }
     }
