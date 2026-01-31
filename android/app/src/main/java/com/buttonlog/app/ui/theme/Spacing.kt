@@ -37,39 +37,63 @@ data class BLSpacing(
 data class BLRadius(
     /** 4dp - Small radius for chips, badges */
     val sm: Dp = 4.dp,
-    /** 8dp - Medium radius for inputs, small cards */
+    /** 8dp - Medium radius for inputs */
     val md: Dp = 8.dp,
-    /** 12dp - Large radius for cards */
+    /** 12dp - Large radius for buttons */
     val lg: Dp = 12.dp,
-    /** 16dp - Extra large radius for sheets, modals */
+    /** 16dp - Extra large radius for cards (softer corners) */
     val xl: Dp = 16.dp,
+    /** 20dp - Extra extra large for sheets, modals */
+    val xxl: Dp = 20.dp,
     /** 24dp - Full round for pills, FABs */
     val full: Dp = 24.dp
 )
 
 /**
  * Shadow/elevation values for consistent depth.
+ * Minimal design uses subtle or no elevation.
  */
 data class BLElevation(
-    /** Small elevation for cards */
+    /** No elevation - use borders instead */
+    val none: Dp = 0.dp,
+    /** Subtle elevation for floating elements */
+    val subtle: Dp = 1.dp,
+    /** Small elevation for elevated cards */
     val sm: Dp = 2.dp,
-    /** Medium elevation for elevated cards */
+    /** Medium elevation for modals */
     val md: Dp = 4.dp,
-    /** Large elevation for modals, sheets */
+    /** Large elevation for sheets */
     val lg: Dp = 8.dp
 )
 
 /**
- * Animation durations for consistent motion.
+ * Animation constants for consistent motion.
  * Matches iOS BLAnimation and Web CSS transition durations.
  */
 object BLAnimation {
+    // Duration constants
     /** 150ms - Fast animations */
     const val fast: Int = 150
     /** 250ms - Normal animations */
     const val normal: Int = 250
     /** 350ms - Slow animations */
     const val slow: Int = 350
+
+    // Spring animation specs (matches iOS)
+    /** Damping ratio for spring animations */
+    const val springDamping: Float = 0.7f
+    /** Stiffness for spring animations */
+    const val springStiffness: Float = 300f
+    /** Bouncy spring damping */
+    const val springBouncyDamping: Float = 0.6f
+    /** Stiff spring stiffness */
+    const val springStiffStiffness: Float = 500f
+
+    // Press scale for interactive elements
+    /** Scale effect for pressed state */
+    const val pressScale: Float = 0.98f
+    /** Background tint opacity for pressed state */
+    const val pressTintOpacity: Float = 0.04f
 }
 
 // CompositionLocal providers for theme access

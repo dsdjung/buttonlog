@@ -1,8 +1,11 @@
 package com.buttonlog.app.ui.components
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.buttonlog.app.data.model.Button
 import com.buttonlog.app.data.model.ButtonState
 import com.buttonlog.app.data.model.ButtonType
+import com.buttonlog.app.ui.theme.BLBorder
 import kotlinx.coroutines.delay
 
 @Composable
@@ -40,32 +44,42 @@ fun ButtonCard(
     // One-time buttons should be disabled while clicking
     val isButtonDisabled = isClicking && button.type == ButtonType.ONE_TIME
     var isPressed by remember { mutableStateOf(false) }
+
+    // Spring animation for smooth, natural feel
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1f,
-        animationSpec = tween(durationMillis = 100),
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.7f,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "scale"
     )
 
     // Reset pressed state after animation
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            delay(100)
+            delay(150)
             isPressed = false
         }
     }
 
+    // Minimal card with subtle border instead of heavy elevation
     Card(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, BLBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Header section
             ButtonHeader(
@@ -119,19 +133,19 @@ private fun ButtonHeader(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon and color
+        // Outlined icon circle - minimal aesthetic
         Box(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(button.uiColor),
+                .border(2.dp, button.uiColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = getIconForButton(button.icon),
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
+                tint = button.uiColor,
+                modifier = Modifier.size(22.dp)
             )
         }
 
@@ -370,7 +384,9 @@ private fun ButtonActionButton(
     Button(
         onClick = onClick,
         enabled = !isDisabled,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = button.uiColor,
             contentColor = Color.White,
@@ -385,30 +401,28 @@ private fun ButtonActionButton(
         ) {
             if (isDisabled) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                     color = Color.White,
                     strokeWidth = 2.dp
                 )
                 Text(
                     text = "Completing...",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium
                 )
             } else {
                 Icon(
                     imageVector = actionIcon,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(18.dp)
                 )
                 Text(
                     text = actionText,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 

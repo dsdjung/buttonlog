@@ -8,36 +8,42 @@ import SwiftUI
 extension Color {
 
     // MARK: Primary Colors
-    /// Main brand color - Vibrant Teal
-    static let blPrimary = Color(hex: "00BFA5")
+    /// Main brand color - Sophisticated Teal
+    static let blPrimary = Color(hex: "26A69A")
     /// Darker variant for pressed states
     static let blPrimaryDark = Color(hex: "00897B")
     /// Lighter variant for backgrounds
-    static let blPrimaryLight = Color(hex: "B2DFDB")
+    static let blPrimaryLight = Color(hex: "80CBC4")
 
     // MARK: Secondary Colors
-    /// Accent color - Coral Orange
-    static let blSecondary = Color(hex: "FF6B6B")
+    /// Accent color - Warm Coral
+    static let blSecondary = Color(hex: "EF8A76")
     /// Darker variant
-    static let blSecondaryDark = Color(hex: "E55555")
+    static let blSecondaryDark = Color(hex: "D77A6A")
     /// Lighter variant
-    static let blSecondaryLight = Color(hex: "FFCDD2")
+    static let blSecondaryLight = Color(hex: "FFAB91")
 
     // MARK: Neutral Colors
-    static let blBackground = Color(hex: "FAFAFA")
+    static let blBackground = Color(hex: "FAFBFC")
     static let blBackgroundDark = Color(hex: "121212")
     static let blSurface = Color(hex: "FFFFFF")
     static let blSurfaceDark = Color(hex: "1E1E1E")
     static let blSurfaceElevated = Color(hex: "F5F5F5")
     static let blSurfaceElevatedDark = Color(hex: "2C2C2C")
 
+    // MARK: Border Colors
+    static let blBorder = Color(hex: "E5E7EB")
+    static let blBorderDark = Color(hex: "374151")
+    static let blDivider = Color(hex: "F3F4F6")
+    static let blDividerDark = Color(hex: "1F2937")
+
     // MARK: Text Colors
-    static let blTextPrimary = Color(hex: "1A1A1A")
+    static let blTextPrimary = Color(hex: "1A1A2E")
     static let blTextPrimaryDark = Color(hex: "FFFFFF")
-    static let blTextSecondary = Color(hex: "666666")
-    static let blTextSecondaryDark = Color(hex: "B3B3B3")
-    static let blTextTertiary = Color(hex: "999999")
-    static let blTextTertiaryDark = Color(hex: "808080")
+    static let blTextSecondary = Color(hex: "6B7280")
+    static let blTextSecondaryDark = Color(hex: "9CA3AF")
+    static let blTextTertiary = Color(hex: "9CA3AF")
+    static let blTextTertiaryDark = Color(hex: "6B7280")
 
     // MARK: Semantic Colors
     static let blSuccess = Color(hex: "4CAF50")
@@ -55,7 +61,7 @@ extension Color {
     static let blButtonOrange = Color(hex: "FF9800")
     static let blButtonYellow = Color(hex: "FFC107")
     static let blButtonGreen = Color(hex: "4CAF50")
-    static let blButtonTeal = Color(hex: "00BFA5")
+    static let blButtonTeal = Color(hex: "26A69A")
     static let blButtonBlue = Color(hex: "2196F3")
     static let blButtonIndigo = Color(hex: "3F51B5")
     static let blButtonPurple = Color(hex: "9C27B0")
@@ -84,30 +90,33 @@ extension Color {
 // MARK: - Typography
 
 struct BLTypography {
-    // MARK: Display
-    static let displayLarge = Font.system(size: 57, weight: .regular)
-    static let displayMedium = Font.system(size: 45, weight: .regular)
-    static let displaySmall = Font.system(size: 36, weight: .regular)
+    // MARK: Display - Light weight for elegance
+    static let displayLarge = Font.system(size: 32, weight: .light)
+    static let displayMedium = Font.system(size: 28, weight: .light)
+    static let displaySmall = Font.system(size: 24, weight: .light)
 
-    // MARK: Headlines
-    static let headlineLarge = Font.system(size: 32, weight: .semibold)
-    static let headlineMedium = Font.system(size: 28, weight: .semibold)
-    static let headlineSmall = Font.system(size: 24, weight: .semibold)
+    // MARK: Headlines - Regular weight for readability
+    static let headlineLarge = Font.system(size: 24, weight: .regular)
+    static let headlineMedium = Font.system(size: 22, weight: .regular)
+    static let headlineSmall = Font.system(size: 20, weight: .regular)
 
-    // MARK: Titles
-    static let titleLarge = Font.system(size: 22, weight: .semibold)
-    static let titleMedium = Font.system(size: 16, weight: .semibold)
-    static let titleSmall = Font.system(size: 14, weight: .semibold)
+    // MARK: Titles - Medium weight for hierarchy
+    static let titleLarge = Font.system(size: 20, weight: .medium)
+    static let titleMedium = Font.system(size: 18, weight: .medium)
+    static let titleSmall = Font.system(size: 16, weight: .medium)
 
-    // MARK: Body
+    // MARK: Body - Regular weight with better tracking
     static let bodyLarge = Font.system(size: 16, weight: .regular)
     static let bodyMedium = Font.system(size: 14, weight: .regular)
     static let bodySmall = Font.system(size: 12, weight: .regular)
 
-    // MARK: Labels
+    // MARK: Labels - Medium weight for emphasis
     static let labelLarge = Font.system(size: 14, weight: .medium)
     static let labelMedium = Font.system(size: 12, weight: .medium)
     static let labelSmall = Font.system(size: 11, weight: .medium)
+
+    // MARK: Caption
+    static let caption = Font.system(size: 11, weight: .regular)
 }
 
 // MARK: - Spacing (8-point grid system)
@@ -134,22 +143,29 @@ struct BLSpacing {
 struct BLRadius {
     /// 4pt - Small radius for chips, badges
     static let sm: CGFloat = 4
-    /// 8pt - Medium radius for inputs, small cards
+    /// 8pt - Medium radius for inputs
     static let md: CGFloat = 8
-    /// 12pt - Large radius for cards
+    /// 12pt - Large radius for buttons
     static let lg: CGFloat = 12
-    /// 16pt - Extra large radius for sheets, modals
+    /// 16pt - Extra large radius for cards (softer corners)
     static let xl: CGFloat = 16
-    /// 24pt - Full round for pills, FABs
+    /// 20pt - Full round for sheets, modals
+    static let xxl: CGFloat = 20
+    /// 24pt - Pill shape for FABs
     static let full: CGFloat = 24
 }
 
 // MARK: - Shadows
 
 struct BLShadow {
-    static let small = BLShadowStyle(color: Color.black.opacity(0.08), radius: 4, y: 2)
-    static let medium = BLShadowStyle(color: Color.black.opacity(0.12), radius: 8, y: 4)
-    static let large = BLShadowStyle(color: Color.black.opacity(0.16), radius: 16, y: 8)
+    /// Subtle shadow for minimal elevation
+    static let subtle = BLShadowStyle(color: Color.black.opacity(0.04), radius: 8, y: 2)
+    /// Small shadow for cards
+    static let small = BLShadowStyle(color: Color.black.opacity(0.06), radius: 4, y: 2)
+    /// Medium shadow for elevated elements
+    static let medium = BLShadowStyle(color: Color.black.opacity(0.08), radius: 8, y: 4)
+    /// Large shadow for modals
+    static let large = BLShadowStyle(color: Color.black.opacity(0.12), radius: 16, y: 8)
 }
 
 struct BLShadowStyle {
@@ -165,18 +181,35 @@ extension View {
         self.shadow(color: style.color, radius: style.radius, x: 0, y: style.y)
     }
 
+    /// Minimal card style with subtle border instead of shadow
     func blCard() -> some View {
         self
             .background(Color.blSurface)
-            .cornerRadius(BLRadius.lg)
-            .blShadow(BLShadow.small)
+            .cornerRadius(BLRadius.xl)
+            .overlay(
+                RoundedRectangle(cornerRadius: BLRadius.xl)
+                    .stroke(Color.blBorder, lineWidth: 1)
+            )
     }
 
+    /// Elevated card with subtle shadow
     func blCardElevated() -> some View {
         self
             .background(Color.blSurface)
-            .cornerRadius(BLRadius.lg)
-            .blShadow(BLShadow.medium)
+            .cornerRadius(BLRadius.xl)
+            .blShadow(BLShadow.subtle)
+    }
+
+    /// Card with border and subtle shadow (hybrid)
+    func blCardMinimal() -> some View {
+        self
+            .background(Color.blSurface)
+            .cornerRadius(BLRadius.xl)
+            .overlay(
+                RoundedRectangle(cornerRadius: BLRadius.xl)
+                    .stroke(Color.blBorder, lineWidth: 1)
+            )
+            .blShadow(BLShadow.subtle)
     }
 }
 
@@ -189,15 +222,16 @@ struct BLPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .font(BLTypography.labelLarge)
             .foregroundColor(.white)
-            .padding(.horizontal, BLSpacing.lg)
+            .padding(.horizontal, BLSpacing.xl)
             .padding(.vertical, BLSpacing.md)
+            .frame(minHeight: 48)
             .background(
-                RoundedRectangle(cornerRadius: BLRadius.md)
+                RoundedRectangle(cornerRadius: BLRadius.lg)
                     .fill(isEnabled ? Color.blPrimary : Color.blTextTertiary)
-                    .opacity(configuration.isPressed ? 0.8 : 1.0)
             )
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .blShadow(BLShadow.subtle)
+            .scaleEffect(configuration.isPressed ? BLAnimation.pressScale : 1.0)
+            .animation(BLAnimation.spring, value: configuration.isPressed)
     }
 }
 
@@ -208,15 +242,15 @@ struct BLSecondaryButtonStyle: ButtonStyle {
         configuration.label
             .font(BLTypography.labelLarge)
             .foregroundColor(isEnabled ? .blPrimary : .blTextTertiary)
-            .padding(.horizontal, BLSpacing.lg)
+            .padding(.horizontal, BLSpacing.xl)
             .padding(.vertical, BLSpacing.md)
+            .frame(minHeight: 48)
             .background(
-                RoundedRectangle(cornerRadius: BLRadius.md)
+                RoundedRectangle(cornerRadius: BLRadius.lg)
                     .stroke(isEnabled ? Color.blPrimary : Color.blTextTertiary, lineWidth: 1.5)
             )
-            .opacity(configuration.isPressed ? 0.7 : 1.0)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? BLAnimation.pressScale : 1.0)
+            .animation(BLAnimation.spring, value: configuration.isPressed)
     }
 }
 
@@ -225,7 +259,8 @@ struct BLTextButtonStyle: ButtonStyle {
         configuration.label
             .font(BLTypography.labelLarge)
             .foregroundColor(.blPrimary)
-            .opacity(configuration.isPressed ? 0.7 : 1.0)
+            .scaleEffect(configuration.isPressed ? BLAnimation.pressScale : 1.0)
+            .animation(BLAnimation.spring, value: configuration.isPressed)
     }
 }
 
@@ -244,8 +279,22 @@ extension ButtonStyle where Self == BLTextButtonStyle {
 // MARK: - Animation Constants
 
 struct BLAnimation {
+    /// Fast ease for micro-interactions
     static let fast = Animation.easeInOut(duration: 0.15)
+    /// Normal ease for transitions
     static let normal = Animation.easeInOut(duration: 0.25)
+    /// Slow ease for emphasis
     static let slow = Animation.easeInOut(duration: 0.35)
-    static let spring = Animation.spring(response: 0.3, dampingFraction: 0.7)
+
+    /// Primary spring animation for interactive elements
+    static let spring = Animation.spring(response: 0.35, dampingFraction: 0.7)
+    /// Bouncy spring for playful feedback
+    static let springBouncy = Animation.spring(response: 0.4, dampingFraction: 0.6)
+    /// Stiff spring for quick snaps
+    static let springStiff = Animation.spring(response: 0.25, dampingFraction: 0.8)
+
+    /// Scale effect for button presses
+    static let pressScale: CGFloat = 0.98
+    /// Background tint opacity for pressed state
+    static let pressTintOpacity: Double = 0.04
 }

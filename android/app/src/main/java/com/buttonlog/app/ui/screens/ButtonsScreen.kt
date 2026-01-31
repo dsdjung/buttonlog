@@ -1,20 +1,26 @@
 package com.buttonlog.app.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.buttonlog.app.ui.components.ButtonCard
 import com.buttonlog.app.ui.components.UpgradePromptDialog
+import com.buttonlog.app.ui.theme.BLSurfaceElevated
+import com.buttonlog.app.ui.theme.BLTextTertiary
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -198,37 +204,44 @@ private fun EmptyStateView(onCreateButton: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Large outlined icon for minimal aesthetic
         Icon(
-            imageVector = Icons.Default.AddCircle,
+            imageVector = Icons.Outlined.AddCircleOutline,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary
+            tint = BLTextTertiary
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         Text(
             text = "No buttons yet",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.displaySmall,
             textAlign = TextAlign.Center
         )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         Text(
             text = "Create your first button to start tracking activities",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         Button(
             onClick = onCreateButton,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Create Button")
+            Text(
+                "Create Button",
+                style = MaterialTheme.typography.labelLarge
+            )
         }
     }
 }
@@ -270,14 +283,23 @@ fun SearchBar(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
+    // Pill-shaped minimal search bar
+    TextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text("Search buttons...") },
+        placeholder = {
+            Text(
+                "Search buttons...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = BLTextTertiary
+            )
+        },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = "Search"
+                contentDescription = "Search",
+                modifier = Modifier.size(18.dp),
+                tint = BLTextTertiary
             )
         },
         trailingIcon = {
@@ -285,13 +307,24 @@ fun SearchBar(
                 IconButton(onClick = { onQueryChange("") }) {
                     Icon(
                         imageVector = Icons.Default.Clear,
-                        contentDescription = "Clear search"
+                        contentDescription = "Clear search",
+                        modifier = Modifier.size(18.dp),
+                        tint = BLTextTertiary
                     )
                 }
             }
         },
-        modifier = modifier.fillMaxWidth(),
-        singleLine = true
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp)),
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium,
+        colors = TextFieldDefaults.colors(
+            unfocusedContainerColor = BLSurfaceElevated,
+            focusedContainerColor = BLSurfaceElevated,
+            unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+            focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
+        )
     )
 }
 

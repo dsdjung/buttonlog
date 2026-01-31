@@ -23,19 +23,25 @@ struct ButtonsView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Search Bar with + button
-            HStack {
+            HStack(spacing: BLSpacing.md) {
                 SearchBar(text: $searchText)
 
                 SwiftUI.Button(action: {
                     showingCreateButton = true
                 }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title)
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.blPrimary)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            Circle()
+                                .stroke(Color.blPrimary, lineWidth: 1.5)
+                        )
                 }
             }
             .padding(.horizontal, BLSpacing.lg)
-            .padding(.top, BLSpacing.sm)
+            .padding(.top, BLSpacing.md)
+            .padding(.bottom, BLSpacing.sm)
 
             // Main content with pull-to-refresh support
             ScrollView {
@@ -139,15 +145,15 @@ struct ButtonCard: View {
         VStack(alignment: .leading, spacing: BLSpacing.md) {
             // Header
             HStack {
-                // Icon and color
+                // Outlined icon circle - minimal aesthetic
                 ZStack {
                     Circle()
-                        .fill(button.uiColor)
-                        .frame(width: 44, height: 44)
+                        .stroke(button.uiColor, lineWidth: 2)
+                        .frame(width: 40, height: 40)
 
                     Image(systemName: iconForButton(button.icon))
-                        .foregroundColor(.white)
-                        .font(.title3)
+                        .foregroundColor(button.uiColor)
+                        .font(.system(size: 18))
                 }
 
                 VStack(alignment: .leading, spacing: BLSpacing.xs) {
@@ -282,48 +288,53 @@ struct ButtonCard: View {
                 }
             } else {
                 SwiftUI.Button(action: {
-                    withAnimation(BLAnimation.fast) {
+                    withAnimation(BLAnimation.spring) {
                         isPressed = true
                     }
 
                     onTap()
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        isPressed = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        withAnimation(BLAnimation.spring) {
+                            isPressed = false
+                        }
                     }
                 }) {
-                    HStack {
+                    HStack(spacing: BLSpacing.sm) {
                         if isButtonDisabled {
                             ProgressView()
                                 .tint(.white)
                             Text("Completing...")
-                                .font(BLTypography.titleMedium)
+                                .font(BLTypography.labelLarge)
                         } else {
                             Image(systemName: buttonActionIcon(for: button))
-                                .font(BLTypography.titleMedium)
+                                .font(.system(size: 16, weight: .medium))
 
                             Text(buttonActionText(for: button))
-                                .font(BLTypography.titleMedium)
+                                .font(BLTypography.labelLarge)
                         }
-
-                        Spacer()
                     }
                     .foregroundColor(.white)
-                    .padding(BLSpacing.lg)
+                    .frame(maxWidth: .infinity, minHeight: 48)
                     .background(
                         RoundedRectangle(cornerRadius: BLRadius.lg)
                             .fill(isButtonDisabled ? button.uiColor.opacity(0.6) : button.uiColor)
-                            .scaleEffect(isPressed ? 0.96 : 1.0)
                     )
+                    .scaleEffect(isPressed ? BLAnimation.pressScale : 1.0)
                 }
                 .buttonStyle(PlainButtonStyle())
                 .disabled(isButtonDisabled)
             }
         }
-        .padding(BLSpacing.lg)
+        .padding(BLSpacing.xl)
         .background(Color.blSurface)
         .cornerRadius(BLRadius.xl)
-        .blShadow(BLShadow.small)
+        .overlay(
+            RoundedRectangle(cornerRadius: BLRadius.xl)
+                .stroke(Color.blBorder, lineWidth: 1)
+        )
+        .scaleEffect(isPressed ? BLAnimation.pressScale : 1.0)
+        .animation(BLAnimation.spring, value: isPressed)
     }
 
     private func iconForButton(_ icon: String) -> String {
@@ -450,18 +461,21 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: BLSpacing.xl) {
+            // Large outlined icon
             Image(systemName: "plus.circle")
-                .font(.system(size: 64))
-                .foregroundColor(.blPrimary)
+                .font(.system(size: 80, weight: .ultraLight))
+                .foregroundColor(.blTextTertiary)
 
-            Text("No buttons yet")
-                .font(BLTypography.headlineSmall)
-                .foregroundColor(.blTextPrimary)
+            VStack(spacing: BLSpacing.sm) {
+                Text("No buttons yet")
+                    .font(BLTypography.displaySmall)
+                    .foregroundColor(.blTextPrimary)
 
-            Text("Create your first button to start tracking activities")
-                .font(BLTypography.bodyLarge)
-                .foregroundColor(.blTextSecondary)
-                .multilineTextAlignment(.center)
+                Text("Create your first button to start tracking activities")
+                    .font(BLTypography.bodyLarge)
+                    .foregroundColor(.blTextSecondary)
+                    .multilineTextAlignment(.center)
+            }
 
             SwiftUI.Button("Create Button") {
                 onCreateButton()
@@ -479,6 +493,7 @@ struct SearchBar: View {
     var body: some View {
         HStack(spacing: BLSpacing.sm) {
             Image(systemName: "magnifyingglass")
+                .font(.system(size: 14))
                 .foregroundColor(.blTextTertiary)
 
             TextField("Search buttons...", text: $text)
@@ -488,14 +503,15 @@ struct SearchBar: View {
             if !text.isEmpty {
                 SwiftUI.Button(action: { text = "" }) {
                     Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14))
                         .foregroundColor(.blTextTertiary)
                 }
             }
         }
-        .padding(.horizontal, BLSpacing.md)
+        .padding(.horizontal, BLSpacing.lg)
         .padding(.vertical, BLSpacing.md)
         .background(Color.blSurfaceElevated)
-        .cornerRadius(BLRadius.md)
+        .cornerRadius(BLRadius.full)  // Pill shape
     }
 }
 

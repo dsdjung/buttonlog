@@ -7,23 +7,23 @@ import androidx.compose.ui.graphics.Color
 // =============================================================================
 
 // MARK: - Primary Colors
-/** Main brand color - Vibrant Teal */
-val BLPrimary = Color(0xFF00BFA5)
+/** Main brand color - Sophisticated Teal */
+val BLPrimary = Color(0xFF26A69A)
 /** Darker variant for pressed states */
 val BLPrimaryDark = Color(0xFF00897B)
 /** Lighter variant for backgrounds */
-val BLPrimaryLight = Color(0xFFB2DFDB)
+val BLPrimaryLight = Color(0xFF80CBC4)
 
 // MARK: - Secondary Colors
-/** Accent color - Coral Orange */
-val BLSecondary = Color(0xFFFF6B6B)
+/** Accent color - Warm Coral */
+val BLSecondary = Color(0xFFEF8A76)
 /** Darker variant */
-val BLSecondaryDark = Color(0xFFE55555)
+val BLSecondaryDark = Color(0xFFD77A6A)
 /** Lighter variant */
-val BLSecondaryLight = Color(0xFFFFCDD2)
+val BLSecondaryLight = Color(0xFFFFAB91)
 
 // MARK: - Neutral Colors - Light Theme
-val BLBackground = Color(0xFFFAFAFA)
+val BLBackground = Color(0xFFFAFBFC)
 val BLSurface = Color(0xFFFFFFFF)
 val BLSurfaceElevated = Color(0xFFF5F5F5)
 
@@ -32,15 +32,21 @@ val BLBackgroundDark = Color(0xFF121212)
 val BLSurfaceDark = Color(0xFF1E1E1E)
 val BLSurfaceElevatedDark = Color(0xFF2C2C2C)
 
+// MARK: - Border Colors
+val BLBorder = Color(0xFFE5E7EB)
+val BLBorderDark = Color(0xFF374151)
+val BLDivider = Color(0xFFF3F4F6)
+val BLDividerDark = Color(0xFF1F2937)
+
 // MARK: - Text Colors - Light Theme
-val BLTextPrimary = Color(0xFF1A1A1A)
-val BLTextSecondary = Color(0xFF666666)
-val BLTextTertiary = Color(0xFF999999)
+val BLTextPrimary = Color(0xFF1A1A2E)
+val BLTextSecondary = Color(0xFF6B7280)
+val BLTextTertiary = Color(0xFF9CA3AF)
 
 // MARK: - Text Colors - Dark Theme
 val BLTextPrimaryDark = Color(0xFFFFFFFF)
-val BLTextSecondaryDark = Color(0xFFB3B3B3)
-val BLTextTertiaryDark = Color(0xFF808080)
+val BLTextSecondaryDark = Color(0xFF9CA3AF)
+val BLTextTertiaryDark = Color(0xFF6B7280)
 
 // MARK: - Semantic Colors
 val BLSuccess = Color(0xFF4CAF50)
@@ -58,7 +64,7 @@ val BLButtonRed = Color(0xFFEF5350)
 val BLButtonOrange = Color(0xFFFF9800)
 val BLButtonYellow = Color(0xFFFFC107)
 val BLButtonGreen = Color(0xFF4CAF50)
-val BLButtonTeal = Color(0xFF00BFA5)
+val BLButtonTeal = Color(0xFF26A69A)
 val BLButtonBlue = Color(0xFF2196F3)
 val BLButtonIndigo = Color(0xFF3F51B5)
 val BLButtonPurple = Color(0xFF9C27B0)
