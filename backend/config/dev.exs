@@ -20,7 +20,7 @@ config :buttonlog, ButtonLog.Repo,
 config :buttonlog, ButtonLogWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 14015, protocol_options: [max_header_name_length: 64, max_header_value_length: 4096, max_headers: 100]],
+  http: [ip: {127, 0, 0, 1}, port: 14015, protocol_options: [max_header_name_length: 128, max_header_value_length: 16_384, max_headers: 200]],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,

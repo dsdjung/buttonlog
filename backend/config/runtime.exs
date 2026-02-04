@@ -43,7 +43,8 @@ if config_env() == :prod do
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for forcing IPv6 only.
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
-      port: port
+      port: port,
+      protocol_options: [max_header_name_length: 128, max_header_value_length: 16_384, max_headers: 200]
     ],
     secret_key_base: secret_key_base,
     server: true
