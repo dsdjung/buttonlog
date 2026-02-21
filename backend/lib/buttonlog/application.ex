@@ -40,7 +40,9 @@ defmodule ButtonLog.Application do
       # Start the Endpoint (http/https)
       ButtonLogWeb.Endpoint,
       # Start the Auto-Stop worker for toggle buttons
-      ButtonLog.Buttons.AutoStopWorker
+      ButtonLog.Buttons.AutoStopWorker,
+      # Start the Reminder worker for button reminders
+      ButtonLog.Buttons.ReminderWorker
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

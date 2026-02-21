@@ -27,7 +27,8 @@ defmodule ButtonLog.Alerts.Alert do
   end
 
   @valid_alert_types [
-    "button_click", "button_created", "friend_request", "general",
+    "button_click", "button_created", "button_reminder", "button_auto_stopped",
+    "friend_request", "general",
     "gift_button_received", "gift_button_clicked", "gift_button_deleted", "gift_button_sent",
     "one_time_button_completed",
     "support_ticket_reply", "support_ticket_status_update"

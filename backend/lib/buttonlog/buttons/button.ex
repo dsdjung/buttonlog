@@ -23,6 +23,13 @@ defmodule ButtonLog.Buttons.Button do
     field :calendar_sync_enabled, :boolean
     field :cooldown_hours, :integer  # Hours before button can be clicked again (nil = no cooldown)
 
+    # Reminder settings
+    field :reminder_enabled, :boolean, default: false
+    field :reminder_hour, :integer  # Hour of day (0-23) in user's timezone
+    field :reminder_days, {:array, :integer}, default: [1, 2, 3, 4, 5, 6, 7]  # 1=Monday, 7=Sunday
+    field :reminder_timezone, :string, default: "UTC"
+    field :reminder_last_sent_at, :utc_datetime
+
     # Archival (for one-time buttons)
     field :archived, :boolean, default: false
     field :archived_at, :utc_datetime
@@ -53,7 +60,8 @@ defmodule ButtonLog.Buttons.Button do
                     :alerts_enabled, :auto_stop_enabled, :auto_stop_minutes,
                     :scheduled_stop_at, :calendar_sync_enabled, :cooldown_hours,
                     :current_state, :state_changed_at, :user_id, :archived, :archived_at,
-                    :choices])
+                    :choices, :reminder_enabled, :reminder_hour, :reminder_days,
+                    :reminder_timezone, :reminder_last_sent_at])
     |> validate_required([:name, :type])
     |> validate_length(:name, min: 1, max: 100)
     |> validate_length(:description, max: 500)
@@ -63,6 +71,8 @@ defmodule ButtonLog.Buttons.Button do
     |> validate_auto_stop_minutes()
     |> validate_cooldown_hours()
     |> validate_choices()
+    |> validate_reminder_hour()
+    |> validate_reminder_days()
   end
 
   defp validate_auto_stop_minutes(changeset) do
@@ -78,6 +88,27 @@ defmodule ButtonLog.Buttons.Button do
       nil -> changeset
       hours when is_integer(hours) and hours >= 1 and hours <= 168 -> changeset  # 1 hour to 1 week
       _ -> add_error(changeset, :cooldown_hours, "must be between 1 and 168 hours")
+    end
+  end
+
+  defp validate_reminder_hour(changeset) do
+    case get_change(changeset, :reminder_hour) do
+      nil -> changeset
+      hour when is_integer(hour) and hour >= 0 and hour <= 23 -> changeset
+      _ -> add_error(changeset, :reminder_hour, "must be between 0 and 23")
+    end
+  end
+
+  defp validate_reminder_days(changeset) do
+    case get_change(changeset, :reminder_days) do
+      nil -> changeset
+      days when is_list(days) ->
+        if Enum.all?(days, &(is_integer(&1) and &1 >= 1 and &1 <= 7)) do
+          changeset
+        else
+          add_error(changeset, :reminder_days, "must contain only values 1-7 (Monday-Sunday)")
+        end
+      _ -> add_error(changeset, :reminder_days, "must be a list of day numbers")
     end
   end
 
@@ -120,6 +151,7 @@ defmodule ButtonLog.Buttons.Button do
     |> put_change(:alerts_enabled, true)
     |> put_change(:auto_stop_enabled, false)
     |> put_change(:calendar_sync_enabled, false)
+    |> put_change(:reminder_enabled, false)
   end
 
   @doc """

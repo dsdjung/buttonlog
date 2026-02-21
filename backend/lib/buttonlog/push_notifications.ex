@@ -341,6 +341,21 @@ defmodule ButtonLog.PushNotifications do
     send_to_user(recipient_id, title, body, data)
   end
 
+  @doc """
+  Sends a button reminder notification.
+  """
+  def send_button_reminder_notification(user_id, button_name, button_id) do
+    title = "Reminder: #{button_name}"
+    body = "Time to click your button!"
+    data = %{
+      "type" => "button_reminder",
+      "button_id" => button_id,
+      "action" => "open_button"
+    }
+
+    send_to_user(user_id, title, body, data)
+  end
+
   # Private functions
 
   defp build_apns_payload(title, body, data) do

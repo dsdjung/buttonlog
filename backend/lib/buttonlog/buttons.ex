@@ -1925,4 +1925,159 @@ defmodule ButtonLog.Buttons do
 
     count
   end
+
+  # =============================================================================
+  # Button Reminder Functions
+  # =============================================================================
+
+  @doc """
+  Lists buttons that are due for a reminder notification.
+  A button is due for reminder when:
+  - reminder_enabled is true
+  - Current hour matches reminder_hour (in button's timezone)
+  - Current day of week is in reminder_days
+  - reminder_last_sent_at is either nil or more than 20 hours ago
+  """
+  def list_buttons_due_for_reminder do
+    now = DateTime.utc_now()
+
+    Repo.all(
+      from b in Button,
+        join: u in assoc(b, :user),
+        where: b.reminder_enabled == true,
+        where: not is_nil(b.reminder_hour),
+        where: is_nil(b.reminder_last_sent_at) or
+               b.reminder_last_sent_at < ago(20, "hour"),
+        preload: [user: u]
+    )
+    |> Enum.filter(fn button ->
+      is_button_due_for_reminder?(button, now)
+    end)
+  end
+
+  @doc """
+  Checks if a button is due for reminder based on current time.
+  """
+  def is_button_due_for_reminder?(button, now) do
+    # Get current time in button's timezone
+    timezone = button.reminder_timezone || "UTC"
+    local_now = convert_to_timezone(now, timezone)
+
+    current_hour = local_now.hour
+    # ISO day of week: 1 = Monday, 7 = Sunday
+    current_day = Date.day_of_week(DateTime.to_date(local_now))
+
+    # Check if current hour matches and day is in reminder_days
+    reminder_days = button.reminder_days || [1, 2, 3, 4, 5, 6, 7]
+
+    current_hour == button.reminder_hour and current_day in reminder_days
+  end
+
+  @doc """
+  Converts a DateTime to a specific timezone.
+  For simplicity, we support common timezone offsets.
+  """
+  def convert_to_timezone(datetime, timezone) do
+    offset_hours = timezone_offset(timezone)
+    DateTime.add(datetime, offset_hours * 3600, :second)
+  end
+
+  defp timezone_offset("UTC"), do: 0
+  defp timezone_offset("America/New_York"), do: -5
+  defp timezone_offset("America/Los_Angeles"), do: -8
+  defp timezone_offset("America/Chicago"), do: -6
+  defp timezone_offset("America/Denver"), do: -7
+  defp timezone_offset("Europe/London"), do: 0
+  defp timezone_offset("Europe/Paris"), do: 1
+  defp timezone_offset("Europe/Berlin"), do: 1
+  defp timezone_offset("Asia/Tokyo"), do: 9
+  defp timezone_offset("Asia/Shanghai"), do: 8
+  defp timezone_offset("Australia/Sydney"), do: 11
+  defp timezone_offset(_), do: 0  # Default to UTC
+
+  @doc """
+  Processes a single button reminder.
+  Sends push notification and updates reminder_last_sent_at.
+  """
+  def process_reminder(button_id) do
+    case Repo.get(Button, button_id) |> Repo.preload(:user) do
+      nil ->
+        {:error, :not_found}
+
+      button ->
+        user = button.user
+
+        # Check user's quiet hours
+        if user_in_quiet_hours?(user) do
+          {:skipped, :quiet_hours}
+        else
+          # Send push notification
+          ButtonLog.PushNotifications.send_button_reminder_notification(
+            user.id,
+            button.name,
+            button.id
+          )
+
+          # Create in-app alert
+          ButtonLog.Alerts.create_alert(
+            %{
+              alert_type: "button_reminder",
+              title: "Reminder: #{button.name}",
+              message: "Time to click your button!",
+              metadata: %{button_id: button.id}
+            },
+            user.id,
+            user.id,
+            button.id
+          )
+
+          # Update reminder_last_sent_at
+          button
+          |> Ecto.Changeset.change(%{reminder_last_sent_at: DateTime.utc_now()})
+          |> Repo.update()
+        end
+    end
+  end
+
+  @doc """
+  Checks if a user is currently in their quiet hours.
+  """
+  def user_in_quiet_hours?(user) do
+    if user.quiet_hours_enabled && user.quiet_hours_start && user.quiet_hours_end do
+      now = Time.utc_now()
+      start_time = user.quiet_hours_start
+      end_time = user.quiet_hours_end
+
+      # Handle overnight quiet hours (e.g., 22:00 to 07:00)
+      if Time.compare(start_time, end_time) == :gt do
+        # Overnight: quiet if now >= start OR now < end
+        Time.compare(now, start_time) != :lt or Time.compare(now, end_time) == :lt
+      else
+        # Same day: quiet if start <= now < end
+        Time.compare(now, start_time) != :lt and Time.compare(now, end_time) == :lt
+      end
+    else
+      false
+    end
+  end
+
+  @doc """
+  Processes all buttons due for reminders.
+  Called periodically by the reminder worker.
+  Returns the count of reminders sent.
+  """
+  def process_all_reminders do
+    buttons = list_buttons_due_for_reminder()
+
+    results = Enum.map(buttons, fn button ->
+      process_reminder(button.id)
+    end)
+
+    success_count = Enum.count(results, fn
+      {:ok, _} -> true
+      _ -> false
+    end)
+
+    {:ok, success_count}
+  end
 end

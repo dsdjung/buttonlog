@@ -57,7 +57,16 @@ data class Button(
     @SerializedName("owner_id")
     val ownerId: String? = null,
     @SerializedName("owner_name")
-    val ownerName: String? = null
+    val ownerName: String? = null,
+    // Reminder fields
+    @SerializedName("reminder_enabled")
+    val reminderEnabled: Boolean? = null,
+    @SerializedName("reminder_hour")
+    val reminderHour: Int? = null,
+    @SerializedName("reminder_days")
+    val reminderDays: List<Int>? = null,
+    @SerializedName("reminder_timezone")
+    val reminderTimezone: String? = null
 ) {
     val hexColor: String
         get() = if (color.startsWith("#")) color else "#$color"
@@ -135,6 +144,36 @@ data class Button(
             }
         }
 
+    /** True if this button has reminder enabled */
+    val hasReminder: Boolean
+        get() = reminderEnabled == true
+
+    /** Formatted reminder time (e.g., "9:00 AM") */
+    val reminderTimeText: String?
+        get() {
+            if (reminderEnabled != true) return null
+            val hour = reminderHour ?: return null
+            return when {
+                hour == 0 -> "12:00 AM"
+                hour < 12 -> "$hour:00 AM"
+                hour == 12 -> "12:00 PM"
+                else -> "${hour - 12}:00 PM"
+            }
+        }
+
+    /** Formatted reminder days (e.g., "Daily" or "Mon, Wed, Fri") */
+    val reminderDaysText: String?
+        get() {
+            if (reminderEnabled != true) return null
+            val days = reminderDays ?: return "Daily"
+            if (days.size == 7) return "Daily"
+            val dayNames = mapOf(
+                1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu",
+                5 to "Fri", 6 to "Sat", 7 to "Sun"
+            )
+            return days.sorted().mapNotNull { dayNames[it] }.joinToString(", ")
+        }
+
     companion object {
         /** Available auto-stop duration options */
         val AUTO_STOP_OPTIONS = listOf(
@@ -157,6 +196,37 @@ data class Button(
             48 to "2 days",
             72 to "3 days",
             168 to "1 week"
+        )
+
+        /** Available reminder hour options */
+        val REMINDER_HOUR_OPTIONS = listOf(
+            6 to "6:00 AM",
+            7 to "7:00 AM",
+            8 to "8:00 AM",
+            9 to "9:00 AM",
+            10 to "10:00 AM",
+            11 to "11:00 AM",
+            12 to "12:00 PM",
+            13 to "1:00 PM",
+            14 to "2:00 PM",
+            15 to "3:00 PM",
+            16 to "4:00 PM",
+            17 to "5:00 PM",
+            18 to "6:00 PM",
+            19 to "7:00 PM",
+            20 to "8:00 PM",
+            21 to "9:00 PM"
+        )
+
+        /** Day of week options (1=Monday, 7=Sunday) */
+        val DAY_OPTIONS = listOf(
+            1 to "Mon",
+            2 to "Tue",
+            3 to "Wed",
+            4 to "Thu",
+            5 to "Fri",
+            6 to "Sat",
+            7 to "Sun"
         )
     }
 }
@@ -334,7 +404,11 @@ data class ButtonFormData(
     var cooldownHours: Int? = null,  // Hours before button can be clicked again (nil = no cooldown)
     // Friend alert configuration
     var friendAlertMode: FriendAlertMode = FriendAlertMode.NONE,
-    var selectedFriendIds: MutableList<String> = mutableListOf()
+    var selectedFriendIds: MutableList<String> = mutableListOf(),
+    // Reminder settings
+    var reminderEnabled: Boolean = false,
+    var reminderHour: Int = 9,  // Default to 9 AM
+    var reminderDays: MutableSet<Int> = mutableSetOf(1, 2, 3, 4, 5, 6, 7)  // All days by default
 ) {
     val isValid: Boolean
         get() = name.trim().isNotEmpty()
@@ -385,6 +459,14 @@ data class ButtonFormData(
                 friendAlerts["friend_ids"] = selectedFriendIds.toList()
             }
             body["friend_alerts"] = friendAlerts
+        }
+
+        // Include reminder settings
+        body["reminder_enabled"] = reminderEnabled
+        if (reminderEnabled) {
+            body["reminder_hour"] = reminderHour
+            body["reminder_days"] = reminderDays.sorted().toList()
+            body["reminder_timezone"] = java.util.TimeZone.getDefault().id
         }
 
         return body.filterValues { it != null }

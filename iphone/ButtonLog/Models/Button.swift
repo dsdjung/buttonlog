@@ -31,6 +31,12 @@ struct ButtonModel: Identifiable, Codable, Equatable {
     // Cooldown field - hours before button can be clicked again
     var cooldownHours: Int? = nil
 
+    // Reminder settings
+    var reminderEnabled: Bool? = nil
+    var reminderHour: Int? = nil  // Hour of day (0-23)
+    var reminderDays: [Int]? = nil  // Days of week (1=Monday, 7=Sunday)
+    var reminderTimezone: String? = nil
+
     // Sharing fields
     var sharingMode: SharingMode? = nil
     var shareToken: String? = nil
@@ -134,6 +140,24 @@ struct ButtonModel: Identifiable, Codable, Equatable {
         }
     }
 
+    /// True if this button has a reminder enabled
+    var hasReminder: Bool {
+        return reminderEnabled == true && reminderHour != nil
+    }
+
+    /// Formatted reminder time (e.g., "9:00 AM")
+    var reminderTimeText: String? {
+        guard let hour = reminderHour else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:00 a"
+        var components = DateComponents()
+        components.hour = hour
+        if let date = Calendar.current.date(from: components) {
+            return formatter.string(from: date)
+        }
+        return "\(hour):00"
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, name, description, type, icon, color, choices
         case isActive = "is_active"
@@ -157,6 +181,10 @@ struct ButtonModel: Identifiable, Codable, Equatable {
         case ownerId = "owner_id"
         case ownerName = "owner_name"
         case cooldownHours = "cooldown_hours"
+        case reminderEnabled = "reminder_enabled"
+        case reminderHour = "reminder_hour"
+        case reminderDays = "reminder_days"
+        case reminderTimezone = "reminder_timezone"
     }
 }
 
@@ -407,6 +435,12 @@ struct ButtonFormData {
     var choices: [IdentifiedChoice] = []  // Multiple choice options for one-time buttons
     var cooldownHours: Int? = nil  // Hours before button can be clicked again (nil = no cooldown)
 
+    // Reminder settings
+    var reminderEnabled: Bool = false
+    var reminderHour: Int = 9  // Default 9 AM
+    var reminderDays: Set<Int> = Set(1...7)  // Default all days (1=Monday, 7=Sunday)
+    var reminderTimezone: String = TimeZone.current.identifier
+
     // Friend alert configuration
     var friendAlertMode: FriendAlertMode = .none
     var selectedFriendIds: [String] = []
@@ -424,6 +458,10 @@ struct ButtonFormData {
         calendarSyncEnabled: Bool = false,
         choices: [String] = [],
         cooldownHours: Int? = nil,
+        reminderEnabled: Bool = false,
+        reminderHour: Int = 9,
+        reminderDays: Set<Int> = Set(1...7),
+        reminderTimezone: String = TimeZone.current.identifier,
         friendAlertMode: FriendAlertMode = .none,
         selectedFriendIds: [String] = []
     ) {
@@ -438,6 +476,10 @@ struct ButtonFormData {
         self.calendarSyncEnabled = calendarSyncEnabled
         self.choices = choices.map { IdentifiedChoice(text: $0) }
         self.cooldownHours = cooldownHours
+        self.reminderEnabled = reminderEnabled
+        self.reminderHour = reminderHour
+        self.reminderDays = reminderDays
+        self.reminderTimezone = reminderTimezone
         self.friendAlertMode = friendAlertMode
         self.selectedFriendIds = selectedFriendIds
     }
@@ -480,6 +522,31 @@ struct ButtonFormData {
         (168, "1 week")
     ]
 
+    /// Available reminder hour options
+    static let reminderHourOptions: [(hour: Int, label: String)] = [
+        (6, "6:00 AM"),
+        (7, "7:00 AM"),
+        (8, "8:00 AM"),
+        (9, "9:00 AM"),
+        (10, "10:00 AM"),
+        (11, "11:00 AM"),
+        (12, "12:00 PM"),
+        (15, "3:00 PM"),
+        (18, "6:00 PM"),
+        (21, "9:00 PM")
+    ]
+
+    /// Day of week options
+    static let dayOptions: [(day: Int, label: String)] = [
+        (1, "Mon"),
+        (2, "Tue"),
+        (3, "Wed"),
+        (4, "Thu"),
+        (5, "Fri"),
+        (6, "Sat"),
+        (7, "Sun")
+    ]
+
     func toRequestBody() -> [String: Any] {
         var body: [String: Any] = [
             "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -505,6 +572,14 @@ struct ButtonFormData {
         // Include cooldown_hours if set
         if let hours = cooldownHours, hours > 0 {
             body["cooldown_hours"] = hours
+        }
+
+        // Include reminder settings if enabled
+        body["reminder_enabled"] = reminderEnabled
+        if reminderEnabled {
+            body["reminder_hour"] = reminderHour
+            body["reminder_days"] = Array(reminderDays).sorted()
+            body["reminder_timezone"] = reminderTimezone
         }
 
         // Include choices for one-time buttons if valid

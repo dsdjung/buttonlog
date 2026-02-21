@@ -425,6 +425,11 @@ defmodule ButtonLogWeb.API.ButtonController do
       scheduled_stop_at: format_datetime(button.scheduled_stop_at),
       calendar_sync_enabled: button.calendar_sync_enabled,
       cooldown_hours: button.cooldown_hours,
+      # Reminder settings
+      reminder_enabled: button.reminder_enabled,
+      reminder_hour: button.reminder_hour,
+      reminder_days: button.reminder_days,
+      reminder_timezone: button.reminder_timezone,
       user_id: button.user_id,
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at),
@@ -470,6 +475,11 @@ defmodule ButtonLogWeb.API.ButtonController do
       scheduled_stop_at: format_datetime(button[:scheduled_stop_at]),
       calendar_sync_enabled: button.calendar_sync_enabled,
       cooldown_hours: button[:cooldown_hours],
+      # Reminder settings
+      reminder_enabled: button[:reminder_enabled] || false,
+      reminder_hour: button[:reminder_hour],
+      reminder_days: button[:reminder_days],
+      reminder_timezone: button[:reminder_timezone],
       user_id: button.user_id,
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at),

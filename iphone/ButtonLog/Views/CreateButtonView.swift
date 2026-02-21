@@ -113,6 +113,58 @@ struct CreateButtonView: View {
                     }
                 }
 
+                // Reminder Section
+                Section(header: Text("Reminder"), footer: Text("Get a daily notification to remind you to click this button.")) {
+                    Toggle("Enable Reminder", isOn: $formData.reminderEnabled)
+
+                    if formData.reminderEnabled {
+                        Picker("Time", selection: $formData.reminderHour) {
+                            ForEach(ButtonFormData.reminderHourOptions, id: \.hour) { option in
+                                Text(option.label).tag(option.hour)
+                            }
+                        }
+
+                        // Day selection
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Days")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+
+                            HStack(spacing: 8) {
+                                ForEach(ButtonFormData.dayOptions, id: \.day) { dayOption in
+                                    SwiftUI.Button(action: {
+                                        if formData.reminderDays.contains(dayOption.day) {
+                                            // Don't allow deselecting if it's the last one
+                                            if formData.reminderDays.count > 1 {
+                                                formData.reminderDays.remove(dayOption.day)
+                                            }
+                                        } else {
+                                            formData.reminderDays.insert(dayOption.day)
+                                        }
+                                    }) {
+                                        Text(dayOption.label)
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 6)
+                                            .background(
+                                                formData.reminderDays.contains(dayOption.day)
+                                                    ? Color.blPrimary
+                                                    : Color(.systemGray5)
+                                            )
+                                            .foregroundColor(
+                                                formData.reminderDays.contains(dayOption.day)
+                                                    ? .white
+                                                    : .primary
+                                            )
+                                            .cornerRadius(6)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Preview")

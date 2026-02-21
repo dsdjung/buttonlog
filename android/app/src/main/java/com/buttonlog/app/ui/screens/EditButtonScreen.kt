@@ -374,6 +374,10 @@ fun CreateButtonScreen(
     var choices by remember { mutableStateOf(mutableListOf("", "")) }
     var friendAlertMode by remember { mutableStateOf(FriendAlertMode.NONE) }
     var selectedFriendIds by remember { mutableStateOf(mutableSetOf<String>()) }
+    // Reminder settings
+    var reminderEnabled by remember { mutableStateOf(false) }
+    var reminderHour by remember { mutableStateOf(9) }
+    var reminderDays by remember { mutableStateOf(mutableSetOf(1, 2, 3, 4, 5, 6, 7)) }
 
     val scrollState = rememberScrollState()
 
@@ -413,7 +417,10 @@ fun CreateButtonScreen(
                                 },
                                 cooldownHours = if (selectedType == ButtonType.INSTANT) cooldownHours else null,
                                 friendAlertMode = friendAlertMode,
-                                selectedFriendIds = selectedFriendIds.toMutableList()
+                                selectedFriendIds = selectedFriendIds.toMutableList(),
+                                reminderEnabled = reminderEnabled,
+                                reminderHour = reminderHour,
+                                reminderDays = reminderDays
                             )
                             onCreateButton(formData)
                         },
@@ -590,6 +597,17 @@ fun CreateButtonScreen(
                             onHoursSelected = { cooldownHours = it }
                         )
                     }
+
+                    // Reminder section
+                    HorizontalDivider()
+                    ReminderSection(
+                        enabled = reminderEnabled,
+                        onEnabledChange = { reminderEnabled = it },
+                        hour = reminderHour,
+                        onHourChange = { reminderHour = it },
+                        days = reminderDays,
+                        onDaysChange = { reminderDays = it.toMutableSet() }
+                    )
                 }
             }
 
@@ -800,6 +818,134 @@ private fun CooldownSection(
                     label = { Text(label) },
                     modifier = Modifier.weight(1f)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReminderSection(
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+    hour: Int,
+    onHourChange: (Int) -> Unit,
+    days: Set<Int>,
+    onDaysChange: (Set<Int>) -> Unit
+) {
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Toggle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Reminder",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Get notified to click this button",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = enabled,
+                onCheckedChange = onEnabledChange
+            )
+        }
+
+        // Time and day selection (only show when enabled)
+        if (enabled) {
+            // Time selector
+            Text(
+                text = "Time",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button.REMINDER_HOUR_OPTIONS.take(4).forEach { (hourVal, label) ->
+                    FilterChip(
+                        selected = hour == hourVal,
+                        onClick = { onHourChange(hourVal) },
+                        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button.REMINDER_HOUR_OPTIONS.drop(4).take(4).forEach { (hourVal, label) ->
+                    FilterChip(
+                        selected = hour == hourVal,
+                        onClick = { onHourChange(hourVal) },
+                        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button.REMINDER_HOUR_OPTIONS.drop(8).take(4).forEach { (hourVal, label) ->
+                    FilterChip(
+                        selected = hour == hourVal,
+                        onClick = { onHourChange(hourVal) },
+                        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button.REMINDER_HOUR_OPTIONS.drop(12).forEach { (hourVal, label) ->
+                    FilterChip(
+                        selected = hour == hourVal,
+                        onClick = { onHourChange(hourVal) },
+                        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Day selector
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Days",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Button.DAY_OPTIONS.forEach { (dayVal, label) ->
+                    FilterChip(
+                        selected = days.contains(dayVal),
+                        onClick = {
+                            val newDays = if (days.contains(dayVal)) {
+                                if (days.size > 1) days - dayVal else days
+                            } else {
+                                days + dayVal
+                            }
+                            onDaysChange(newDays)
+                        },
+                        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
