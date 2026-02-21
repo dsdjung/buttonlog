@@ -773,6 +773,15 @@ class APIService {
         )
     }
 
+    // MARK: - Streaks
+
+    /// Gets streak statistics for the current user
+    func getStreaks() async throws -> StreakData {
+        // Get timezone offset in hours
+        let timezoneOffset = TimeZone.current.secondsFromGMT() / 3600
+        return try await makeRequest(endpoint: "/streaks?timezone_offset=\(timezoneOffset)")
+    }
+
     // MARK: - Notifications
 
     func getNotifications() async throws -> [AppNotification] {

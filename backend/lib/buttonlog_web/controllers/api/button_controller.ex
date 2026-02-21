@@ -1444,6 +1444,39 @@ defmodule ButtonLogWeb.API.ButtonController do
       end)
     }
   end
+
+  @doc """
+  Gets streak statistics for the current user.
+  GET /api/streaks
+  """
+  def streaks(conn, params) do
+    user = conn.assigns.current_user
+
+    # Get timezone offset from params (in hours, e.g., -5 for EST)
+    timezone_offset = case params["timezone_offset"] do
+      nil -> -5  # Default to EST
+      offset_string ->
+        case Float.parse(offset_string) do
+          {offset, _} -> round(offset)
+          :error -> -5
+        end
+    end
+
+    streak_data = ButtonLog.Buttons.calculate_user_streaks(user.id, timezone_offset)
+
+    json(conn, %{
+      success: true,
+      data: %{
+        current_streak: streak_data.current_streak,
+        longest_streak: streak_data.longest_streak,
+        total_active_days: streak_data.total_active_days,
+        last_active_date: format_date(streak_data.last_active_date)
+      }
+    })
+  end
+
+  defp format_date(nil), do: nil
+  defp format_date(date), do: Date.to_iso8601(date)
 end
 
 

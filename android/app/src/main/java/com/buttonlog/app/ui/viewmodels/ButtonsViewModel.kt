@@ -71,6 +71,7 @@ class ButtonsViewModel @Inject constructor(
     fun fetchButtons() {
         viewModelScope.launch {
             buttonRepository.fetchButtons()
+            fetchStreaks()
         }
     }
 
@@ -78,7 +79,22 @@ class ButtonsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true) }
             buttonRepository.fetchButtons()
+            fetchStreaks()
             _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
+
+    fun fetchStreaks() {
+        viewModelScope.launch {
+            try {
+                val timezoneOffset = java.util.TimeZone.getDefault().rawOffset / 3600000
+                val result = buttonRepository.getStreaks(timezoneOffset)
+                result.onSuccess { streakData ->
+                    _uiState.update { it.copy(streakData = streakData) }
+                }
+            } catch (e: Exception) {
+                // Silently fail - streaks are optional UI enhancement
+            }
         }
     }
 
@@ -335,6 +351,8 @@ data class ButtonsUiState(
     val isLoadingDiary: Boolean = false,
     val diaryError: String? = null,
     // Upgrade prompt
-    val upgradeRequired: UpgradeInfo? = null
+    val upgradeRequired: UpgradeInfo? = null,
+    // Streaks
+    val streakData: com.buttonlog.app.data.model.StreakData? = null
 )
 

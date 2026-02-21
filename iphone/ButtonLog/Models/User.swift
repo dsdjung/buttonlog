@@ -145,3 +145,33 @@ struct UserProfileUpdate {
         ].compactMapValues { $0 }
     }
 }
+
+// MARK: - Streak Data
+
+struct StreakData: Codable {
+    let currentStreak: Int
+    let longestStreak: Int
+    let totalActiveDays: Int
+    let lastActiveDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case currentStreak = "current_streak"
+        case longestStreak = "longest_streak"
+        case totalActiveDays = "total_active_days"
+        case lastActiveDate = "last_active_date"
+    }
+
+    var isStreakActive: Bool {
+        return currentStreak > 0
+    }
+
+    var streakEmoji: String {
+        switch currentStreak {
+        case 0: return "😴"
+        case 1...6: return "🔥"
+        case 7...29: return "💪"
+        case 30...99: return "⭐"
+        default: return "🏆"
+        }
+    }
+}

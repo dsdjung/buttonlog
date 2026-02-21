@@ -192,6 +192,11 @@ interface APIService {
         @Query("cursor_id") cursorId: String? = null
     ): ActivityFeedResponse
 
+    @GET("streaks")
+    suspend fun getStreaks(
+        @Query("timezone_offset") timezoneOffset: Int = 0
+    ): StreakResponse
+
     // MARK: - Notification Endpoints
 
     @GET("notifications")

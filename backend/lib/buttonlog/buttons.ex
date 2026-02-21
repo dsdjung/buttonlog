@@ -1727,4 +1727,132 @@ defmodule ButtonLog.Buttons do
 
     {:ok, success_count}
   end
+
+  # =============================================================================
+  # Streak Tracking Functions
+  # =============================================================================
+
+  @doc """
+  Calculates streak statistics for a user.
+  Returns current streak, longest streak, and total active days.
+  """
+  def calculate_user_streaks(user_id, timezone_offset_hours \\ 0) do
+    active_dates = get_user_active_dates(user_id, timezone_offset_hours)
+
+    current_streak = calculate_current_streak(active_dates, timezone_offset_hours)
+    longest_streak = calculate_longest_streak(active_dates)
+    total_active_days = length(active_dates)
+
+    %{
+      current_streak: current_streak,
+      longest_streak: longest_streak,
+      total_active_days: total_active_days,
+      last_active_date: List.first(active_dates)
+    }
+  end
+
+  @doc """
+  Gets all dates where a user clicked at least one button.
+  Returns dates in descending order (most recent first).
+  """
+  def get_user_active_dates(user_id, timezone_offset_hours \\ 0) do
+    # Get all click timestamps for the user
+    clicks = Repo.all(
+      from bc in ButtonClick,
+        where: bc.user_id == ^user_id,
+        select: bc.clicked_at,
+        order_by: [desc: bc.clicked_at]
+    )
+
+    # Convert to local dates and get unique dates
+    clicks
+    |> Enum.map(fn clicked_at ->
+      # Apply timezone offset
+      adjusted = DateTime.add(clicked_at, timezone_offset_hours * 3600, :second)
+      DateTime.to_date(adjusted)
+    end)
+    |> Enum.uniq()
+    |> Enum.sort({:desc, Date})
+  end
+
+  @doc """
+  Calculates the current streak (consecutive days up to and including today or yesterday).
+  """
+  def calculate_current_streak(active_dates, timezone_offset_hours \\ 0) when is_list(active_dates) do
+    if Enum.empty?(active_dates) do
+      0
+    else
+      today = get_local_today(timezone_offset_hours)
+      yesterday = Date.add(today, -1)
+
+      # Check if the streak is still active (last activity today or yesterday)
+      most_recent = List.first(active_dates)
+
+      cond do
+        most_recent == today or most_recent == yesterday ->
+          count_consecutive_days(active_dates, today)
+        true ->
+          0  # Streak broken
+      end
+    end
+  end
+
+  @doc """
+  Calculates the longest streak ever achieved.
+  """
+  def calculate_longest_streak(active_dates) when is_list(active_dates) do
+    if Enum.empty?(active_dates) do
+      0
+    else
+      # Sort dates in ascending order to find consecutive sequences
+      sorted_dates = Enum.sort(active_dates, {:asc, Date})
+
+      # Calculate longest streak by tracking consecutive days
+      {longest_streak, _current, _prev} = Enum.reduce(sorted_dates, {0, 0, nil}, fn date, {longest, current, prev_date} ->
+        cond do
+          prev_date == nil ->
+            {1, 1, date}
+          Date.diff(date, prev_date) == 1 ->
+            new_current = current + 1
+            {max(longest, new_current), new_current, date}
+          true ->
+            {max(longest, current), 1, date}
+        end
+      end)
+
+      longest_streak
+    end
+  end
+
+  defp get_local_today(timezone_offset_hours) do
+    DateTime.utc_now()
+    |> DateTime.add(timezone_offset_hours * 3600, :second)
+    |> DateTime.to_date()
+  end
+
+  defp count_consecutive_days([], _reference_date), do: 0
+  defp count_consecutive_days(dates, reference_date) do
+    # Sort dates descending (most recent first)
+    sorted = Enum.sort(dates, {:desc, Date})
+
+    # Start from today or the most recent date and count backwards
+    start_date = if List.first(sorted) == reference_date, do: reference_date, else: Date.add(reference_date, -1)
+
+    {count, _} = Enum.reduce_while(sorted, {0, start_date}, fn date, {count, expected_date} ->
+      cond do
+        date == expected_date ->
+          {:cont, {count + 1, Date.add(expected_date, -1)}}
+        Date.diff(expected_date, date) == 0 ->
+          {:cont, {count + 1, Date.add(expected_date, -1)}}
+        Date.diff(expected_date, date) > 0 ->
+          # Skip future dates (shouldn't happen with sorted list)
+          {:cont, {count, expected_date}}
+        true ->
+          # Gap found, stop counting
+          {:halt, {count, expected_date}}
+      end
+    end)
+
+    count
+  end
 end

@@ -80,6 +80,7 @@ fun ButtonsScreen(
                     ButtonsList(
                         buttons = uiState.filteredButtons,
                         clickingButtonIds = uiState.clickingButtonIds,
+                        streakData = uiState.streakData,
                         onButtonClick = { buttonId ->
                             viewModel.clickButton(buttonId)
                         },
@@ -250,6 +251,7 @@ private fun EmptyStateView(onCreateButton: () -> Unit) {
 private fun ButtonsList(
     buttons: List<com.buttonlog.app.data.model.Button>,
     clickingButtonIds: Set<String> = emptySet(),
+    streakData: com.buttonlog.app.data.model.StreakData? = null,
     onButtonClick: (String) -> Unit,
     onButtonClickWithChoice: (String, String) -> Unit,
     onEditClick: (com.buttonlog.app.data.model.Button) -> Unit,
@@ -262,6 +264,13 @@ private fun ButtonsList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Streak card at the top
+        if (streakData != null && streakData.totalActiveDays > 0) {
+            item {
+                StreakCard(streakData = streakData)
+            }
+        }
+
         items(buttons) { button ->
             ButtonCard(
                 button = button,
@@ -326,5 +335,91 @@ fun SearchBar(
             focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
         )
     )
+}
+
+@Composable
+private fun StreakCard(streakData: com.buttonlog.app.data.model.StreakData) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Streak emoji and count
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.width(80.dp)
+            ) {
+                Text(
+                    text = streakData.streakEmoji,
+                    style = MaterialTheme.typography.headlineLarge
+                )
+                Text(
+                    text = "${streakData.currentStreak}",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "day streak",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Divider(
+                modifier = Modifier
+                    .height(50.dp)
+                    .width(1.dp),
+                color = MaterialTheme.colorScheme.outline
+            )
+
+            // Stats
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = null,
+                        tint = androidx.compose.ui.graphics.Color(0xFFFFD700),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Longest: ${streakData.longestStreak} days",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarToday,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Total: ${streakData.totalActiveDays} active days",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
 }
 

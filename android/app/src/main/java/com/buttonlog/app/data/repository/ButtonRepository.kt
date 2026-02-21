@@ -19,6 +19,7 @@ import com.buttonlog.app.data.model.ButtonSharingSetting
 import com.buttonlog.app.data.model.ButtonSharingUpdateRequest
 import com.buttonlog.app.data.model.ButtonSharingUpdate
 import com.buttonlog.app.data.model.CreatedGiftButton
+import com.buttonlog.app.data.model.StreakData
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -459,6 +460,26 @@ class ButtonRepository @Inject constructor(
                 Result.success(response.data)
             } else {
                 val errorMessage = response.error?.message ?: "Failed to fetch diary data"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // MARK: - Streaks
+
+    /**
+     * Fetches user streak data including current streak, longest streak, and total active days.
+     * @param timezoneOffsetHours The timezone offset in hours from UTC
+     */
+    suspend fun getStreaks(timezoneOffsetHours: Int): Result<StreakData> {
+        return try {
+            val response = apiService.getStreaks(timezoneOffsetHours)
+            if (response.success && response.data != null) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to fetch streak data"
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {

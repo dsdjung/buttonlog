@@ -210,3 +210,33 @@ data class ActivityFeedResponse(
     val error: ApiError?,
     val meta: ActivityMeta?
 )
+
+// Streak tracking
+data class StreakResponse(
+    val success: Boolean,
+    val data: StreakData?,
+    val error: ApiError?
+)
+
+data class StreakData(
+    @SerializedName("current_streak")
+    val currentStreak: Int,
+    @SerializedName("longest_streak")
+    val longestStreak: Int,
+    @SerializedName("total_active_days")
+    val totalActiveDays: Int,
+    @SerializedName("last_active_date")
+    val lastActiveDate: String?
+) {
+    val isStreakActive: Boolean
+        get() = currentStreak > 0
+
+    val streakEmoji: String
+        get() = when (currentStreak) {
+            0 -> "😴"
+            in 1..6 -> "🔥"
+            in 7..29 -> "💪"
+            in 30..99 -> "⭐"
+            else -> "🏆"
+        }
+}

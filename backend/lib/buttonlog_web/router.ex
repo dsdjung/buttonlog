@@ -92,6 +92,9 @@ defmodule ButtonLogWeb.Router do
     # Diary endpoint
     get "/diary", API.ButtonController, :diary
 
+    # Streaks endpoint
+    get "/streaks", API.ButtonController, :streaks
+
     # Button endpoints
     get "/buttons", API.ButtonController, :index
     get "/buttons/created-gifts", API.ButtonController, :created_gift_buttons

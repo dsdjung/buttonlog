@@ -8,6 +8,7 @@ struct ButtonsView: View {
     @State private var historyButton: ButtonModel?
     @State private var sharingButton: ButtonModel?
     @State private var alertSettingsButton: ButtonModel?
+    @State private var streakData: StreakData?
 
     var filteredButtons: [ButtonModel] {
         if searchText.isEmpty {
@@ -66,6 +67,12 @@ struct ButtonsView: View {
                 } else {
                     // Buttons list
                     LazyVStack(spacing: BLSpacing.lg) {
+                        // Streak Card (if data available)
+                        if let streak = streakData, streak.totalActiveDays > 0 {
+                            StreakCard(streakData: streak)
+                                .padding(.horizontal, BLSpacing.lg)
+                        }
+
                         ForEach(filteredButtons) { button in
                             ButtonCard(
                                 button: button,
@@ -101,10 +108,14 @@ struct ButtonsView: View {
             }
             .refreshable {
                 await appState.loadButtons()
+                await loadStreaks()
             }
         }
         .background(Color.blBackground)
         .navigationBarHidden(true)
+        .task {
+            await loadStreaks()
+        }
         .sheet(isPresented: $showingCreateButton) {
             CreateButtonView()
         }
@@ -120,6 +131,73 @@ struct ButtonsView: View {
         .sheet(item: $alertSettingsButton) { button in
             ButtonAlertSettingsView(button: button)
         }
+    }
+
+    private func loadStreaks() async {
+        do {
+            let data = try await APIService.shared.getStreaks()
+            await MainActor.run {
+                streakData = data
+            }
+        } catch {
+            // Silently fail - streak is optional UI enhancement
+        }
+    }
+}
+
+// MARK: - Streak Card
+
+struct StreakCard: View {
+    let streakData: StreakData
+
+    var body: some View {
+        HStack(spacing: BLSpacing.lg) {
+            // Streak emoji and count
+            VStack(spacing: 4) {
+                Text(streakData.streakEmoji)
+                    .font(.system(size: 32))
+                Text("\(streakData.currentStreak)")
+                    .font(BLTypography.headlineLarge)
+                    .foregroundColor(.blTextPrimary)
+                Text("day streak")
+                    .font(BLTypography.caption)
+                    .foregroundColor(.blTextSecondary)
+            }
+            .frame(minWidth: 80)
+
+            Divider()
+                .frame(height: 50)
+
+            // Stats
+            VStack(alignment: .leading, spacing: BLSpacing.sm) {
+                HStack {
+                    Image(systemName: "trophy.fill")
+                        .foregroundColor(.yellow)
+                        .font(.system(size: 14))
+                    Text("Longest: \(streakData.longestStreak) days")
+                        .font(BLTypography.bodySmall)
+                        .foregroundColor(.blTextSecondary)
+                }
+
+                HStack {
+                    Image(systemName: "calendar")
+                        .foregroundColor(.blPrimary)
+                        .font(.system(size: 14))
+                    Text("Total: \(streakData.totalActiveDays) active days")
+                        .font(BLTypography.bodySmall)
+                        .foregroundColor(.blTextSecondary)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(BLSpacing.lg)
+        .background(Color.blSurface)
+        .cornerRadius(BLRadius.xl)
+        .overlay(
+            RoundedRectangle(cornerRadius: BLRadius.xl)
+                .stroke(streakData.currentStreak > 0 ? Color.blPrimary.opacity(0.3) : Color.blBorder, lineWidth: 1)
+        )
     }
 }
 
