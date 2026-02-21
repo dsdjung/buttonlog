@@ -60,6 +60,14 @@ class FriendsViewModel @Inject constructor(
         }
     }
 
+    fun refreshFriends() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            friendsRepository.fetchFriends()
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
+
     fun sendFriendRequest(email: String? = null, username: String? = null) {
         viewModelScope.launch {
             val result = friendsRepository.sendFriendRequest(email, username)
@@ -303,6 +311,7 @@ data class FriendsUiState(
     val activityHasMore: Boolean = false,
     val activityNextCursor: ActivityCursor? = null,
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val isLoadingPermissions: Boolean = false,
     val isLoadingFriendButtons: Boolean = false,
     val isLoadingFriendActivity: Boolean = false,

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,35 +43,40 @@ fun FriendsScreen(
         viewModel.fetchFriends()
     }
 
-    Column(
+    PullToRefreshBox(
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = { viewModel.refreshFriends() },
         modifier = Modifier.fillMaxSize()
     ) {
-        // Header with Add Friend button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text(
-                text = "Friends",
-                style = MaterialTheme.typography.headlineMedium
-            )
-
-            FilledTonalButton(onClick = { showAddFriendDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.PersonAdd,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+            // Header with Add Friend button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Friends",
+                    style = MaterialTheme.typography.headlineMedium
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Invite")
-            }
-        }
 
-        when {
-            uiState.isLoading -> {
+                FilledTonalButton(onClick = { showAddFriendDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.PersonAdd,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Invite")
+                }
+            }
+
+            when {
+                uiState.isLoading && !uiState.isRefreshing -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -147,6 +153,7 @@ fun FriendsScreen(
                     }
                 }
             }
+        }
         }
     }
 
@@ -520,11 +527,22 @@ private fun PendingFriendRequestCard(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(onClick = onAccept) {
+                Button(
+                    onClick = onAccept,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BLButtonGreen,
+                        contentColor = androidx.compose.ui.graphics.Color.White
+                    )
+                ) {
                     Text("Accept")
                 }
 
-                OutlinedButton(onClick = { /* Decline */ }) {
+                OutlinedButton(
+                    onClick = { /* Decline */ },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {
                     Text("Decline")
                 }
             }

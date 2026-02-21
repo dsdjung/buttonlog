@@ -299,14 +299,15 @@ struct PendingFriendRequestRow: View {
                         onAccept()
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(.green)
                     .controlSize(.small)
-                    
+
                     SwiftUI.Button("Decline") {
                         // Handle decline
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .foregroundColor(.red)
+                    .tint(.secondary)
                 }
             }
         }
