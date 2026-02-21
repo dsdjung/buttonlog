@@ -45,6 +45,10 @@ fun EditButtonScreen(
     var selectedColor by remember { mutableStateOf(button.color) }
     var alertsEnabled by remember { mutableStateOf(button.alertsEnabled) }
     var localSharingSettings by remember(sharingSettings) { mutableStateOf(sharingSettings) }
+    // Reminder settings
+    var reminderEnabled by remember { mutableStateOf(button.reminderEnabled ?: false) }
+    var reminderHour by remember { mutableStateOf(button.reminderHour ?: 9) }
+    var reminderDays by remember { mutableStateOf((button.reminderDays ?: listOf(1, 2, 3, 4, 5, 6, 7)).toMutableSet()) }
 
     val scrollState = rememberScrollState()
 
@@ -65,7 +69,11 @@ fun EditButtonScreen(
                                 description = description.ifEmpty { null },
                                 icon = selectedIcon,
                                 color = selectedColor,
-                                alertsEnabled = alertsEnabled
+                                alertsEnabled = alertsEnabled,
+                                reminderEnabled = reminderEnabled,
+                                reminderHour = if (reminderEnabled) reminderHour else null,
+                                reminderDays = if (reminderEnabled) reminderDays.sorted() else null,
+                                reminderTimezone = if (reminderEnabled) java.util.TimeZone.getDefault().id else null
                             )
                             onSave(updatedButton, localSharingSettings)
                         },
@@ -150,6 +158,18 @@ fun EditButtonScreen(
                         onCheckedChange = { alertsEnabled = it }
                     )
                 }
+
+                HorizontalDivider()
+
+                // Reminder section
+                ReminderSection(
+                    enabled = reminderEnabled,
+                    onEnabledChange = { reminderEnabled = it },
+                    hour = reminderHour,
+                    onHourChange = { reminderHour = it },
+                    days = reminderDays,
+                    onDaysChange = { reminderDays = it.toMutableSet() }
+                )
             }
 
             // Friend Sharing Section
