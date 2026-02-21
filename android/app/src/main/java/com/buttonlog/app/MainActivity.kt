@@ -1,6 +1,7 @@
 package com.buttonlog.app
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -67,6 +68,9 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    // Store pending invite code for deep links
+    private var pendingInviteCode: String? = null
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -84,15 +88,33 @@ class MainActivity : ComponentActivity() {
         // Request notification permission for Android 13+
         requestNotificationPermission()
 
+        // Handle deep link on initial launch
+        handleDeepLink(intent)
+
         setContent {
             ButtonLogTheme {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
                 val onboardingCompleted by authViewModel.onboardingCompleted.collectAsState()
 
+                // Track pending invite code
+                var localPendingInviteCode by remember { mutableStateOf(pendingInviteCode) }
+
+                // Update local state when activity gets new pending code
+                LaunchedEffect(pendingInviteCode) {
+                    localPendingInviteCode = pendingInviteCode
+                }
+
                 if (isLoggedIn) {
                     if (onboardingCompleted) {
-                        MainScreen(onLogout = { authViewModel.logout() })
+                        MainScreen(
+                            onLogout = { authViewModel.logout() },
+                            pendingInviteCode = localPendingInviteCode,
+                            onInviteCodeConsumed = {
+                                pendingInviteCode = null
+                                localPendingInviteCode = null
+                            }
+                        )
                     } else {
                         OnboardingScreen(
                             onComplete = { authViewModel.completeOnboarding() }
@@ -101,6 +123,24 @@ class MainActivity : ComponentActivity() {
                 } else {
                     LoginScreen(viewModel = authViewModel)
                 }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDeepLink(intent)
+    }
+
+    private fun handleDeepLink(intent: Intent?) {
+        val data = intent?.data ?: return
+
+        // Handle buttonlog://invite/{code} deep links
+        if (data.scheme == "buttonlog" && data.host == "invite") {
+            val code = data.pathSegments.firstOrNull()
+            if (!code.isNullOrEmpty()) {
+                android.util.Log.d("MainActivity", "Deep link invite code: $code")
+                pendingInviteCode = code
             }
         }
     }
@@ -126,7 +166,11 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onLogout: () -> Unit = {}) {
+fun MainScreen(
+    onLogout: () -> Unit = {},
+    pendingInviteCode: String? = null,
+    onInviteCodeConsumed: () -> Unit = {}
+) {
     val navController = rememberNavController()
     var showCreateButton by remember { mutableStateOf(false) }
     var buttonToEdit by remember { mutableStateOf<Button?>(null) }
@@ -153,6 +197,15 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     val friendsUiState by friendsViewModel.uiState.collectAsState()
     val buttonsUiState by buttonsViewModel.uiState.collectAsState()
     val notificationsUiState by notificationsViewModel.uiState.collectAsState()
+
+    // Handle pending invite code from deep link
+    LaunchedEffect(pendingInviteCode) {
+        if (!pendingInviteCode.isNullOrEmpty()) {
+            android.util.Log.d("MainScreen", "Processing pending invite code: $pendingInviteCode")
+            friendsViewModel.acceptInvite(pendingInviteCode)
+            onInviteCodeConsumed()
+        }
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -566,6 +619,60 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     if (showWebhookSettingsScreen) {
         WebhookSettingsScreen(
             onNavigateBack = { showWebhookSettingsScreen = false }
+        )
+    }
+
+    // Invite Accepted Dialog
+    if (friendsUiState.showInviteAcceptedDialog) {
+        val acceptedFriend = friendsUiState.acceptedFriend
+        AlertDialog(
+            onDismissRequest = { friendsViewModel.clearInviteAcceptedDialog() },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "You're now friends!",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            },
+            text = {
+                Text(
+                    text = if (acceptedFriend != null) {
+                        "You and ${acceptedFriend.displayNameOrUsername} are now connected. You can share buttons and see each other's activity."
+                    } else {
+                        "You've successfully connected with a new friend. You can now share buttons and see each other's activity."
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        friendsViewModel.clearInviteAcceptedDialog()
+                        // Navigate to friends screen
+                        navController.navigate("friends") {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                ) {
+                    Text("View Friends")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { friendsViewModel.clearInviteAcceptedDialog() }) {
+                    Text("OK")
+                }
+            }
         )
     }
 }
