@@ -1,18 +1,30 @@
 package com.buttonlog.app.ui.screens
 
+import android.content.Intent
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.buttonlog.app.data.model.Friend
+import com.buttonlog.app.ui.theme.*
 import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -209,50 +221,169 @@ private fun CreatedGiftButtonsCard(onClick: () -> Unit) {
 
 @Composable
 private fun EmptyFriendsView(onAddFriend: () -> Unit) {
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(BLBackground)
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            imageVector = Icons.Default.People,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+        Spacer(modifier = Modifier.height(48.dp))
+
+        // Icon illustration
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .clip(CircleShape)
+                .background(BLPrimary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.People,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = BLPrimary
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Headline
         Text(
-            text = "No friends yet",
+            text = "Better Together",
             style = MaterialTheme.typography.headlineMedium,
+            color = BLTextPrimary,
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Invite friends to see their buttons and activity",
+            text = "Invite your accountability partner to track habits together and keep each other on track",
             style = MaterialTheme.typography.bodyLarge,
+            color = BLTextSecondary,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Feature highlights
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            EmptyStateBenefitRow(
+                icon = Icons.Default.CardGiftcard,
+                color = BLButtonPurple,
+                text = "Create buttons for friends"
+            )
+            EmptyStateBenefitRow(
+                icon = Icons.Default.NotificationsActive,
+                color = BLPrimary,
+                text = "Get notified when they complete"
+            )
+            EmptyStateBenefitRow(
+                icon = Icons.Default.TrendingUp,
+                color = BLSecondary,
+                text = "Celebrate progress together"
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // CTA buttons
         Button(
             onClick = onAddFriend,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = BLPrimary)
         ) {
             Icon(
-                imageVector = Icons.Default.PersonAdd,
+                imageVector = Icons.Default.Email,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Invite Friend")
+            Text("Invite by Email")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = {
+                val shareIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "Join me on ButtonLog! Let's keep each other accountable. Download the app: https://buttonlog.com/download"
+                    )
+                }
+                context.startActivity(Intent.createChooser(shareIntent, "Invite a friend"))
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.5.dp, BLPrimary),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = BLPrimary)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Share Invite Link")
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+private fun EmptyStateBenefitRow(
+    icon: ImageVector,
+    color: androidx.compose.ui.graphics.Color,
+    text: String
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = BLSurface,
+        border = BorderStroke(1.dp, BLBorder)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = color
+                )
+            }
+
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = BLTextPrimary
+            )
         }
     }
 }

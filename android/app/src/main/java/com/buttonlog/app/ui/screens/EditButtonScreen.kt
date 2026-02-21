@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -19,8 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.buttonlog.app.data.model.Button
+import com.buttonlog.app.ui.theme.*
 import com.buttonlog.app.data.model.ButtonFormData
 import com.buttonlog.app.data.model.ButtonSharingSetting
 import com.buttonlog.app.data.model.ButtonType
@@ -352,8 +355,12 @@ fun CreateButtonScreen(
     isLoading: Boolean,
     error: String?,
     friends: List<Friend> = emptyList(),
+    showSuccess: Boolean = false,
+    createdButtonName: String = "",
     onCreateButton: (ButtonFormData) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onSuccessInviteFriend: () -> Unit = {},
+    onSuccessDone: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -592,6 +599,15 @@ fun CreateButtonScreen(
                 )
             }
         }
+    }
+
+    // Success dialog
+    if (showSuccess) {
+        ButtonCreatedSuccessDialog(
+            buttonName = createdButtonName,
+            onInviteFriend = onSuccessInviteFriend,
+            onDone = onSuccessDone
+        )
     }
 }
 
@@ -1187,4 +1203,131 @@ private fun FriendNotificationsSection(
             }
         }
     }
+}
+
+// MARK: - Post-Create Success Dialog
+
+@Composable
+fun ButtonCreatedSuccessDialog(
+    buttonName: String,
+    onInviteFriend: () -> Unit,
+    onDone: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDone,
+        confirmButton = {
+            Button(
+                onClick = onInviteFriend,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BLPrimary)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PersonAdd,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Invite a Friend")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDone,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Maybe Later",
+                    color = BLTextSecondary
+                )
+            }
+        },
+        title = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Success icon
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(BLSuccess.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        tint = BLSuccess
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Button Created!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = BLTextPrimary,
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "\"$buttonName\" is ready to track",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = BLTextSecondary,
+                    textAlign = TextAlign.Center
+                )
+
+                // Social prompt card
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = BLSurface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BLBorder)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(BLPrimary.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.People,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = BLPrimary
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Better with a Friend",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = BLTextPrimary
+                            )
+                            Text(
+                                text = "Invite someone to keep you accountable",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = BLTextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    )
 }

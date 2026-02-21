@@ -187,4 +187,5 @@ extension Notification.Name {
     static let buttonClickNotificationReceived = Notification.Name("buttonClickNotificationReceived")
     static let friendRequestNotificationReceived = Notification.Name("friendRequestNotificationReceived")
     static let friendAcceptedNotificationReceived = Notification.Name("friendAcceptedNotificationReceived")
+    static let navigateToFriends = Notification.Name("navigateToFriends")
 }

@@ -5,53 +5,68 @@ struct FriendsView: View {
     @State private var showingAddFriend = false
     @State private var selectedFriend: Friend?
     @State private var showingCreatedGiftButtons = false
+    @State private var showingShareSheet = false
+
+    private var acceptedFriends: [Friend] {
+        appState.friends.filter { $0.status == .accepted }
+    }
 
     var body: some View {
-        List {
-            // Created Gift Buttons Section
-            Section {
-                NavigationLink(destination: CreatedGiftButtonsView()) {
-                    HStack {
-                        Image(systemName: "gift.fill")
-                            .foregroundColor(.purple)
-                            .frame(width: 24)
-                        VStack(alignment: .leading) {
-                            Text("Buttons I Created for Friends")
-                                .font(.body)
-                            if !appState.createdGiftButtons.isEmpty {
-                                Text("\(appState.createdGiftButtons.count) gift button\(appState.createdGiftButtons.count == 1 ? "" : "s")")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+        Group {
+            if acceptedFriends.isEmpty && appState.pendingFriendRequests.isEmpty {
+                // Empty state - no friends yet
+                EmptyFriendsStateView(
+                    onInviteByEmail: { showingAddFriend = true },
+                    onShareLink: { showingShareSheet = true }
+                )
+            } else {
+                List {
+                    // Created Gift Buttons Section
+                    Section {
+                        NavigationLink(destination: CreatedGiftButtonsView()) {
+                            HStack {
+                                Image(systemName: "gift.fill")
+                                    .foregroundColor(.purple)
+                                    .frame(width: 24)
+                                VStack(alignment: .leading) {
+                                    Text("Buttons I Created for Friends")
+                                        .font(.body)
+                                    if !appState.createdGiftButtons.isEmpty {
+                                        Text("\(appState.createdGiftButtons.count) gift button\(appState.createdGiftButtons.count == 1 ? "" : "s")")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                Spacer()
                             }
                         }
-                        Spacer()
                     }
-                }
-            }
 
-            // Pending Friend Requests Section
-            if !appState.pendingFriendRequests.isEmpty {
-                Section("Pending Requests") {
-                    ForEach(appState.pendingFriendRequests) { friend in
-                        PendingFriendRequestRow(friend: friend) {
-                            Task {
-                                await appState.acceptFriendRequest(friendId: friend.id)
+                    // Pending Friend Requests Section
+                    if !appState.pendingFriendRequests.isEmpty {
+                        Section("Pending Requests") {
+                            ForEach(appState.pendingFriendRequests) { friend in
+                                PendingFriendRequestRow(friend: friend) {
+                                    Task {
+                                        await appState.acceptFriendRequest(friendId: friend.id)
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
-            
-            // Friends Section
-            Section("Friends") {
-                if appState.friends.filter({ $0.status == .accepted }).isEmpty {
-                    Text("No friends yet")
-                        .foregroundColor(.secondary)
-                        .font(.subheadline)
-                } else {
-                    ForEach(appState.friends.filter { $0.status == .accepted }) { friend in
-                        FriendRow(friend: friend) {
-                            selectedFriend = friend
+
+                    // Friends Section
+                    Section("Friends") {
+                        if acceptedFriends.isEmpty {
+                            Text("No friends yet")
+                                .foregroundColor(.secondary)
+                                .font(.subheadline)
+                        } else {
+                            ForEach(acceptedFriends) { friend in
+                                FriendRow(friend: friend) {
+                                    selectedFriend = friend
+                                }
+                            }
                         }
                     }
                 }
@@ -74,6 +89,148 @@ struct FriendsView: View {
         .sheet(item: $selectedFriend) { friend in
             FriendDetailView(friend: friend)
         }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(items: [
+                "Join me on ButtonLog! Let's keep each other accountable. Download the app: https://buttonlog.com/download"
+            ])
+        }
+    }
+}
+
+// MARK: - Empty Friends State View
+
+struct EmptyFriendsStateView: View {
+    let onInviteByEmail: () -> Void
+    let onShareLink: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: BLSpacing.xl) {
+                Spacer()
+                    .frame(height: BLSpacing.xxxl)
+
+                // Icon illustration
+                ZStack {
+                    Circle()
+                        .fill(Color.blPrimary.opacity(0.1))
+                        .frame(width: 120, height: 120)
+
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 48))
+                        .foregroundColor(.blPrimary)
+                }
+
+                // Headline
+                VStack(spacing: BLSpacing.sm) {
+                    Text("Better Together")
+                        .font(BLTypography.headlineLarge)
+                        .foregroundColor(.blTextPrimary)
+
+                    Text("Invite your accountability partner to track habits together and keep each other on track")
+                        .font(BLTypography.bodyLarge)
+                        .foregroundColor(.blTextSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, BLSpacing.xl)
+                }
+
+                // Feature highlights
+                VStack(spacing: BLSpacing.md) {
+                    EmptyStateBenefitRow(
+                        icon: "gift.fill",
+                        color: .purple,
+                        text: "Create buttons for friends"
+                    )
+
+                    EmptyStateBenefitRow(
+                        icon: "bell.badge.fill",
+                        color: .blPrimary,
+                        text: "Get notified when they complete"
+                    )
+
+                    EmptyStateBenefitRow(
+                        icon: "chart.line.uptrend.xyaxis",
+                        color: .blSecondary,
+                        text: "Celebrate progress together"
+                    )
+                }
+                .padding(.horizontal, BLSpacing.xl)
+
+                Spacer()
+                    .frame(height: BLSpacing.lg)
+
+                // CTA buttons
+                VStack(spacing: BLSpacing.md) {
+                    SwiftUI.Button(action: onInviteByEmail) {
+                        HStack(spacing: BLSpacing.sm) {
+                            Image(systemName: "envelope.fill")
+                                .font(.system(size: 16))
+                            Text("Invite by Email")
+                                .font(BLTypography.labelLarge)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(
+                            RoundedRectangle(cornerRadius: BLRadius.lg)
+                                .fill(Color.blPrimary)
+                        )
+                    }
+
+                    SwiftUI.Button(action: onShareLink) {
+                        HStack(spacing: BLSpacing.sm) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 16))
+                            Text("Share Invite Link")
+                                .font(BLTypography.labelLarge)
+                        }
+                        .foregroundColor(.blPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(
+                            RoundedRectangle(cornerRadius: BLRadius.lg)
+                                .stroke(Color.blPrimary, lineWidth: 1.5)
+                        )
+                    }
+                }
+                .padding(.horizontal, BLSpacing.xl)
+
+                Spacer()
+            }
+        }
+        .background(Color.blBackground)
+    }
+}
+
+struct EmptyStateBenefitRow: View {
+    let icon: String
+    let color: Color
+    let text: String
+
+    var body: some View {
+        HStack(spacing: BLSpacing.md) {
+            ZStack {
+                Circle()
+                    .stroke(color.opacity(0.3), lineWidth: 1.5)
+                    .frame(width: 36, height: 36)
+
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(color)
+            }
+
+            Text(text)
+                .font(BLTypography.bodyMedium)
+                .foregroundColor(.blTextPrimary)
+
+            Spacer()
+        }
+        .padding(BLSpacing.md)
+        .background(Color.blSurface)
+        .cornerRadius(BLRadius.lg)
+        .overlay(
+            RoundedRectangle(cornerRadius: BLRadius.lg)
+                .stroke(Color.blBorder, lineWidth: 1)
+        )
     }
 }
 

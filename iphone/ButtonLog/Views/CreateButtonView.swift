@@ -6,6 +6,8 @@ struct CreateButtonView: View {
 
     @State private var formData = ButtonFormData()
     @State private var isLoading = false
+    @State private var showingSuccessPrompt = false
+    @State private var createdButtonName = ""
 
     let buttonColors = [
         "#007AFF", "#FF3B30", "#FF9500", "#FFCC00",
@@ -122,6 +124,24 @@ struct CreateButtonView: View {
                 }
             }
         }
+        .fullScreenCover(isPresented: $showingSuccessPrompt) {
+            ButtonCreatedSuccessView(
+                buttonName: createdButtonName,
+                onInviteFriend: {
+                    showingSuccessPrompt = false
+                    // Small delay to allow sheet to dismiss before navigating
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        dismiss()
+                        // Post notification to navigate to friends tab
+                        NotificationCenter.default.post(name: .navigateToFriends, object: nil)
+                    }
+                },
+                onDone: {
+                    showingSuccessPrompt = false
+                    dismiss()
+                }
+            )
+        }
     }
 
     private func createButton() {
@@ -131,10 +151,116 @@ struct CreateButtonView: View {
             await MainActor.run {
                 isLoading = false
                 if success {
-                    dismiss()
+                    createdButtonName = formData.name
+                    showingSuccessPrompt = true
                 }
             }
         }
+    }
+}
+
+// MARK: - Post-Create Success Prompt
+
+struct ButtonCreatedSuccessView: View {
+    let buttonName: String
+    let onInviteFriend: () -> Void
+    let onDone: () -> Void
+
+    var body: some View {
+        VStack(spacing: BLSpacing.xl) {
+            Spacer()
+
+            // Success icon
+            ZStack {
+                Circle()
+                    .fill(Color.blSuccess.opacity(0.1))
+                    .frame(width: 100, height: 100)
+
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 50))
+                    .foregroundColor(.blSuccess)
+            }
+
+            VStack(spacing: BLSpacing.sm) {
+                Text("Button Created!")
+                    .font(BLTypography.headlineLarge)
+                    .foregroundColor(.blTextPrimary)
+
+                Text("\"\(buttonName)\" is ready to track")
+                    .font(BLTypography.bodyLarge)
+                    .foregroundColor(.blTextSecondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            Spacer()
+
+            // Social prompt card
+            VStack(spacing: BLSpacing.md) {
+                HStack(spacing: BLSpacing.md) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.blPrimary.opacity(0.1))
+                            .frame(width: 48, height: 48)
+
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.blPrimary)
+                    }
+
+                    VStack(alignment: .leading, spacing: BLSpacing.xs) {
+                        Text("Better with a Friend")
+                            .font(BLTypography.titleMedium)
+                            .foregroundColor(.blTextPrimary)
+
+                        Text("Invite someone to keep you accountable")
+                            .font(BLTypography.bodySmall)
+                            .foregroundColor(.blTextSecondary)
+                    }
+
+                    Spacer()
+                }
+                .padding(BLSpacing.lg)
+                .background(Color.blSurface)
+                .cornerRadius(BLRadius.xl)
+                .overlay(
+                    RoundedRectangle(cornerRadius: BLRadius.xl)
+                        .stroke(Color.blBorder, lineWidth: 1)
+                )
+            }
+            .padding(.horizontal, BLSpacing.xl)
+
+            Spacer()
+
+            // CTA buttons
+            VStack(spacing: BLSpacing.md) {
+                SwiftUI.Button(action: onInviteFriend) {
+                    HStack(spacing: BLSpacing.sm) {
+                        Image(systemName: "person.badge.plus")
+                            .font(.system(size: 16))
+                        Text("Invite a Friend")
+                            .font(BLTypography.labelLarge)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(
+                        RoundedRectangle(cornerRadius: BLRadius.lg)
+                            .fill(Color.blPrimary)
+                    )
+                }
+
+                SwiftUI.Button(action: onDone) {
+                    Text("Maybe Later")
+                        .font(BLTypography.labelLarge)
+                        .foregroundColor(.blTextSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                }
+            }
+            .padding(.horizontal, BLSpacing.xl)
+            .padding(.bottom, BLSpacing.lg)
+        }
+        .background(Color.blBackground)
     }
 }
 
