@@ -192,6 +192,17 @@ interface APIService {
         @Query("cursor_id") cursorId: String? = null
     ): ActivityFeedResponse
 
+    // MARK: - Invite Links
+
+    @GET("users/invite-link")
+    suspend fun getInviteLink(): InviteLinkResponse
+
+    @POST("users/invite-link/regenerate")
+    suspend fun regenerateInviteLink(): InviteLinkResponse
+
+    @POST("friends/accept-invite/{code}")
+    suspend fun acceptInvite(@Path("code") code: String): AcceptInviteResponse
+
     @GET("streaks")
     suspend fun getStreaks(
         @Query("timezone_offset") timezoneOffset: Int = 0
@@ -419,6 +430,46 @@ data class GenericResponse(
     val data: Any?,
     val error: ApiError?
 )
+
+// MARK: - Invite Link Response
+
+data class InviteLinkResponse(
+    val success: Boolean,
+    val data: InviteLinkData?,
+    val error: ApiError?
+)
+
+data class InviteLinkData(
+    @SerializedName("invite_code")
+    val inviteCode: String,
+    @SerializedName("invite_url")
+    val inviteUrl: String,
+    @SerializedName("share_message")
+    val shareMessage: String
+)
+
+data class AcceptInviteResponse(
+    val success: Boolean,
+    val data: AcceptInviteData?,
+    val error: ApiError?
+)
+
+data class AcceptInviteData(
+    @SerializedName("already_friends")
+    val alreadyFriends: Boolean = false,
+    val friend: AcceptedFriend?,
+    val message: String?
+)
+
+data class AcceptedFriend(
+    val id: String,
+    val username: String?,
+    @SerializedName("display_name")
+    val displayName: String?
+) {
+    val displayNameOrUsername: String
+        get() = displayName ?: username ?: "Unknown"
+}
 
 data class TokenRefreshResponse(
     val success: Boolean,

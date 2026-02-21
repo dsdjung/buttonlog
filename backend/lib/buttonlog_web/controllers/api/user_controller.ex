@@ -213,6 +213,75 @@ defmodule ButtonLogWeb.API.UserController do
       %{field: field, message: List.first(errors)}
     end)
   end
+
+  @doc """
+  Gets the user's invite link. Creates one if it doesn't exist.
+  """
+  def invite_link(conn, _params) do
+    user = conn.assigns.current_user
+
+    case Accounts.get_or_create_invite_code(user.id) do
+      {:ok, code} ->
+        # Build the invite URL - use app deep link
+        base_url = Application.get_env(:buttonlog, :app_deep_link_base) || "buttonlog://invite"
+        invite_url = "#{base_url}/#{code}"
+
+        conn
+        |> json(%{
+          success: true,
+          data: %{
+            invite_code: code,
+            invite_url: invite_url,
+            share_message: "Join me on ButtonLog! #{invite_url}"
+          }
+        })
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "INVITE_CODE_ERROR",
+            message: "Failed to generate invite code"
+          }
+        })
+    end
+  end
+
+  @doc """
+  Regenerates the user's invite link, invalidating the previous one.
+  """
+  def regenerate_invite_link(conn, _params) do
+    user = conn.assigns.current_user
+
+    case Accounts.regenerate_invite_code(user.id) do
+      {:ok, code} ->
+        base_url = Application.get_env(:buttonlog, :app_deep_link_base) || "buttonlog://invite"
+        invite_url = "#{base_url}/#{code}"
+
+        conn
+        |> json(%{
+          success: true,
+          data: %{
+            invite_code: code,
+            invite_url: invite_url,
+            share_message: "Join me on ButtonLog! #{invite_url}"
+          }
+        })
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "INVITE_CODE_ERROR",
+            message: "Failed to regenerate invite code"
+          }
+        })
+    end
+  end
 end
 
 

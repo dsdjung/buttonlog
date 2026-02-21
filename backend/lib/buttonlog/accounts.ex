@@ -539,4 +539,69 @@ defmodule ButtonLog.Accounts do
       true -> false
     end
   end
+
+  # Invite Code Functions
+
+  @doc """
+  Gets a user by their invite code.
+  """
+  def get_user_by_invite_code(invite_code) when is_binary(invite_code) do
+    Repo.get_by(User, invite_code: invite_code)
+  end
+
+  def get_user_by_invite_code(_), do: nil
+
+  @doc """
+  Generates a unique invite code for a user.
+  Returns the code if user already has one, otherwise generates a new one.
+  """
+  def get_or_create_invite_code(user_id) do
+    user = get_user!(user_id)
+
+    case user.invite_code do
+      nil ->
+        # Generate and save a new invite code
+        code = generate_unique_invite_code()
+        case update_invite_code(user, code) do
+          {:ok, updated_user} -> {:ok, updated_user.invite_code}
+          {:error, reason} -> {:error, reason}
+        end
+
+      existing_code ->
+        {:ok, existing_code}
+    end
+  end
+
+  @doc """
+  Regenerates the invite code for a user.
+  This invalidates the previous invite link.
+  """
+  def regenerate_invite_code(user_id) do
+    user = get_user!(user_id)
+    code = generate_unique_invite_code()
+    case update_invite_code(user, code) do
+      {:ok, updated_user} -> {:ok, updated_user.invite_code}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp update_invite_code(user, code) do
+    user
+    |> Ecto.Changeset.change(invite_code: code)
+    |> Repo.update()
+  end
+
+  defp generate_unique_invite_code do
+    # Generate a short, URL-safe code
+    code = :crypto.strong_rand_bytes(6)
+    |> Base.url_encode64(padding: false)
+    |> String.replace(~r/[^a-zA-Z0-9]/, "")
+    |> String.slice(0, 8)
+
+    # Ensure uniqueness
+    case get_user_by_invite_code(code) do
+      nil -> code
+      _ -> generate_unique_invite_code()
+    end
+  end
 end

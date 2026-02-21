@@ -55,6 +55,9 @@ defmodule ButtonLog.Accounts.User do
     # Terms of Service acceptance
     field :tos_accepted_at, :naive_datetime
 
+    # Friend invite code for deep link invites
+    field :invite_code, :string
+
     # Virtual fields for password handling
     field :password, :string, virtual: true
     field :password_confirmation, :string, virtual: true

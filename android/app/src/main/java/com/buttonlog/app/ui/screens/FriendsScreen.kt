@@ -80,7 +80,12 @@ fun FriendsScreen(
             }
 
             uiState.friends.isEmpty() -> {
-                EmptyFriendsView(onAddFriend = { showAddFriendDialog = true })
+                EmptyFriendsView(
+                    onAddFriend = { showAddFriendDialog = true },
+                    inviteLinkData = uiState.inviteLinkData,
+                    isLoadingInviteLink = uiState.isLoadingInviteLink,
+                    onLoadInviteLink = { viewModel.loadInviteLink() }
+                )
             }
 
             else -> {
@@ -284,8 +289,27 @@ private fun CreatedGiftButtonsCard(onClick: () -> Unit) {
 }
 
 @Composable
-private fun EmptyFriendsView(onAddFriend: () -> Unit) {
+private fun EmptyFriendsView(
+    onAddFriend: () -> Unit,
+    inviteLinkData: com.buttonlog.app.data.api.InviteLinkData? = null,
+    isLoadingInviteLink: Boolean = false,
+    onLoadInviteLink: () -> Unit = {}
+) {
     val context = LocalContext.current
+    var pendingShare by remember { mutableStateOf(false) }
+
+    // Auto-share when invite link is loaded after user clicked share
+    LaunchedEffect(inviteLinkData) {
+        if (pendingShare && inviteLinkData != null) {
+            pendingShare = false
+            val shareIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, inviteLinkData.shareMessage)
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "Invite a friend"))
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -381,30 +405,43 @@ private fun EmptyFriendsView(onAddFriend: () -> Unit) {
 
         OutlinedButton(
             onClick = {
-                val shareIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = "text/plain"
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        "Join me on ButtonLog! Let's keep each other accountable. Download the app: https://buttonlog.com/download"
-                    )
+                if (inviteLinkData != null) {
+                    // Use the fetched invite link
+                    val shareIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, inviteLinkData.shareMessage)
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Invite a friend"))
+                } else {
+                    // Load the invite link first, then share when loaded
+                    pendingShare = true
+                    onLoadInviteLink()
                 }
-                context.startActivity(Intent.createChooser(shareIntent, "Invite a friend"))
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.5.dp, BLPrimary),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = BLPrimary)
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = BLPrimary),
+            enabled = !isLoadingInviteLink
         ) {
-            Icon(
-                imageVector = Icons.Default.Share,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
+            if (isLoadingInviteLink) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = BLPrimary
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Share Invite Link")
+            Text(if (isLoadingInviteLink) "Loading..." else "Share Invite Link")
         }
 
         Spacer(modifier = Modifier.height(32.dp))

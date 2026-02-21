@@ -243,3 +243,45 @@ struct FeedActivityPage {
     let hasMore: Bool
     let nextCursor: ActivityCursor?
 }
+
+// MARK: - Invite Links
+
+struct InviteLinkResponse: Codable {
+    let inviteCode: String
+    let inviteUrl: String
+    let shareMessage: String
+
+    enum CodingKeys: String, CodingKey {
+        case inviteCode = "invite_code"
+        case inviteUrl = "invite_url"
+        case shareMessage = "share_message"
+    }
+}
+
+struct AcceptInviteResponse: Codable {
+    let alreadyFriends: Bool?
+    let friend: AcceptedFriend?
+    let message: String?
+
+    enum CodingKeys: String, CodingKey {
+        case alreadyFriends = "already_friends"
+        case friend
+        case message
+    }
+}
+
+struct AcceptedFriend: Codable {
+    let id: String
+    let username: String?
+    let displayName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case username
+        case displayName = "display_name"
+    }
+
+    var displayNameOrUsername: String {
+        displayName ?? username ?? "Unknown"
+    }
+}

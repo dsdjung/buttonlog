@@ -2,6 +2,8 @@ package com.buttonlog.app.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.buttonlog.app.data.api.AcceptedFriend
+import com.buttonlog.app.data.api.InviteLinkData
 import com.buttonlog.app.data.model.Friend
 import com.buttonlog.app.data.model.FriendButton
 import com.buttonlog.app.data.model.FriendActivity
@@ -224,6 +226,70 @@ class FriendsViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
         friendsRepository.clearError()
     }
+
+    // MARK: - Invite Links
+
+    fun loadInviteLink() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingInviteLink = true) }
+            val result = friendsRepository.getInviteLink()
+            result.fold(
+                onSuccess = { inviteData ->
+                    _uiState.update {
+                        it.copy(
+                            inviteLinkData = inviteData,
+                            isLoadingInviteLink = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            error = error.message,
+                            isLoadingInviteLink = false
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun acceptInvite(code: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAcceptingInvite = true) }
+            val result = friendsRepository.acceptInvite(code)
+            result.fold(
+                onSuccess = { data ->
+                    _uiState.update {
+                        it.copy(
+                            acceptedFriend = data.friend,
+                            showInviteAcceptedDialog = true,
+                            isAcceptingInvite = false
+                        )
+                    }
+                    // Refresh friends list
+                    fetchFriends()
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            error = error.message,
+                            isAcceptingInvite = false
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun clearInviteAcceptedDialog() {
+        _uiState.update {
+            it.copy(
+                showInviteAcceptedDialog = false,
+                acceptedFriend = null
+            )
+        }
+    }
 }
 
 data class FriendsUiState(
@@ -243,5 +309,11 @@ data class FriendsUiState(
     val isLoadingMoreActivity: Boolean = false,
     val activityPermissionDenied: Boolean = false,
     val friendRequestSent: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // Invite link state
+    val inviteLinkData: InviteLinkData? = null,
+    val isLoadingInviteLink: Boolean = false,
+    val isAcceptingInvite: Boolean = false,
+    val acceptedFriend: AcceptedFriend? = null,
+    val showInviteAcceptedDialog: Boolean = false
 )

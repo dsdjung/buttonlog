@@ -30,6 +30,11 @@ class AppState: ObservableObject {
     // Track buttons currently being clicked (to disable them during the request)
     @Published var clickingButtonIds: Set<String> = []
 
+    // Deep link invite handling
+    var pendingInviteCode: String?
+    @Published var inviteAcceptedFriend: AcceptedFriend?
+    @Published var showInviteAcceptedAlert = false
+
     private let apiService = APIService.shared
     private var cancellables = Set<AnyCancellable>()
     
@@ -226,6 +231,37 @@ class AppState: ObservableObject {
             errorMessage = "Failed to remove friend: \(error.localizedDescription)"
             return false
         }
+    }
+
+    /// Accept an invite via deep link code
+    func acceptInvite(code: String) async -> Bool {
+        do {
+            let response = try await apiService.acceptInvite(code: code)
+            if let friend = response.friend {
+                inviteAcceptedFriend = friend
+                showInviteAcceptedAlert = true
+            }
+            // Refresh friends list to include the new friend
+            await loadFriends()
+            return true
+        } catch let error as APIError {
+            if case .upgradeRequired(let info) = error {
+                pendingUpgradeInfo = info
+            } else {
+                errorMessage = "Failed to accept invite: \(error.localizedDescription)"
+            }
+            return false
+        } catch {
+            errorMessage = "Failed to accept invite: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    /// Process any pending invite code (called after authentication)
+    func processPendingInvite() async {
+        guard let code = pendingInviteCode else { return }
+        pendingInviteCode = nil
+        _ = await acceptInvite(code: code)
     }
 
     // MARK: - Created Gift Buttons

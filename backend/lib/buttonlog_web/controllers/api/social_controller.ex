@@ -554,6 +554,142 @@ defmodule ButtonLogWeb.API.SocialController do
       %{field: field, message: List.first(errors)}
     end)
   end
+
+  @doc """
+  Accepts a friend invite via invite code.
+  This creates a bidirectional friendship automatically.
+  """
+  def accept_invite(conn, %{"code" => code}) do
+    user = conn.assigns.current_user
+
+    # Find the user with this invite code
+    case ButtonLog.Accounts.get_user_by_invite_code(code) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "INVALID_INVITE_CODE",
+            message: "This invite link is invalid or has expired"
+          }
+        })
+
+      inviter when inviter.id == user.id ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "INVALID_REQUEST",
+            message: "You cannot accept your own invite"
+          }
+        })
+
+      inviter ->
+        # Check subscription limit
+        current_friend_count = Social.count_user_friends(user.id)
+
+        case SubscriptionService.check_action_with_upgrade_info(user.id, :add_friend, %{current_friend_count: current_friend_count}) do
+          {:ok, :allowed} ->
+            # Check if already friends
+            if Social.are_friends?(user.id, inviter.id) do
+              conn
+              |> json(%{
+                success: true,
+                data: %{
+                  already_friends: true,
+                  friend: %{
+                    id: inviter.id,
+                    username: inviter.username,
+                    display_name: inviter.display_name
+                  }
+                }
+              })
+            else
+              # Create bidirectional friendship
+              case create_bidirectional_friendship(user.id, inviter.id) do
+                {:ok, _} ->
+                  conn
+                  |> put_status(:created)
+                  |> json(%{
+                    success: true,
+                    data: %{
+                      friend: %{
+                        id: inviter.id,
+                        username: inviter.username,
+                        display_name: inviter.display_name
+                      },
+                      message: "You are now friends with #{inviter.display_name || inviter.username}!"
+                    }
+                  })
+
+                {:error, _reason} ->
+                  conn
+                  |> put_status(:internal_server_error)
+                  |> json(%{
+                    success: false,
+                    error: %{
+                      code: "FRIENDSHIP_ERROR",
+                      message: "Failed to create friendship. Please try again."
+                    }
+                  })
+              end
+            end
+
+          {:error, upgrade_info} ->
+            conn
+            |> put_status(:payment_required)
+            |> json(%{
+              success: false,
+              error: %{
+                code: "UPGRADE_REQUIRED",
+                message: upgrade_info.message,
+                upgrade_info: %{
+                  reason: upgrade_info.reason,
+                  current_plan: upgrade_info.current_plan,
+                  current_usage: upgrade_info[:current_usage],
+                  limit: upgrade_info[:limit],
+                  recommended_plan: upgrade_info.recommended_plan,
+                  upgrade_benefit: upgrade_info.upgrade_benefit
+                }
+              }
+            })
+        end
+    end
+  end
+
+  # Creates a bidirectional friendship between two users
+  defp create_bidirectional_friendship(user_id, friend_id) do
+    # Create friendship from user to friend (accepted)
+    case Social.create_friendship(%{status: "accepted"}, user_id, friend_id) do
+      {:ok, _friendship1} ->
+        # Create reverse friendship
+        case Social.create_friendship(%{status: "accepted"}, friend_id, user_id) do
+          {:ok, _friendship2} ->
+            # Create notification permissions for both directions
+            ButtonLog.Notifications.upsert_friend_notification_permissions(%{
+              can_receive_button_notifications: true,
+              can_receive_friend_requests: true,
+              can_receive_general_notifications: true,
+              notification_frequency: "immediate"
+            }, user_id, friend_id)
+
+            ButtonLog.Notifications.upsert_friend_notification_permissions(%{
+              can_receive_button_notifications: true,
+              can_receive_friend_requests: true,
+              can_receive_general_notifications: true,
+              notification_frequency: "immediate"
+            }, friend_id, user_id)
+
+            {:ok, :friendship_created}
+
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:error, reason} -> {:error, reason}
+    end
+  end
 end
 
 

@@ -133,6 +133,10 @@ defmodule ButtonLogWeb.Router do
     put "/users/notification-preferences", API.UserController, :update_notification_preferences
     put "/users/password", API.PasswordController, :change_password
 
+    # Invite link endpoints
+    get "/users/invite-link", API.UserController, :invite_link
+    post "/users/invite-link/regenerate", API.UserController, :regenerate_invite_link
+
     # Data export endpoints
     get "/users/export", API.ExportController, :export
     get "/users/export/info", API.ExportController, :export_info
@@ -142,6 +146,7 @@ defmodule ButtonLogWeb.Router do
     post "/friends/request", API.SocialController, :send_friend_request
     put "/friends/:id/accept", API.SocialController, :accept_friend_request
     delete "/friends/:id", API.SocialController, :remove_friend
+    post "/friends/accept-invite/:code", API.SocialController, :accept_invite
     get "/friends/:friend_id/permissions", API.SocialController, :get_permissions
     put "/friends/:friend_id/permissions", API.SocialController, :update_permissions
     get "/friends/:friend_id/buttons", API.SocialController, :friend_buttons

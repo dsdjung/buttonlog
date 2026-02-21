@@ -6,9 +6,32 @@ struct FriendsView: View {
     @State private var selectedFriend: Friend?
     @State private var showingCreatedGiftButtons = false
     @State private var showingShareSheet = false
+    @State private var inviteShareMessage: String = ""
+    @State private var isLoadingInvite = false
 
     private var acceptedFriends: [Friend] {
         appState.friends.filter { $0.status == .accepted }
+    }
+
+    private func loadAndShareInvite() {
+        isLoadingInvite = true
+        Task {
+            do {
+                let response = try await APIService.shared.getInviteLink()
+                await MainActor.run {
+                    inviteShareMessage = response.shareMessage
+                    isLoadingInvite = false
+                    showingShareSheet = true
+                }
+            } catch {
+                await MainActor.run {
+                    // Fallback to static message
+                    inviteShareMessage = "Join me on ButtonLog! Let's keep each other accountable. Download the app: https://buttonlog.com/download"
+                    isLoadingInvite = false
+                    showingShareSheet = true
+                }
+            }
+        }
     }
 
     var body: some View {
@@ -17,7 +40,7 @@ struct FriendsView: View {
                 // Empty state - no friends yet
                 EmptyFriendsStateView(
                     onInviteByEmail: { showingAddFriend = true },
-                    onShareLink: { showingShareSheet = true }
+                    onShareLink: { loadAndShareInvite() }
                 )
             } else {
                 List {
@@ -109,9 +132,7 @@ struct FriendsView: View {
             FriendDetailView(friend: friend)
         }
         .sheet(isPresented: $showingShareSheet) {
-            ShareSheet(items: [
-                "Join me on ButtonLog! Let's keep each other accountable. Download the app: https://buttonlog.com/download"
-            ])
+            ShareSheet(items: [inviteShareMessage])
         }
     }
 }

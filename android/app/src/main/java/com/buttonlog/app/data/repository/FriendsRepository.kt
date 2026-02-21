@@ -1,9 +1,11 @@
 package com.buttonlog.app.data.repository
 
 import android.util.Log
+import com.buttonlog.app.data.api.AcceptInviteData
 import com.buttonlog.app.data.api.APIService
 import com.buttonlog.app.data.api.FriendPermissionUpdateRequest
 import com.buttonlog.app.data.api.FriendRequestBody
+import com.buttonlog.app.data.api.InviteLinkData
 import com.buttonlog.app.data.model.Friend
 import com.buttonlog.app.data.model.FriendButton
 import com.buttonlog.app.data.model.FriendActivity
@@ -238,6 +240,38 @@ class FriendsRepository @Inject constructor(
 
     fun getFriend(friendId: String): Friend? {
         return _friends.value.find { it.friendId == friendId }
+    }
+
+    // MARK: - Invite Links
+
+    suspend fun getInviteLink(): Result<InviteLinkData> {
+        return try {
+            val response = apiService.getInviteLink()
+
+            if (response.success && response.data != null) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to get invite link"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun acceptInvite(code: String): Result<AcceptInviteData> {
+        return try {
+            val response = apiService.acceptInvite(code)
+
+            if (response.success && response.data != null) {
+                Result.success(response.data)
+            } else {
+                val errorMessage = response.error?.message ?: "Failed to accept invite"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     fun clearError() {

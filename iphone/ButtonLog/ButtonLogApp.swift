@@ -35,6 +35,27 @@ struct ButtonLogApp: App {
             .animation(.easeInOut(duration: 0.3), value: authManager.isCheckingAuth)
             .animation(.easeInOut(duration: 0.3), value: authManager.isAuthenticated)
             .animation(.easeInOut(duration: 0.3), value: authManager.onboardingCompleted)
+            .onOpenURL { url in
+                handleDeepLink(url: url)
+            }
+        }
+    }
+
+    /// Handle deep links including invite links
+    private func handleDeepLink(url: URL) {
+        // Handle buttonlog://invite/{code} deep links
+        guard url.scheme == "buttonlog" else { return }
+
+        if url.host == "invite", let code = url.pathComponents.last, !code.isEmpty, code != "/" {
+            // Only process if user is authenticated
+            if authManager.isAuthenticated {
+                Task {
+                    await appState.acceptInvite(code: code)
+                }
+            } else {
+                // Store the invite code for after authentication
+                appState.pendingInviteCode = code
+            }
         }
     }
 }

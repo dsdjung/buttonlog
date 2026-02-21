@@ -773,6 +773,23 @@ class APIService {
         )
     }
 
+    // MARK: - Invite Links
+
+    /// Gets the user's invite link (creates one if it doesn't exist)
+    func getInviteLink() async throws -> InviteLinkResponse {
+        return try await makeRequest(endpoint: "/users/invite-link")
+    }
+
+    /// Regenerates the user's invite link, invalidating the previous one
+    func regenerateInviteLink() async throws -> InviteLinkResponse {
+        return try await makeRequest(endpoint: "/users/invite-link/regenerate", method: .POST)
+    }
+
+    /// Accepts a friend invite via code
+    func acceptInvite(code: String) async throws -> AcceptInviteResponse {
+        return try await makeRequest(endpoint: "/friends/accept-invite/\(code)", method: .POST)
+    }
+
     // MARK: - Streaks
 
     /// Gets streak statistics for the current user
