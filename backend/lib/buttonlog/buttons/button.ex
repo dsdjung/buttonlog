@@ -21,6 +21,7 @@ defmodule ButtonLog.Buttons.Button do
     field :auto_stop_minutes, :integer  # Duration in minutes (15, 30, 60, 120, 240, 480)
     field :scheduled_stop_at, :utc_datetime  # When the button should auto-stop
     field :calendar_sync_enabled, :boolean
+    field :cooldown_hours, :integer  # Hours before button can be clicked again (nil = no cooldown)
 
     # Archival (for one-time buttons)
     field :archived, :boolean, default: false
@@ -50,7 +51,7 @@ defmodule ButtonLog.Buttons.Button do
     button
     |> cast(attrs, [:name, :description, :type, :icon, :color, :is_active,
                     :alerts_enabled, :auto_stop_enabled, :auto_stop_minutes,
-                    :scheduled_stop_at, :calendar_sync_enabled,
+                    :scheduled_stop_at, :calendar_sync_enabled, :cooldown_hours,
                     :current_state, :state_changed_at, :user_id, :archived, :archived_at,
                     :choices])
     |> validate_required([:name, :type])
@@ -60,6 +61,7 @@ defmodule ButtonLog.Buttons.Button do
     |> validate_inclusion(:current_state, ["idle", "active"], allow_blank: true)
     |> validate_format(:color, ~r/^#[0-9A-Fa-f]{6}$/, message: "must be a valid hex color")
     |> validate_auto_stop_minutes()
+    |> validate_cooldown_hours()
     |> validate_choices()
   end
 
@@ -68,6 +70,14 @@ defmodule ButtonLog.Buttons.Button do
       nil -> changeset
       minutes when minutes in [15, 30, 60, 120, 240, 480] -> changeset
       _ -> add_error(changeset, :auto_stop_minutes, "must be 15, 30, 60, 120, 240, or 480 minutes")
+    end
+  end
+
+  defp validate_cooldown_hours(changeset) do
+    case get_change(changeset, :cooldown_hours) do
+      nil -> changeset
+      hours when is_integer(hours) and hours >= 1 and hours <= 168 -> changeset  # 1 hour to 1 week
+      _ -> add_error(changeset, :cooldown_hours, "must be between 1 and 168 hours")
     end
   end
 

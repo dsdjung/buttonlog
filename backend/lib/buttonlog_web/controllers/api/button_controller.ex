@@ -294,6 +294,22 @@ defmodule ButtonLogWeb.API.ButtonController do
           }
         })
 
+      {:error, :on_cooldown, next_available_at} ->
+        conn
+        |> put_status(:too_many_requests)
+        |> json(%{
+          success: false,
+          error: %{
+            code: "ON_COOLDOWN",
+            message: "This button is on cooldown",
+            next_available_at: format_datetime(next_available_at)
+          },
+          meta: %{
+            timestamp: DateTime.utc_now(),
+            request_id: generate_request_id()
+          }
+        })
+
       {:error, :choice_required} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -408,6 +424,7 @@ defmodule ButtonLogWeb.API.ButtonController do
       auto_stop_minutes: button.auto_stop_minutes,
       scheduled_stop_at: format_datetime(button.scheduled_stop_at),
       calendar_sync_enabled: button.calendar_sync_enabled,
+      cooldown_hours: button.cooldown_hours,
       user_id: button.user_id,
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at),
@@ -452,6 +469,7 @@ defmodule ButtonLogWeb.API.ButtonController do
       auto_stop_minutes: button[:auto_stop_minutes],
       scheduled_stop_at: format_datetime(button[:scheduled_stop_at]),
       calendar_sync_enabled: button.calendar_sync_enabled,
+      cooldown_hours: button[:cooldown_hours],
       user_id: button.user_id,
       created_at: format_datetime(button.inserted_at),
       updated_at: format_datetime(button.updated_at),

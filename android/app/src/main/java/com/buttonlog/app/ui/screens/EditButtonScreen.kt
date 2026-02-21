@@ -370,6 +370,7 @@ fun CreateButtonScreen(
     var alertsEnabled by remember { mutableStateOf(true) }
     var autoStopEnabled by remember { mutableStateOf(false) }
     var autoStopMinutes by remember { mutableStateOf<Int?>(null) }
+    var cooldownHours by remember { mutableStateOf<Int?>(null) }
     var choices by remember { mutableStateOf(mutableListOf("", "")) }
     var friendAlertMode by remember { mutableStateOf(FriendAlertMode.NONE) }
     var selectedFriendIds by remember { mutableStateOf(mutableSetOf<String>()) }
@@ -410,6 +411,7 @@ fun CreateButtonScreen(
                                 } else {
                                     mutableListOf()
                                 },
+                                cooldownHours = if (selectedType == ButtonType.INSTANT) cooldownHours else null,
                                 friendAlertMode = friendAlertMode,
                                 selectedFriendIds = selectedFriendIds.toMutableList()
                             )
@@ -579,6 +581,15 @@ fun CreateButtonScreen(
                             )
                         }
                     }
+
+                    // Cooldown section (only for instant type)
+                    if (selectedType == ButtonType.INSTANT) {
+                        HorizontalDivider()
+                        CooldownSection(
+                            selectedHours = cooldownHours,
+                            onHoursSelected = { cooldownHours = it }
+                        )
+                    }
                 }
             }
 
@@ -714,6 +725,78 @@ private fun AutoStopDurationSelector(
                 FilterChip(
                     selected = selectedMinutes == minutes,
                     onClick = { onMinutesSelected(minutes) },
+                    label = { Text(label) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CooldownSection(
+    selectedHours: Int?,
+    onHoursSelected: (Int?) -> Unit
+) {
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Cooldown Period",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            text = "Prevent clicking too frequently. Useful for daily habits.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // First row: None, 1 hour, 2 hours
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = selectedHours == null,
+                onClick = { onHoursSelected(null) },
+                label = { Text("None") },
+                modifier = Modifier.weight(1f)
+            )
+            Button.COOLDOWN_OPTIONS.take(2).forEach { (hours, label) ->
+                FilterChip(
+                    selected = selectedHours == hours,
+                    onClick = { onHoursSelected(hours) },
+                    label = { Text(label) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // Second row: 4 hours, 8 hours, 12 hours
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button.COOLDOWN_OPTIONS.drop(2).take(3).forEach { (hours, label) ->
+                FilterChip(
+                    selected = selectedHours == hours,
+                    onClick = { onHoursSelected(hours) },
+                    label = { Text(label) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // Third row: 1 day, 2 days, 3 days, 1 week
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button.COOLDOWN_OPTIONS.drop(5).forEach { (hours, label) ->
+                FilterChip(
+                    selected = selectedHours == hours,
+                    onClick = { onHoursSelected(hours) },
                     label = { Text(label) },
                     modifier = Modifier.weight(1f)
                 )

@@ -263,6 +263,10 @@ struct ButtonCard: View {
                         if button.isShared, let ownerName = button.ownerName {
                             SharedWithMeBadge(ownerName: ownerName)
                         }
+
+                        if button.hasCooldown, let cooldownText = button.cooldownDurationText {
+                            CooldownBadge(duration: cooldownText)
+                        }
                     }
                 }
 
@@ -533,6 +537,24 @@ struct SharedWithMeBadge: View {
         .padding(.vertical, BLSpacing.xs)
         .background(Color.blButtonBlue.opacity(0.2))
         .foregroundColor(.blButtonBlue)
+        .cornerRadius(BLRadius.sm)
+    }
+}
+
+struct CooldownBadge: View {
+    let duration: String
+
+    var body: some View {
+        HStack(spacing: BLSpacing.xs) {
+            Image(systemName: "clock.fill")
+                .font(.caption2)
+            Text(duration)
+                .font(BLTypography.labelSmall)
+        }
+        .padding(.horizontal, BLSpacing.sm)
+        .padding(.vertical, BLSpacing.xs)
+        .background(Color.blButtonOrange.opacity(0.2))
+        .foregroundColor(.blButtonOrange)
         .cornerRadius(BLRadius.sm)
     }
 }

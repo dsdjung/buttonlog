@@ -98,6 +98,21 @@ struct CreateButtonView: View {
                     Toggle("Calendar Sync", isOn: $formData.calendarSyncEnabled)
                 }
 
+                // Cooldown Section (for instant buttons to prevent spam)
+                if formData.type == .instant {
+                    Section(header: Text("Cooldown"), footer: Text("Set a cooldown period to prevent clicking too frequently. Useful for daily habits.")) {
+                        Picker("Cooldown Period", selection: Binding(
+                            get: { formData.cooldownHours ?? 0 },
+                            set: { formData.cooldownHours = $0 == 0 ? nil : $0 }
+                        )) {
+                            Text("None").tag(0)
+                            ForEach(ButtonFormData.cooldownOptions, id: \.hours) { option in
+                                Text(option.label).tag(option.hours)
+                            }
+                        }
+                    }
+                }
+
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Preview")

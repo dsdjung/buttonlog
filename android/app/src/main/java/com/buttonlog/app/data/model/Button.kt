@@ -42,6 +42,9 @@ data class Button(
     val giftMessage: String? = null,
     // Multiple choice options for one-time buttons
     val choices: List<String>? = null,
+    // Cooldown field - hours before button can be clicked again
+    @SerializedName("cooldown_hours")
+    val cooldownHours: Int? = null,
     // Sharing fields
     @SerializedName("sharing_mode")
     val sharingMode: SharingMode? = null,
@@ -115,6 +118,23 @@ data class Button(
             }
         }
 
+    /** True if this button has a cooldown period */
+    val hasCooldown: Boolean
+        get() = (cooldownHours ?: 0) > 0
+
+    /** Formatted cooldown duration (e.g., "24 hours", "1 hour") */
+    val cooldownDurationText: String?
+        get() {
+            val hours = cooldownHours ?: return null
+            if (hours <= 0) return null
+            return when {
+                hours == 1 -> "1 hour"
+                hours == 24 -> "1 day"
+                hours % 24 == 0 -> "${hours / 24} days"
+                else -> "$hours hours"
+            }
+        }
+
     companion object {
         /** Available auto-stop duration options */
         val AUTO_STOP_OPTIONS = listOf(
@@ -124,6 +144,19 @@ data class Button(
             120 to "2 hours",
             240 to "4 hours",
             480 to "8 hours"
+        )
+
+        /** Available cooldown period options */
+        val COOLDOWN_OPTIONS = listOf(
+            1 to "1 hour",
+            2 to "2 hours",
+            4 to "4 hours",
+            8 to "8 hours",
+            12 to "12 hours",
+            24 to "1 day",
+            48 to "2 days",
+            72 to "3 days",
+            168 to "1 week"
         )
     }
 }
@@ -297,6 +330,8 @@ data class ButtonFormData(
     @SerializedName("calendar_sync_enabled")
     var calendarSyncEnabled: Boolean = false,
     var choices: MutableList<String> = mutableListOf(),  // Multiple choice options for one-time buttons
+    @SerializedName("cooldown_hours")
+    var cooldownHours: Int? = null,  // Hours before button can be clicked again (nil = no cooldown)
     // Friend alert configuration
     var friendAlertMode: FriendAlertMode = FriendAlertMode.NONE,
     var selectedFriendIds: MutableList<String> = mutableListOf()
@@ -331,6 +366,11 @@ data class ButtonFormData(
         // Only include auto_stop_minutes if auto-stop is enabled
         if (autoStopEnabled && autoStopMinutes != null) {
             body["auto_stop_minutes"] = autoStopMinutes
+        }
+
+        // Include cooldown_hours if set
+        if (cooldownHours != null && cooldownHours!! > 0) {
+            body["cooldown_hours"] = cooldownHours
         }
 
         // Include choices for one-time buttons if valid

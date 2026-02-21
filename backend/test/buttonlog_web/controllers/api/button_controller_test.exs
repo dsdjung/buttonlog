@@ -328,6 +328,83 @@ defmodule ButtonLogWeb.API.ButtonControllerTest do
     end
   end
 
+  describe "cooldown functionality" do
+    test "creates button with cooldown_hours", %{conn: conn, token: token} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/buttons", %{
+          button: %{
+            name: "Daily Button",
+            type: "instant",
+            cooldown_hours: 24
+          }
+        })
+
+      assert %{"success" => true, "data" => button} = json_response(conn, 201)
+      assert button["name"] == "Daily Button"
+      assert button["cooldown_hours"] == 24
+    end
+
+    test "rejects invalid cooldown_hours", %{conn: conn, token: token} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/buttons", %{
+          button: %{
+            name: "Bad Cooldown",
+            type: "instant",
+            cooldown_hours: 500  # Over 168 limit
+          }
+        })
+
+      assert %{"success" => false, "error" => error} = json_response(conn, 422)
+      assert error["code"] == "VALIDATION_ERROR"
+    end
+
+    test "allows clicking button without cooldown", %{conn: conn, user: user, token: token} do
+      {:ok, button} = Buttons.create_button(%{name: "No Cooldown", type: "instant"}, user.id)
+
+      # First click
+      conn1 =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/buttons/#{button.id}/click")
+
+      assert %{"success" => true} = json_response(conn1, 200)
+
+      # Second click immediately - should work
+      conn2 =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/buttons/#{button.id}/click")
+
+      assert %{"success" => true} = json_response(conn2, 200)
+    end
+
+    test "blocks clicking button on cooldown", %{conn: conn, user: user, token: token} do
+      {:ok, button} = Buttons.create_button(%{name: "Daily Button", type: "instant", cooldown_hours: 24}, user.id)
+
+      # First click
+      conn1 =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/buttons/#{button.id}/click")
+
+      assert %{"success" => true} = json_response(conn1, 200)
+
+      # Second click immediately - should be blocked
+      conn2 =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/buttons/#{button.id}/click")
+
+      assert %{"success" => false, "error" => error} = json_response(conn2, 429)
+      assert error["code"] == "ON_COOLDOWN"
+      assert error["next_available_at"] != nil
+    end
+  end
+
   describe "GET /api/streaks" do
     test "returns streak data for user with activity", %{conn: conn, user: user, token: token} do
       {:ok, button} = Buttons.create_button(%{name: "Streak Button", type: "instant"}, user.id)

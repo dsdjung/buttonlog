@@ -282,33 +282,92 @@ defmodule ButtonLog.Buttons do
     # First verify the button exists and belongs to the user
     case get_button(button_id, user_id) do
       {:ok, button} ->
-        result = case button.type do
-          "toggle" ->
-            handle_toggle_button_click(button, user_id)
+        # Check cooldown before allowing click
+        case check_button_cooldown(button, user_id) do
+          {:ok, :no_cooldown} ->
+            do_click_button(button, user_id, selected_choice)
 
-          "one-time" ->
-            handle_one_time_button_click(button, user_id, selected_choice)
-
-          _other_type ->
-            # For instant buttons, just record a click
-            click_result = %ButtonClick{}
-            |> ButtonClick.create_changeset(%{
-              device: "web",
-              platform: "web",
-              action: "click"
-            }, button_id, user_id)
-            |> Repo.insert()
-
-            # Notify gift creator if this is a gift button
-            if match?({:ok, _}, click_result), do: notify_gift_creator_of_click(button, "click", nil)
-
-            click_result
+          {:error, :on_cooldown, next_available_at} ->
+            {:error, :on_cooldown, next_available_at}
         end
-
-        result
 
       error -> error
     end
+  end
+
+  defp do_click_button(button, user_id, selected_choice) do
+    result = case button.type do
+      "toggle" ->
+        handle_toggle_button_click(button, user_id)
+
+      "one-time" ->
+        handle_one_time_button_click(button, user_id, selected_choice)
+
+      _other_type ->
+        # For instant buttons, just record a click
+        click_result = %ButtonClick{}
+        |> ButtonClick.create_changeset(%{
+          device: "web",
+          platform: "web",
+          action: "click"
+        }, button.id, user_id)
+        |> Repo.insert()
+
+        # Notify gift creator if this is a gift button
+        if match?({:ok, _}, click_result), do: notify_gift_creator_of_click(button, "click", nil)
+
+        click_result
+    end
+
+    result
+  end
+
+  @doc """
+  Checks if a button is on cooldown. Returns {:ok, :no_cooldown} if the button can be clicked,
+  or {:error, :on_cooldown, next_available_at} if it's still on cooldown.
+  """
+  def check_button_cooldown(button, user_id) do
+    case button.cooldown_hours do
+      nil ->
+        {:ok, :no_cooldown}
+
+      0 ->
+        {:ok, :no_cooldown}
+
+      cooldown_hours when is_integer(cooldown_hours) ->
+        # Get the last click by this user for this button
+        last_click = get_last_click(button.id, user_id)
+
+        case last_click do
+          nil ->
+            {:ok, :no_cooldown}
+
+          click ->
+            now = DateTime.utc_now()
+            # Convert NaiveDateTime to DateTime if needed
+            click_time = case click.inserted_at do
+              %DateTime{} = dt -> dt
+              %NaiveDateTime{} = ndt -> DateTime.from_naive!(ndt, "Etc/UTC")
+            end
+            cooldown_ends_at = DateTime.add(click_time, cooldown_hours * 3600, :second)
+
+            if DateTime.compare(now, cooldown_ends_at) == :lt do
+              {:error, :on_cooldown, cooldown_ends_at}
+            else
+              {:ok, :no_cooldown}
+            end
+        end
+    end
+  end
+
+  defp get_last_click(button_id, user_id) do
+    import Ecto.Query
+
+    ButtonClick
+    |> where([c], c.button_id == ^button_id and c.user_id == ^user_id)
+    |> order_by([c], desc: c.inserted_at)
+    |> limit(1)
+    |> Repo.one()
   end
 
   defp handle_toggle_button_click(button, user_id) do
@@ -1194,47 +1253,58 @@ defmodule ButtonLog.Buttons do
     if can_click_button?(button_id, user_id) do
       case get_button_by_id(button_id) do
         {:ok, button} ->
-          result = case button.type do
-            "toggle" ->
-              handle_toggle_button_click_for_collaborator(button, user_id, click_attrs)
+          # Check cooldown before allowing click
+          case check_button_cooldown(button, user_id) do
+            {:ok, :no_cooldown} ->
+              do_click_button_with_access(button, user_id, click_attrs, selected_choice)
 
-            "one-time" ->
-              # Only owner can complete one-time buttons
-              if button.user_id == user_id do
-                handle_one_time_button_click(button, user_id, selected_choice)
-              else
-                {:error, :owner_only_action}
-              end
-
-            _other_type ->
-              # For instant buttons, just record a click
-              %ButtonClick{}
-              |> ButtonClick.create_changeset(
-                Map.merge(%{
-                  device: click_attrs[:device] || "web",
-                  platform: click_attrs[:platform] || "web",
-                  action: "click"
-                }, click_attrs),
-                button_id,
-                user_id
-              )
-              |> Repo.insert()
-          end
-
-          # Notify owner if clicked by collaborator
-          case result do
-            {:ok, click} ->
-              if button.user_id != user_id do
-                notify_owner_of_collaborator_click(button, user_id, click)
-              end
-              {:ok, click}
-            error -> error
+            {:error, :on_cooldown, next_available_at} ->
+              {:error, :on_cooldown, next_available_at}
           end
 
         error -> error
       end
     else
       {:error, :not_authorized}
+    end
+  end
+
+  defp do_click_button_with_access(button, user_id, click_attrs, selected_choice) do
+    result = case button.type do
+      "toggle" ->
+        handle_toggle_button_click_for_collaborator(button, user_id, click_attrs)
+
+      "one-time" ->
+        # Only owner can complete one-time buttons
+        if button.user_id == user_id do
+          handle_one_time_button_click(button, user_id, selected_choice)
+        else
+          {:error, :owner_only_action}
+        end
+
+      _other_type ->
+        # For instant buttons, just record a click
+        %ButtonClick{}
+        |> ButtonClick.create_changeset(
+          Map.merge(%{
+            device: click_attrs[:device] || "web",
+            platform: click_attrs[:platform] || "web",
+            action: "click"
+          }, click_attrs),
+          button.id,
+          user_id
+        )
+        |> Repo.insert()
+    end
+
+    # Notify owner if clicked by collaborator
+    case result do
+      {:ok, click} ->
+        if button.user_id != user_id do
+          notify_owner_of_collaborator_click(button, user_id, click)
+        end
+        {:ok, click}
+      error -> error
     end
   end
 

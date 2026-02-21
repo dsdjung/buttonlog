@@ -28,6 +28,9 @@ struct ButtonModel: Identifiable, Codable, Equatable {
     // Multiple choice options for one-time buttons
     var choices: [String]? = nil
 
+    // Cooldown field - hours before button can be clicked again
+    var cooldownHours: Int? = nil
+
     // Sharing fields
     var sharingMode: SharingMode? = nil
     var shareToken: String? = nil
@@ -110,6 +113,27 @@ struct ButtonModel: Identifiable, Codable, Equatable {
         }
     }
 
+    /// True if this button has a cooldown period
+    var hasCooldown: Bool {
+        guard let hours = cooldownHours else { return false }
+        return hours > 0
+    }
+
+    /// Formatted cooldown duration (e.g., "24 hours", "1 hour")
+    var cooldownDurationText: String? {
+        guard let hours = cooldownHours, hours > 0 else { return nil }
+        if hours == 1 {
+            return "1 hour"
+        } else if hours == 24 {
+            return "1 day"
+        } else if hours % 24 == 0 {
+            let days = hours / 24
+            return "\(days) days"
+        } else {
+            return "\(hours) hours"
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, name, description, type, icon, color, choices
         case isActive = "is_active"
@@ -132,6 +156,7 @@ struct ButtonModel: Identifiable, Codable, Equatable {
         case isSharedWithMe = "is_shared_with_me"
         case ownerId = "owner_id"
         case ownerName = "owner_name"
+        case cooldownHours = "cooldown_hours"
     }
 }
 
@@ -380,6 +405,7 @@ struct ButtonFormData {
     var autoStopMinutes: Int? = nil  // Duration in minutes (15, 30, 60, 120, 240, 480)
     var calendarSyncEnabled: Bool = false
     var choices: [IdentifiedChoice] = []  // Multiple choice options for one-time buttons
+    var cooldownHours: Int? = nil  // Hours before button can be clicked again (nil = no cooldown)
 
     // Friend alert configuration
     var friendAlertMode: FriendAlertMode = .none
@@ -397,6 +423,7 @@ struct ButtonFormData {
         autoStopMinutes: Int? = nil,
         calendarSyncEnabled: Bool = false,
         choices: [String] = [],
+        cooldownHours: Int? = nil,
         friendAlertMode: FriendAlertMode = .none,
         selectedFriendIds: [String] = []
     ) {
@@ -410,6 +437,7 @@ struct ButtonFormData {
         self.autoStopMinutes = autoStopMinutes
         self.calendarSyncEnabled = calendarSyncEnabled
         self.choices = choices.map { IdentifiedChoice(text: $0) }
+        self.cooldownHours = cooldownHours
         self.friendAlertMode = friendAlertMode
         self.selectedFriendIds = selectedFriendIds
     }
@@ -439,6 +467,19 @@ struct ButtonFormData {
         (480, "8 hours")
     ]
 
+    /// Available cooldown period options
+    static let cooldownOptions: [(hours: Int, label: String)] = [
+        (1, "1 hour"),
+        (2, "2 hours"),
+        (4, "4 hours"),
+        (8, "8 hours"),
+        (12, "12 hours"),
+        (24, "1 day"),
+        (48, "2 days"),
+        (72, "3 days"),
+        (168, "1 week")
+    ]
+
     func toRequestBody() -> [String: Any] {
         var body: [String: Any] = [
             "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -459,6 +500,11 @@ struct ButtonFormData {
         // Only include auto_stop_minutes if auto-stop is enabled
         if autoStopEnabled, let minutes = autoStopMinutes {
             body["auto_stop_minutes"] = minutes
+        }
+
+        // Include cooldown_hours if set
+        if let hours = cooldownHours, hours > 0 {
+            body["cooldown_hours"] = hours
         }
 
         // Include choices for one-time buttons if valid

@@ -190,6 +190,11 @@ private fun ButtonHeader(
                         SharedWithMeBadge(ownerName = ownerName)
                     }
                 }
+                if (button.hasCooldown) {
+                    button.cooldownDurationText?.let { duration ->
+                        CooldownBadge(duration = duration)
+                    }
+                }
             }
         }
 
@@ -504,6 +509,33 @@ private fun SharedWithMeBadge(ownerName: String) {
                 text = "Shared by $ownerName",
                 style = MaterialTheme.typography.labelSmall,
                 color = blue
+            )
+        }
+    }
+}
+
+@Composable
+private fun CooldownBadge(duration: String) {
+    val orange = Color(0xFFFF9800)
+    Surface(
+        color = orange.copy(alpha = 0.2f),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Schedule,
+                contentDescription = null,
+                tint = orange,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(
+                text = duration,
+                style = MaterialTheme.typography.labelSmall,
+                color = orange
             )
         }
     }
