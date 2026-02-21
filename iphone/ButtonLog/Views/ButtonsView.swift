@@ -71,6 +71,7 @@ struct ButtonsView: View {
                         if let streak = streakData, streak.totalActiveDays > 0 {
                             StreakCard(streakData: streak)
                                 .padding(.horizontal, BLSpacing.lg)
+                                .transition(.opacity.combined(with: .offset(y: 12)))
                         }
 
                         ForEach(filteredButtons) { button in
@@ -100,10 +101,12 @@ struct ButtonsView: View {
                                     alertSettingsButton = button
                                 }
                             )
+                            .transition(.opacity.combined(with: .offset(y: 12)))
                         }
                     }
                     .padding(BLSpacing.lg)
                     .padding(.bottom, 80) // Space for floating button
+                    .animation(.easeOut(duration: 0.25), value: filteredButtons.count)
                 }
             }
             .refreshable {

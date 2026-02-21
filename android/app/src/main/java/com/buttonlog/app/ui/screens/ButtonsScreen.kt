@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,6 +22,7 @@ import com.buttonlog.app.ui.components.ButtonCard
 import com.buttonlog.app.ui.components.UpgradePromptDialog
 import com.buttonlog.app.ui.theme.BLSurfaceElevated
 import com.buttonlog.app.ui.theme.BLTextTertiary
+import com.buttonlog.app.ui.theme.StaggeredFadeIn
 import com.buttonlog.app.ui.viewmodels.ButtonsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -271,17 +273,20 @@ private fun ButtonsList(
             }
         }
 
-        items(buttons) { button ->
-            ButtonCard(
-                button = button,
-                onClick = { onButtonClick(button.id) },
-                onClickWithChoice = { choice -> onButtonClickWithChoice(button.id, choice) },
-                onEditClick = { onEditClick(button) },
-                onHistoryClick = { onHistoryClick(button) },
-                onAlertSettingsClick = if (button.isOwner) {{ onAlertSettingsClick(button) }} else null,
-                onDeleteClick = { onDeleteClick(button) },
-                isClicking = clickingButtonIds.contains(button.id)
-            )
+        itemsIndexed(buttons) { index, button ->
+            // Staggered fade-in animation for polished appearance
+            StaggeredFadeIn(index = index) {
+                ButtonCard(
+                    button = button,
+                    onClick = { onButtonClick(button.id) },
+                    onClickWithChoice = { choice -> onButtonClickWithChoice(button.id, choice) },
+                    onEditClick = { onEditClick(button) },
+                    onHistoryClick = { onHistoryClick(button) },
+                    onAlertSettingsClick = if (button.isOwner) {{ onAlertSettingsClick(button) }} else null,
+                    onDeleteClick = { onDeleteClick(button) },
+                    isClicking = clickingButtonIds.contains(button.id)
+                )
+            }
         }
     }
 }

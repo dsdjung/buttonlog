@@ -94,6 +94,12 @@ object BLAnimation {
     const val pressScale: Float = 0.98f
     /** Background tint opacity for pressed state */
     const val pressTintOpacity: Float = 0.04f
+
+    // Staggered animation constants
+    /** Delay between items in staggered animations (ms) */
+    const val staggerDelay: Int = 50
+    /** Initial offset for slide-in animations (dp) */
+    const val slideOffset: Float = 12f
 }
 
 // CompositionLocal providers for theme access
