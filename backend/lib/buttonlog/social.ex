@@ -628,6 +628,56 @@ defmodule ButtonLog.Social do
   end
 
   @doc """
+  Gets aggregated activity feed from ALL friends.
+  Returns a paginated list of activities from all friends that have granted view permission.
+  Activities are sorted by clicked_at descending (most recent first).
+
+  Options:
+    - :limit - number of items per page (default 20, max 50)
+    - :cursor - ISO8601 datetime string for pagination
+    - :cursor_id - ID for tie-breaking when timestamps match
+  """
+  def get_friends_activity_feed(user_id, opts \\ []) do
+    # Get all accepted friends who have granted activity view permission
+    friend_ids = get_friends_with_activity_permission(user_id)
+
+    if Enum.empty?(friend_ids) do
+      %{activities: [], has_more: false, next_cursor: nil}
+    else
+      # Parse cursor if provided as string
+      opts = parse_cursor_opts(opts)
+      # Get aggregated activity from all friends
+      ButtonLog.Buttons.list_all_friends_activity(friend_ids, opts)
+    end
+  end
+
+  @doc """
+  Gets the list of friend IDs who have granted the user permission to view their activity.
+  """
+  def get_friends_with_activity_permission(user_id) do
+    # Get friends where user is the initiator
+    friends_as_user = Repo.all(
+      from f in Friendship,
+        where: f.user_id == ^user_id and f.status == "accepted",
+        select: f.friend_id
+    )
+
+    # Get friends where user is the recipient
+    friends_as_recipient = Repo.all(
+      from f in Friendship,
+        where: f.friend_id == ^user_id and f.status == "accepted",
+        select: f.user_id
+    )
+
+    all_friend_ids = friends_as_user ++ friends_as_recipient
+
+    # Filter to only those who have granted activity view permission
+    Enum.filter(all_friend_ids, fn friend_id ->
+      can_view_history?(friend_id, user_id)
+    end)
+  end
+
+  @doc """
   Sends an invitation email to someone who isn't registered yet.
   Returns {:ok, :invitation_sent} on success.
   """

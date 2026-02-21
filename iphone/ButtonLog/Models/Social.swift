@@ -184,3 +184,62 @@ struct ActivityPage {
     let hasMore: Bool
     let nextCursor: ActivityCursor?
 }
+
+// Activity from aggregated friend feed (includes user name)
+struct FeedActivity: Identifiable, Codable {
+    let id: String
+    let buttonId: String
+    let buttonName: String
+    let buttonType: String
+    let buttonIcon: String?
+    let buttonColor: String?
+    let userId: String
+    let userName: String?
+    let clickedAt: Date?
+    let duration: Int?
+    let action: String?
+    let device: String?
+    let platform: String?
+    let createdAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case buttonId = "button_id"
+        case buttonName = "button_name"
+        case buttonType = "button_type"
+        case buttonIcon = "button_icon"
+        case buttonColor = "button_color"
+        case userId = "user_id"
+        case userName = "user_name"
+        case clickedAt = "clicked_at"
+        case duration
+        case action
+        case device
+        case platform
+        case createdAt = "created_at"
+    }
+
+    var displayAction: String {
+        return action ?? "click"
+    }
+
+    var displayUserName: String {
+        return userName ?? "Friend"
+    }
+
+    var buttonTypeEmoji: String {
+        switch buttonType {
+        case "instant": return "⚡"
+        case "timed": return "⏱️"
+        case "state": return "🔄"
+        default: return "📱"
+        }
+    }
+}
+
+// Paginated feed activity results
+struct FeedActivityPage {
+    let activities: [FeedActivity]
+    let hasMore: Bool
+    let nextCursor: ActivityCursor?
+}

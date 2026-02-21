@@ -759,6 +759,20 @@ class APIService {
         )
     }
 
+    /// Gets aggregated activity feed from all friends
+    func getActivityFeed(limit: Int = 20, cursor: ActivityCursor? = nil) async throws -> FeedActivityPage {
+        var endpoint = "/activity/feed?limit=\(limit)"
+        if let cursor = cursor {
+            endpoint += "&cursor=\(cursor.clickedAt)&cursor_id=\(cursor.id)"
+        }
+        let result: (data: [FeedActivity], meta: APIMetadata?) = try await makeRequestWithMeta(endpoint: endpoint)
+        return FeedActivityPage(
+            activities: result.data,
+            hasMore: result.meta?.hasMore ?? false,
+            nextCursor: result.meta?.nextCursor
+        )
+    }
+
     // MARK: - Notifications
 
     func getNotifications() async throws -> [AppNotification] {

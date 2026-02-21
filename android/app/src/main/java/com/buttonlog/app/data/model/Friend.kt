@@ -165,3 +165,48 @@ data class ActivityCursor(
     val clickedAt: String,
     val id: String
 )
+
+// Aggregated activity feed (shows activities from all friends)
+data class FeedActivity(
+    val id: String,
+    @SerializedName("button_id")
+    val buttonId: String,
+    @SerializedName("button_name")
+    val buttonName: String,
+    @SerializedName("button_type")
+    val buttonType: String,
+    @SerializedName("button_icon")
+    val buttonIcon: String?,
+    @SerializedName("button_color")
+    val buttonColor: String?,
+    @SerializedName("user_id")
+    val userId: String,
+    @SerializedName("user_name")
+    val userName: String?,
+    @SerializedName("clicked_at")
+    val clickedAt: String,
+    val duration: Int?,
+    val action: String?,
+    val device: String?,
+    val platform: String?,
+    @SerializedName("created_at")
+    val createdAt: String
+) {
+    val displayAction: String
+        get() = when (action?.lowercase()) {
+            "start" -> "started"
+            "stop", "end" -> "stopped"
+            "click" -> "completed"
+            else -> action ?: "completed"
+        }
+
+    val displayUserName: String
+        get() = userName ?: "Unknown"
+}
+
+data class ActivityFeedResponse(
+    val success: Boolean,
+    val data: List<FeedActivity> = emptyList(),
+    val error: ApiError?,
+    val meta: ActivityMeta?
+)

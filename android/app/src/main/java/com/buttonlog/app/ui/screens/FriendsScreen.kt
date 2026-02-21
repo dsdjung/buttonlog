@@ -32,6 +32,7 @@ import com.buttonlog.app.ui.viewmodels.FriendsViewModel
 fun FriendsScreen(
     onFriendSelected: (Friend) -> Unit = {},
     onCreatedGiftButtonsClick: () -> Unit = {},
+    onActivityFeedClick: () -> Unit = {},
     viewModel: FriendsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -88,6 +89,11 @@ fun FriendsScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Activity feed link
+                    item {
+                        ActivityFeedCard(onClick = onActivityFeedClick)
+                    }
+
                     // Created gift buttons link
                     item {
                         CreatedGiftButtonsCard(onClick = onCreatedGiftButtonsClick)
@@ -157,6 +163,64 @@ fun FriendsScreen(
     uiState.error?.let { error ->
         LaunchedEffect(error) {
             // Could show snackbar here
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ActivityFeedCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = BLPrimary.copy(alpha = 0.2f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Timeline,
+                            contentDescription = null,
+                            tint = BLPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                Column {
+                    Text(
+                        text = "Friend Activity",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "See what your friends are up to",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "View",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

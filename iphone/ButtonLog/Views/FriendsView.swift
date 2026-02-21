@@ -21,6 +21,25 @@ struct FriendsView: View {
                 )
             } else {
                 List {
+                    // Activity Feed Section
+                    Section {
+                        NavigationLink(destination: ActivityFeedView()) {
+                            HStack {
+                                Image(systemName: "waveform.path.ecg")
+                                    .foregroundColor(.blPrimary)
+                                    .frame(width: 24)
+                                VStack(alignment: .leading) {
+                                    Text("Friend Activity")
+                                        .font(.body)
+                                    Text("See what your friends are up to")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                            }
+                        }
+                    }
+
                     // Created Gift Buttons Section
                     Section {
                         NavigationLink(destination: CreatedGiftButtonsView()) {

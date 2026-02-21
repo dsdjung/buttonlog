@@ -605,6 +605,70 @@ defmodule ButtonLog.Buttons do
     {activities, next_cursor, has_more}
   end
 
+  @doc """
+  Lists activity from multiple friends for an aggregated activity feed.
+  Returns activities from all specified friend IDs, sorted by clicked_at descending.
+
+  Options:
+    - :limit - number of items per page (default 20, max 50)
+    - :cursor - DateTime for pagination
+    - :cursor_id - ID for tie-breaking when timestamps match
+  """
+  def list_all_friends_activity(friend_ids, opts \\ []) when is_list(friend_ids) do
+    limit = min(Keyword.get(opts, :limit, 20), 50)
+    cursor = Keyword.get(opts, :cursor)
+
+    query =
+      from bc in ButtonClick,
+        join: b in Button, on: b.id == bc.button_id,
+        join: u in ButtonLog.Accounts.User, on: b.user_id == u.id,
+        where: b.user_id in ^friend_ids,
+        order_by: [desc: bc.clicked_at, desc: bc.id],
+        limit: ^(limit + 1),
+        select: %{
+          id: bc.id,
+          button_id: bc.button_id,
+          button_name: b.name,
+          button_type: b.type,
+          button_icon: b.icon,
+          button_color: b.color,
+          user_id: b.user_id,
+          user_name: coalesce(u.display_name, coalesce(u.username, u.email)),
+          clicked_at: bc.clicked_at,
+          duration: bc.duration,
+          action: bc.action,
+          device: bc.device,
+          platform: bc.platform,
+          inserted_at: bc.inserted_at
+        }
+
+    query =
+      if cursor do
+        cursor_id = Keyword.get(opts, :cursor_id, "")
+        from [bc, b, u] in query,
+          where: bc.clicked_at < ^cursor or (bc.clicked_at == ^cursor and bc.id < ^cursor_id)
+      else
+        query
+      end
+
+    results = Repo.all(query)
+
+    # Check if there are more results
+    has_more = length(results) > limit
+    activities = Enum.take(results, limit)
+
+    # Get the next cursor from the last item
+    next_cursor =
+      if has_more and length(activities) > 0 do
+        last = List.last(activities)
+        %{clicked_at: last.clicked_at, id: last.id}
+      else
+        nil
+      end
+
+    %{activities: activities, has_more: has_more, next_cursor: next_cursor}
+  end
+
   # =============================================================================
   # Button Sharing Functions
   # =============================================================================

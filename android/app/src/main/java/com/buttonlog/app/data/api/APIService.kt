@@ -185,6 +185,13 @@ interface APIService {
         @Query("cursor_id") cursorId: String? = null
     ): FriendActivityResponse
 
+    @GET("activity/feed")
+    suspend fun getActivityFeed(
+        @Query("limit") limit: Int = 20,
+        @Query("cursor") cursor: String? = null,
+        @Query("cursor_id") cursorId: String? = null
+    ): ActivityFeedResponse
+
     // MARK: - Notification Endpoints
 
     @GET("notifications")

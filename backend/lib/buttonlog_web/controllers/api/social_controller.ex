@@ -423,6 +423,54 @@ defmodule ButtonLogWeb.API.SocialController do
     end
   end
 
+  @doc """
+  Gets an aggregated activity feed from all friends.
+  Returns activities from all friends who have granted view permission, sorted by most recent.
+  """
+  def activity_feed(conn, params) do
+    user = conn.assigns.current_user
+    limit = params |> Map.get("limit", "20") |> String.to_integer() |> min(50)
+    cursor = Map.get(params, "cursor")
+    cursor_id = Map.get(params, "cursor_id")
+
+    opts = [limit: limit]
+    opts = if cursor, do: Keyword.put(opts, :cursor, cursor), else: opts
+    opts = if cursor_id, do: Keyword.put(opts, :cursor_id, cursor_id), else: opts
+
+    result = Social.get_friends_activity_feed(user.id, opts)
+
+    conn
+    |> json(%{
+      success: true,
+      data: Enum.map(result.activities, &serialize_feed_activity/1),
+      meta: %{
+        count: length(result.activities),
+        limit: limit,
+        has_more: result.has_more,
+        next_cursor: serialize_cursor(result.next_cursor)
+      }
+    })
+  end
+
+  defp serialize_feed_activity(activity) do
+    %{
+      id: activity.id,
+      button_id: activity.button_id,
+      button_name: activity.button_name,
+      button_type: activity.button_type,
+      button_icon: activity.button_icon || "star.fill",
+      button_color: activity.button_color || "#00BFA5",
+      user_id: activity.user_id,
+      user_name: activity.user_name,
+      clicked_at: format_datetime(activity.clicked_at),
+      duration: activity.duration,
+      action: activity.action,
+      device: activity.device,
+      platform: activity.platform,
+      created_at: format_datetime(activity.inserted_at)
+    }
+  end
+
   defp serialize_cursor(nil), do: nil
   defp serialize_cursor(%{clicked_at: clicked_at, id: id}) do
     %{
