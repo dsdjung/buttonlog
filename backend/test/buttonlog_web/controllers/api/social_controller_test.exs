@@ -135,7 +135,7 @@ defmodule ButtonLogWeb.API.SocialControllerTest do
       assert error["code"] == "FRIENDSHIP_NOT_FOUND"
     end
 
-    test "returns error when not recipient", %{conn: conn, user: user, token: token} do
+    test "returns error when not recipient", %{conn: conn, user: user, token: _token} do
       other_user = insert_user(%{email: "other3@test.com", username: "other3"})
       third_user = insert_user(%{email: "third@test.com", username: "third"})
 
@@ -240,6 +240,143 @@ defmodule ButtonLogWeb.API.SocialControllerTest do
 
       assert %{"success" => false, "error" => error} = json_response(conn, 403)
       assert error["code"] == "NOT_FRIENDS"
+    end
+  end
+
+  describe "POST /api/friends/accept-invite/:code" do
+    test "accepts invite and creates bidirectional friendship", %{conn: conn, user: _user, token: token} do
+      inviter = insert_user(%{email: "inviter@test.com", username: "inviter"})
+
+      # Generate invite code for the inviter
+      {:ok, invite_code} = ButtonLog.Accounts.get_or_create_invite_code(inviter.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/friends/accept-invite/#{invite_code}")
+
+      # Returns 201 Created on success
+      assert %{"success" => true, "data" => data} = json_response(conn, 201)
+      assert data["friend"]["id"] == inviter.id
+      assert data["friend"]["username"] == "inviter"
+      # The response includes a success message
+      assert is_binary(data["message"])
+    end
+
+    test "returns already_friends when already connected", %{conn: conn, user: user, token: token} do
+      friend = insert_user(%{email: "existingfriend@test.com", username: "existingfriend"})
+
+      # Create existing friendship
+      {:ok, friendship} = Social.send_friend_request(user.id, friend.id)
+      {:ok, _} = Social.accept_friend_request(friendship.id, friend.id)
+
+      # Generate invite code for the friend
+      {:ok, invite_code} = ButtonLog.Accounts.get_or_create_invite_code(friend.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/friends/accept-invite/#{invite_code}")
+
+      # Returns 200 for already_friends case (not 201)
+      assert %{"success" => true, "data" => data} = json_response(conn, 200)
+      assert data["already_friends"] == true
+    end
+
+    test "returns error for invalid invite code", %{conn: conn, token: token} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/friends/accept-invite/INVALID_CODE")
+
+      assert %{"success" => false, "error" => error} = json_response(conn, 404)
+      assert error["code"] == "INVALID_INVITE_CODE"
+    end
+
+    test "returns error when accepting own invite code", %{conn: conn, user: user, token: token} do
+      # Generate invite code for the current user
+      {:ok, invite_code} = ButtonLog.Accounts.get_or_create_invite_code(user.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/friends/accept-invite/#{invite_code}")
+
+      assert %{"success" => false, "error" => error} = json_response(conn, 400)
+      # The actual error code returned is INVALID_REQUEST
+      assert error["code"] == "INVALID_REQUEST"
+    end
+
+    test "requires authentication", %{conn: conn} do
+      conn = post(conn, "/api/friends/accept-invite/SOMECODE")
+      assert json_response(conn, 401)
+    end
+  end
+
+  describe "GET /api/activity/feed" do
+    test "returns aggregated activity from all friends", %{conn: conn, user: user, token: token} do
+      friend1 = insert_user(%{email: "feedfriend1@test.com", username: "feedfriend1"})
+      friend2 = insert_user(%{email: "feedfriend2@test.com", username: "feedfriend2"})
+
+      # Create friendships
+      {:ok, f1} = Social.send_friend_request(user.id, friend1.id)
+      {:ok, _} = Social.accept_friend_request(f1.id, friend1.id)
+      {:ok, f2} = Social.send_friend_request(user.id, friend2.id)
+      {:ok, _} = Social.accept_friend_request(f2.id, friend2.id)
+
+      # Create buttons and clicks for friends
+      {:ok, button1} = ButtonLog.Buttons.create_button(%{name: "Friend1 Button", type: "instant"}, friend1.id)
+      {:ok, button2} = ButtonLog.Buttons.create_button(%{name: "Friend2 Button", type: "instant"}, friend2.id)
+
+      {:ok, _} = ButtonLog.Buttons.click_button(button1.id, friend1.id)
+      {:ok, _} = ButtonLog.Buttons.click_button(button2.id, friend2.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/activity/feed")
+
+      assert %{"success" => true, "data" => activities, "meta" => meta} = json_response(conn, 200)
+      assert is_list(activities)
+      assert length(activities) >= 2
+      assert Map.has_key?(meta, "has_more")
+    end
+
+    test "returns empty feed when no friends", %{conn: conn, token: token} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/activity/feed")
+
+      assert %{"success" => true, "data" => [], "meta" => _meta} = json_response(conn, 200)
+    end
+
+    test "supports pagination with limit parameter", %{conn: conn, user: user, token: token} do
+      friend = insert_user(%{email: "pagedfrnd@test.com", username: "pagedfrnd"})
+
+      # Create friendship
+      {:ok, f} = Social.send_friend_request(user.id, friend.id)
+      {:ok, _} = Social.accept_friend_request(f.id, friend.id)
+
+      # Create button and multiple clicks
+      {:ok, button} = ButtonLog.Buttons.create_button(%{name: "Paged Button", type: "instant"}, friend.id)
+      for _ <- 1..5 do
+        {:ok, _} = ButtonLog.Buttons.click_button(button.id, friend.id)
+      end
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/activity/feed?limit=2")
+
+      assert %{"success" => true, "data" => activities, "meta" => meta} = json_response(conn, 200)
+      assert length(activities) <= 2
+      assert Map.has_key?(meta, "has_more")
+    end
+
+    test "requires authentication", %{conn: conn} do
+      conn = get(conn, "/api/activity/feed")
+      assert json_response(conn, 401)
     end
   end
 

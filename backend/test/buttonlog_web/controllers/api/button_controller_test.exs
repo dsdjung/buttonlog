@@ -328,6 +328,57 @@ defmodule ButtonLogWeb.API.ButtonControllerTest do
     end
   end
 
+  describe "GET /api/streaks" do
+    test "returns streak data for user with activity", %{conn: conn, user: user, token: token} do
+      {:ok, button} = Buttons.create_button(%{name: "Streak Button", type: "instant"}, user.id)
+
+      # Click the button to create activity
+      {:ok, _} = Buttons.click_button(button.id, user.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/streaks")
+
+      assert %{"success" => true, "data" => data} = json_response(conn, 200)
+      assert is_integer(data["current_streak"])
+      assert is_integer(data["longest_streak"])
+      assert is_integer(data["total_active_days"])
+      # streak_emoji is optional - may be nil or a string
+      assert is_nil(data["streak_emoji"]) or is_binary(data["streak_emoji"])
+    end
+
+    test "returns zero streak for user with no activity", %{conn: conn, token: token} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/streaks")
+
+      assert %{"success" => true, "data" => data} = json_response(conn, 200)
+      assert data["current_streak"] == 0
+      assert data["total_active_days"] == 0
+    end
+
+    test "accepts timezone_offset parameter", %{conn: conn, user: user, token: token} do
+      {:ok, button} = Buttons.create_button(%{name: "TZ Button", type: "instant"}, user.id)
+      {:ok, _} = Buttons.click_button(button.id, user.id)
+
+      # Test with positive offset (e.g., +5 hours)
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/streaks?timezone_offset=300")
+
+      assert %{"success" => true, "data" => data} = json_response(conn, 200)
+      assert data["current_streak"] >= 0
+    end
+
+    test "requires authentication", %{conn: conn} do
+      conn = get(conn, "/api/streaks")
+      assert json_response(conn, 401)
+    end
+  end
+
   # Helper functions
   defp insert_user(attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])

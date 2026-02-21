@@ -249,6 +249,77 @@ defmodule ButtonLogWeb.API.UserControllerTest do
     end
   end
 
+  describe "GET /api/users/invite-link" do
+    test "returns invite link for user", %{conn: conn, user: _user, token: token} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/users/invite-link")
+
+      assert %{"success" => true, "data" => data} = json_response(conn, 200)
+      assert is_binary(data["invite_code"])
+      assert String.length(data["invite_code"]) > 0
+      assert String.contains?(data["invite_url"], data["invite_code"])
+      assert is_binary(data["share_message"])
+    end
+
+    test "returns same invite code on multiple calls", %{conn: conn, token: token} do
+      conn1 =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/users/invite-link")
+
+      assert %{"success" => true, "data" => data1} = json_response(conn1, 200)
+
+      conn2 =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/users/invite-link")
+
+      assert %{"success" => true, "data" => data2} = json_response(conn2, 200)
+
+      assert data1["invite_code"] == data2["invite_code"]
+    end
+
+    test "requires authentication", %{conn: conn} do
+      conn = get(conn, "/api/users/invite-link")
+      assert json_response(conn, 401)
+    end
+  end
+
+  describe "POST /api/users/invite-link/regenerate" do
+    test "generates new invite code", %{conn: conn, user: user, token: token} do
+      # First get the original code
+      {:ok, original_code} = Accounts.get_or_create_invite_code(user.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/users/invite-link/regenerate")
+
+      assert %{"success" => true, "data" => data} = json_response(conn, 200)
+      assert data["invite_code"] != original_code
+      assert is_binary(data["invite_code"])
+    end
+
+    test "new code is different from old code", %{conn: conn, user: user, token: token} do
+      {:ok, code1} = Accounts.get_or_create_invite_code(user.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> post("/api/users/invite-link/regenerate")
+
+      assert %{"success" => true, "data" => data} = json_response(conn, 200)
+      assert data["invite_code"] != code1
+    end
+
+    test "requires authentication", %{conn: conn} do
+      conn = post(conn, "/api/users/invite-link/regenerate")
+      assert json_response(conn, 401)
+    end
+  end
+
   # Helper functions
   defp insert_user(attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])
